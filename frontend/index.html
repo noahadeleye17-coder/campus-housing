@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Housing</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <!-- OVERLAY -->
+  <div id="menuOverlay" class="menu-overlay"></div>
+
+  <!-- NAVBAR -->
+<header class="navbar">
+  <div class="nav-left">
+    <div class="logo-badge">🏠</div>
+    <span class="site-name">Off-Campus Hub</span>
+  </div>
+
+  <button
+    id="hamburger"
+    class="menu-btn"
+    aria-label="Open menu"
+    aria-expanded="false"
+  >
+    ☰
+  </button>
+</header>
+
+  <!-- MOBILE MENU -->
+  <nav id="mobileMenu" class="mobile-menu" aria-hidden="true">
+
+    <!-- PROFILE -->
+    <div class="menu-profile">
+      <div class="avatar" id="avatar">👤</div>
+      <div class="profile-info">
+        <strong id="profileName">Guest</strong>
+        <span id="profileStatus">Not logged in</span>
+      </div>
+    </div>
+
+    <div class="menu-divider"></div>
+
+    <!-- NAV LINKS -->
+    <a href="#">Roommate Finder</a>
+    <a href="#">About</a>
+
+    <div class="menu-divider"></div>
+
+    <!-- AUTH (JS CONTROLS THIS ONLY) -->
+    <div id="authActions" class="auth-actions"></div>
+
+  </nav>
+ <!-- FLOATING SEARCH / FILTER PILL -->
+<div class="search-pill">
+  <button class="pill-item">
+    💰 <span>Price</span>
+  </button>
+
+  <div class="pill-divider"></div>
+
+  <button class="pill-item">
+    📍 <span>Distance</span>
+  </button>
+
+  <div class="pill-divider"></div>
+
+  <button class="pill-item">
+    🏠 <span>Type</span>
+  </button>
+
+  <div class="pill-divider"></div>
+
+  <button class="pill-item pill-settings">
+    ⚙️
+  </button>
+</div>
+
+
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1>Find student housing near your campus</h1>
+    <p>Verified apartments • Safe locations • Easy access</p>
+  </section>
+
+  <!-- APARTMENTS -->
+  <main class="container">
+    <div id="apartments" class="apartment-grid"></div>
+  </main>
+
+  <!-- ROOMMATE SECTION -->
+<section class="section roommates">
+  <div class="container">
+    <h2 class="section-title">How Roommate Finder Works</h2>
+    <div class="grid steps-grid">
+      <div class="step-card">
+        <img src="icons/signup.png" alt="Sign Up">
+        <h3>Sign Up</h3>
+        <p>Create an account to start your roommate search.</p>
+      </div>
+      <div class="step-card">
+        <img src="icons/preferences.png" alt="Set Preferences">
+        <h3>Set Preferences</h3>
+        <p>Tell us your habits, budget, and lifestyle.</p>
+      </div>
+      <div class="step-card">
+        <img src="icons/match.png" alt="Get Matches">
+        <h3>Get Matches</h3>
+        <p>See potential roommates that fit your style.</p>
+      </div>
+      <div class="step-card">
+        <img src="icons/connect.png" alt="Connect">
+        <h3>Connect</h3>
+        <p>Message and meet safely through our platform.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS SECTION -->
+<section class="section reviews">
+  <div class="container">
+    <h2 class="section-title">What Students Say</h2>
+    <div class="grid reviews-grid">
+      <div class="review-card">
+        <img src="images/avatars/student1.png" alt="Ada" class="review-avatar">
+        <p>"Found an amazing apartment near campus! Highly recommend." </p>
+        <strong>- Ada, 200 Level</strong>
+      </div>
+      <div class="review-card">
+        <img src="images/avatars/student2.png" alt="Tunde" class="review-avatar">
+        <p>"Roommate Finder made connecting with other students so easy."</p>
+        <strong>- Tunde, 300 Level</strong>
+      </div>
+      <div class="review-card">
+        <img src="images/avatars/student3.png" alt="Chiamaka" class="review-avatar">
+        <p>"Smooth and secure experience listing my apartment."</p>
+        <strong>- Chiamaka, Landlord</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA SECTION -->
+<section class="section cta">
+  <div class="container cta-container">
+    <h2>Ready to Find Your Perfect Apartment?</h2>
+    <a href="register.html" class="btn btn-primary">Sign Up Now</a>
+  </div>
+</section>
+
+
+  <script src="app.js"></script>
+</body>
+</html>

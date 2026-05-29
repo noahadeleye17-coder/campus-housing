@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Landlord Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1 { color: #333; }
+    .apartment { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+    .price { font-weight: bold; color: green; }
+    form input, form button { display: block; margin: 10px 0; padding: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Landlord Dashboard</h1>
+
+  <h2>Add Apartment</h2>
+  <form id="addApartmentForm" enctype="multipart/form-data">
+  <input id="title" placeholder="Title" required />
+  <input id="price" type="number" placeholder="Price" required />
+  <input id="location" placeholder="Location" required />
+  <input id="distance" type="number" placeholder="Distance (km)" required />
+  <input id="amenities" placeholder="Amenities (comma separated)" />
+  <input id="latitude" placeholder="Latitude" required />
+  <input id="longitude" placeholder="Longitude" required />
+  <input id="image" type="file" accept="image/*" />
+  <button>Add Apartment</button>
+</form>
+
+  <h2>My Apartments</h2>
+  <div id="myApartments">Loading apartments...</div>
+
+  <script src="landlord.js"></script>
+</body>
+</html>

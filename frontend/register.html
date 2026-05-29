@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+</head>
+<body>
+
+  <h2>Register</h2>
+
+  <form id="registerForm">
+    <input type="text" id="name" placeholder="Name" required /><br><br>
+    <input type="email" id="email" placeholder="Email" required /><br><br>
+    <input type="password" id="password" placeholder="Password" required /><br><br>
+
+    <select id="role">
+      <option value="student">Student</option>
+      <option value="landlord">Landlord</option>
+    </select><br><br>
+
+    <button type="submit">Register</button>
+  </form>
+
+  <p id="error" style="color:red;"></p>
+
+  <script src="register.js"></script>
+</body>
+</html>
