@@ -10,17 +10,53 @@
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
 </head>
-<body>
+<body class="detail-page">
   <div class="top-bar">
     <button class="back-btn" onclick="goBack()">← Back</button>
     <h1>Apartment Details</h1>
   </div>
 
   <main id="apartmentDetails" class="details-card">
-    Loading apartment details...
+    <div class="detail-hero-image skeleton"></div>
+    <div class="detail-content">
+      <div class="detail-loading-heading">
+        <div>
+          <div class="skeleton detail-skeleton-title"></div>
+          <div class="skeleton detail-skeleton-location"></div>
+        </div>
+        <div class="skeleton detail-skeleton-status"></div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-stat-skeleton skeleton"></div>
+        <div class="detail-stat-skeleton skeleton"></div>
+        <div class="detail-stat-skeleton skeleton"></div>
+        <div class="detail-stat-skeleton skeleton"></div>
+      </div>
+      <div class="detail-loading-chips">
+        <span class="skeleton"></span>
+        <span class="skeleton"></span>
+        <span class="skeleton"></span>
+      </div>
+    </div>
   </main>
 
-  <div id="map" class="details-map"></div>
+  <section class="map-section" aria-label="Apartment location">
+    <div id="map" class="details-map map-loading skeleton"></div>
+  </section>
+
+  <section class="roommate-coming detail-roommate">
+    <div class="roommate-coming-inner">
+      <div>
+        <span class="section-kicker">Coming soon</span>
+        <h2>Need someone to split the rent?</h2>
+        <p>
+          Roommate Finder will help students find a match by budget, lifestyle,
+          and housing preferences before they commit to an apartment.
+        </p>
+      </div>
+      <a class="pill-btn outline" href="index.html">Back to listings</a>
+    </div>
+  </section>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="apartment.js"></script>

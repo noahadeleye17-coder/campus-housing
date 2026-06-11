@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Campus Housing</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1 { color: #333; }
+    #filters { margin-bottom: 20px; }
+    input, select { margin: 5px; padding: 5px; }
+    .apartment { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+    .price { font-weight: bold; color: green; }
+  </style>
+</head>
+<body>
+  <h1>Campus Housing</h1>
+
+  <div id="filters">
+    <input id="searchTitle" placeholder="Search by title..." />
+    <input id="maxPrice" placeholder="Max price" type="number" />
+    <input id="maxDistance" placeholder="Max distance (km)" type="number" />
+    <button id="filterBtn">Filter</button>
+  </div>
+
+  <div id="apartments">Loading apartments...</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
