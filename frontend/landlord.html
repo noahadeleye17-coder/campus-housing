@@ -1,34 +1,461 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Landlord Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h1 { color: #333; }
-    .apartment { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-    .price { font-weight: bold; color: green; }
-    form input, form button { display: block; margin: 10px 0; padding: 5px; }
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f2f6ff;
+      color: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 30px 24px;
+      background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 20%),
+        linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%);
+    }
+
+    .page-shell {
+      width: min(100%, 1180px);
+      margin: 0 auto;
+    }
+
+    .page-header {
+      margin-bottom: 24px;
+      padding: 20px;
+      border-radius: 24px;
+      background: #ffffff;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .page-header h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 2.5vw, 2.5rem);
+      letter-spacing: -0.03em;
+    }
+
+    .page-header p {
+      margin: 0;
+      max-width: 720px;
+      color: #475569;
+      line-height: 1.7;
+    }
+
+    .stats-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      padding: 22px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .stat-label {
+      display: block;
+      font-size: 0.92rem;
+      color: #475569;
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.05;
+    }
+
+    .layout {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: 1.2fr 1fr;
+      align-items: start;
+    }
+
+    .form-card,
+    .panel-card {
+      background: #ffffff;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 24px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+      padding: 26px;
+    }
+
+    .form-card h2,
+    .panel-card h2 {
+      margin: 0 0 18px;
+      font-size: 1.35rem;
+      color: #0f172a;
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .field-grid.columns-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: #f8fafc;
+      color: #0f172a;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+      background: #ffffff;
+    }
+
+    .field input[type="file"] {
+      padding: 10px 14px;
+      background: #f8fafc;
+    }
+
+    .field textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .field small {
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .submit-row {
+      margin-top: 20px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .submit-row button {
+      min-width: 160px;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .submit-row button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(37, 99, 235, 0.25);
+    }
+
+    .cancel-btn {
+      min-width: 140px;
+      border: 1px solid rgba(59, 130, 246, 0.22);
+      border-radius: 14px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+      background: #f1f5ff;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .cancel-btn:hover {
+      background: #e2e8f0;
+      transform: translateY(-1px);
+    }
+    .cancel-btn:active {
+      transform: translateY(0);
+    }
+
+    .panel-card p {
+      color: #475569;
+      line-height: 1.7;
+      margin: 0 0 18px;
+    }
+
+    .apartment-list {
+      display: grid;
+      gap: 18px;
+    }
+
+    .apartment-card {
+      display: grid;
+      gap: 14px;
+      padding: 20px;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      background: #f8fbff;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .apartment-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.1);
+    }
+
+    .apartment-card img,
+    .card-placeholder {
+      width: 100%;
+      border-radius: 16px;
+      min-height: 160px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #e2e8f0 10%, #cbd5e1 100%);
+    }
+
+    .apartment-card h3 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: #1e293b;
+    }
+
+    .apartment-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: #475569;
+      font-size: 0.95rem;
+    }
+
+    .apartment-meta span {
+      background: #e2e8f0;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .apartment-price {
+      margin-top: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .delete-listing {
+      justify-self: start;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #b91c1c;
+      background: #fff1f2;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .delete-listing:hover {
+      background: #ffe4e6;
+    }
+
+    .listing-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .listing-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 100px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .edit-listing {
+      color: #0f172a;
+      background: #e0f2fe;
+      border-color: rgba(59, 130, 246, 0.25);
+    }
+
+    .edit-listing:hover {
+      background: #bfdbfe;
+      transform: translateY(-1px);
+    }
+
+    .delete-listing {
+      justify-self: start;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #b91c1c;
+      background: #fff1f2;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .delete-listing:hover {
+      background: #ffe4e6;
+    }
+
+    .amenities-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .amenities-list li {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.86rem;
+    }
+
+    .empty-state {
+      padding: 28px 22px;
+      border-radius: 18px;
+      background: #eef2ff;
+      color: #475569;
+      border: 1px dashed rgba(99, 102, 241, 0.35);
+      text-align: center;
+    }
+
+    @media (max-width: 920px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 18px 14px;
+      }
+
+      .page-header,
+      .form-card,
+      .panel-card {
+        padding: 20px;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Landlord Dashboard</h1>
+  <div class="page-shell">
+    <section class="page-header">
+      <h1>Landlord Dashboard</h1>
+      <p>Use this form to quickly add new apartments, update listings, and keep your rental inventory organized. Each listing is saved with a title, price, location, and optional image.</p>
+    </section>
 
-  <h2>Add Apartment</h2>
-  <form id="addApartmentForm" enctype="multipart/form-data">
-  <input id="title" placeholder="Title" required />
-  <input id="price" type="number" placeholder="Price" required />
-  <input id="location" placeholder="Location" required />
-  <input id="distance" type="number" placeholder="Distance (km)" required />
-  <input id="amenities" placeholder="Amenities (comma separated)" />
-  <input id="latitude" placeholder="Latitude" required />
-  <input id="longitude" placeholder="Longitude" required />
-  <input id="image" type="file" accept="image/*" />
-  <button>Add Apartment</button>
-</form>
+    <div class="stats-grid">
+      <article class="stat-card">
+        <span class="stat-label">Active listings</span>
+        <p id="listingCount" class="stat-value">0</p>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Most recent listing</span>
+        <p id="latestListing" class="stat-value">None yet</p>
+      </article>
+    </div>
 
-  <h2>My Apartments</h2>
-  <div id="myApartments">Loading apartments...</div>
+    <div class="layout">
+      <section class="form-card">
+        <h2>Add apartment listing</h2>
+        <form id="addApartmentForm" enctype="multipart/form-data" autocomplete="off">
+          <div class="field-grid">
+            <div class="field">
+              <label for="title">Apartment title</label>
+              <input id="title" name="title" type="text" placeholder="Enter apartment title" required />
+            </div>
+
+            <div class="field">
+              <label for="price">Monthly price</label>
+              <input id="price" name="price" type="number" placeholder="Enter monthly price" required />
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="location">Location</label>
+              <input id="location" name="location" type="text" placeholder="Enter neighborhood or address" required />
+            </div>
+
+            <div class="field">
+              <label for="distance">Distance from campus (km)</label>
+              <input id="distance" name="distance" type="number" placeholder="e.g. 2.5" step="0.1" required />
+            </div>
+          </div>
+
+          <div class="field-grid columns-2">
+            <div class="field">
+              <label for="latitude">Latitude</label>
+              <input id="latitude" name="latitude" type="text" placeholder="Latitude coordinate" required />
+            </div>
+
+            <div class="field">
+              <label for="longitude">Longitude</label>
+              <input id="longitude" name="longitude" type="text" placeholder="Longitude coordinate" required />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="amenities">Amenities</label>
+            <input id="amenities" name="amenities" type="text" placeholder="WiFi, parking, laundry" />
+            <small>List amenities separated by commas for better readability.</small>
+          </div>
+
+          <div class="field">
+            <label for="image">Apartment image</label>
+            <input id="image" name="image" type="file" accept="image/*" />
+            <small>Select a photo to highlight the listing.</small>
+          </div>
+
+          <div class="submit-row">
+            <button type="submit" id="submitBtn">Add apartment</button>
+            <button type="button" id="cancelEditBtn" class="cancel-btn" style="display: none; margin-left: 12px;">Cancel edit</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel-card">
+        <h2>My apartment listings</h2>
+        <p>Review the apartments you have added below. Each listing includes key details so you can track price, location, and distance at a glance.</p>
+        <div id="myApartments" class="apartment-list">Loading apartments...</div>
+      </section>
+    </div>
+  </div>
 
   <script src="landlord.js"></script>
 </body>

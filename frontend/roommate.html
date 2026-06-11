@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roommate Profile | Campus Housing</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body class="roommate-page">
+  <div id="menuOverlay" class="menu-overlay"></div>
+
+  <header class="navbar">
+    <div class="nav-left">
+      <div class="logo-badge">CH</div>
+      <a href="index.html" class="site-name">Off-Campus Hub</a>
+    </div>
+
+    <button
+      id="hamburger"
+      class="menu-btn"
+      aria-label="Open menu"
+      aria-expanded="false"
+    >
+      ☰
+    </button>
+  </header>
+
+  <nav id="mobileMenu" class="mobile-menu" aria-hidden="true">
+    <div class="menu-profile">
+      <div class="avatar" id="avatar">U</div>
+      <div class="profile-info">
+        <strong id="profileName">Guest</strong>
+        <span id="profileStatus">Not logged in</span>
+      </div>
+    </div>
+
+    <div class="menu-divider"></div>
+
+    <a href="index.html">Apartments</a>
+    <a href="roommate.html">Roommate Profile</a>
+    <a href="about.html">About</a>
+
+    <div class="menu-divider"></div>
+
+    <div id="authActions" class="auth-actions"></div>
+  </nav>
+
+  <main class="roommate-shell">
+    <section class="roommate-header">
+      <div>
+        <p class="section-kicker">Roommate Finder</p>
+        <h1>Create your roommate profile</h1>
+        <p>Share the housing habits that matter most so other students can find a better fit.</p>
+      </div>
+      <div class="roommate-status" id="profileStatusCard">
+        <span>Profile status</span>
+        <strong>Checking...</strong>
+      </div>
+    </section>
+
+    <section id="loginNotice" class="notice-panel" hidden>
+      <div>
+        <strong>Login required</strong>
+        <p>You need a student account before creating a roommate profile.</p>
+      </div>
+      <a href="login.html" class="btn">Login</a>
+    </section>
+
+    <section class="roommate-layout">
+      <form id="roommateForm" class="roommate-form">
+        <div class="form-section">
+          <div class="form-section-heading">
+            <span>Basics</span>
+            <p>Keep this short and useful for other students scanning matches.</p>
+          </div>
+
+          <label class="form-field form-field-wide">
+            <span>Short bio</span>
+            <textarea id="bio" maxlength="500" rows="5" placeholder="Tell people what living with you is like."></textarea>
+          </label>
+
+          <label class="form-field">
+            <span>Campus</span>
+            <input id="campus" type="text" placeholder="North Campus" />
+          </label>
+
+          <label class="form-field">
+            <span>Preferred area</span>
+            <input id="preferredLocation" type="text" placeholder="Student Village" />
+          </label>
+
+          <label class="form-field">
+            <span>Minimum budget</span>
+            <input id="budgetMin" type="number" min="0" placeholder="700" />
+          </label>
+
+          <label class="form-field">
+            <span>Maximum budget</span>
+            <input id="budgetMax" type="number" min="0" placeholder="1000" />
+          </label>
+
+          <label class="form-field">
+            <span>Move-in date</span>
+            <input id="moveInDate" type="date" />
+          </label>
+
+          <label class="form-field">
+            <span>Profile visibility</span>
+            <select id="visible">
+              <option value="true">Visible to students</option>
+              <option value="false">Hidden for now</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-heading">
+            <span>Lifestyle</span>
+            <p>These choices power compatibility scores for roommate matches.</p>
+          </div>
+
+          <label class="form-field">
+            <span>Sleep schedule</span>
+            <select id="sleepSchedule">
+              <option value="">Choose one</option>
+              <option value="early">Early</option>
+              <option value="flexible">Flexible</option>
+              <option value="late">Late</option>
+            </select>
+          </label>
+
+          <label class="form-field">
+            <span>Cleanliness</span>
+            <select id="cleanliness">
+              <option value="">Choose one</option>
+              <option value="relaxed">Relaxed</option>
+              <option value="moderate">Moderate</option>
+              <option value="very_clean">Very clean</option>
+            </select>
+          </label>
+
+          <label class="form-field">
+            <span>Noise preference</span>
+            <select id="noisePreference">
+              <option value="">Choose one</option>
+              <option value="quiet">Quiet</option>
+              <option value="moderate">Moderate</option>
+              <option value="lively">Lively</option>
+            </select>
+          </label>
+
+          <label class="form-field">
+            <span>Guests</span>
+            <select id="guestPreference">
+              <option value="">Choose one</option>
+              <option value="rarely">Rarely</option>
+              <option value="sometimes">Sometimes</option>
+              <option value="often">Often</option>
+            </select>
+          </label>
+
+          <label class="form-field">
+            <span>Study style</span>
+            <select id="studyPreference">
+              <option value="">Choose one</option>
+              <option value="home">At home</option>
+              <option value="library">Library</option>
+              <option value="mixed">Mixed</option>
+            </select>
+          </label>
+
+          <label class="form-field form-field-wide">
+            <span>Interests</span>
+            <input id="interests" type="text" placeholder="music, basketball, cooking" />
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button id="saveProfileBtn" type="submit" class="btn">Save profile</button>
+          <button id="deleteProfileBtn" type="button" class="btn outline danger" hidden>Delete profile</button>
+          <p id="formMessage" class="form-message" aria-live="polite"></p>
+        </div>
+      </form>
+
+      <aside class="roommate-preview">
+        <div class="preview-card">
+          <div class="preview-avatar" id="previewInitial">U</div>
+          <div>
+            <span class="preview-label">Live preview</span>
+            <h2 id="previewName">Your profile</h2>
+            <p id="previewBio">Start filling out the form to preview your roommate profile.</p>
+          </div>
+
+          <dl class="preview-list">
+            <div>
+              <dt>Campus</dt>
+              <dd id="previewCampus">Not set</dd>
+            </div>
+            <div>
+              <dt>Budget</dt>
+              <dd id="previewBudget">Not set</dd>
+            </div>
+            <div>
+              <dt>Lifestyle</dt>
+              <dd id="previewLifestyle">Not set</dd>
+            </div>
+            <div>
+              <dt>Interests</dt>
+              <dd id="previewInterests">Not set</dd>
+            </div>
+          </dl>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="roommate.js"></script>
+</body>
+</html>

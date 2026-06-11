@@ -1,28 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Register</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register | Campus Housing</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
+<body class="auth-page">
+  <div class="auth-card">
+    <div>
+      <h1>Create your account</h1>
+      <p>Sign up to discover apartments, connect with landlords, and manage your housing search.</p>
+    </div>
 
-  <h2>Register</h2>
+    <div id="googleSignInButton"></div>
+    <div class="divider"><span>or</span></div>
 
-  <form id="registerForm">
-    <input type="text" id="name" placeholder="Name" required /><br><br>
-    <input type="email" id="email" placeholder="Email" required /><br><br>
-    <input type="password" id="password" placeholder="Password" required /><br><br>
+    <form id="registerForm" class="auth-form">
+      <input type="text" id="name" placeholder="Full name" required />
+      <input type="email" id="email" placeholder="Email address" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <select id="role">
+        <option value="student">Student</option>
+        <option value="landlord">Landlord</option>
+      </select>
+      <button type="submit" class="btn btn-primary">Create account</button>
+      <p id="error" class="form-error"></p>
+    </form>
 
-    <select id="role">
-      <option value="student">Student</option>
-      <option value="landlord">Landlord</option>
-    </select><br><br>
+    <p class="secondary-text">
+      Already have an account? <a href="login.html">Login</a>
+    </p>
+  </div>
 
-    <button type="submit">Register</button>
-  </form>
-
-  <p id="error" style="color:red;"></p>
-
+  <script src="google-auth.js"></script>
   <script src="register.js"></script>
 </body>
 </html>

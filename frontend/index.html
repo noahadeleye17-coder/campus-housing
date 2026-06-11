@@ -43,8 +43,9 @@
     <div class="menu-divider"></div>
 
     <!-- NAV LINKS -->
-    <a href="#">Roommate Finder</a>
-    <a href="#">About</a>
+    <a href="roommate.html">Roommate Finder</a>
+    <a href="about.html">About</a>
+    <a href="#" id="mobileSavedBtn">Saved</a>
 
     <div class="menu-divider"></div>
 
@@ -52,37 +53,20 @@
     <div id="authActions" class="auth-actions"></div>
 
   </nav>
- <!-- FLOATING SEARCH / FILTER PILL -->
-<div class="search-pill">
-  <button class="pill-item">
-    💰 <span>Price</span>
-  </button>
-
-  <div class="pill-divider"></div>
-
-  <button class="pill-item">
-    📍 <span>Distance</span>
-  </button>
-
-  <div class="pill-divider"></div>
-
-  <button class="pill-item">
-    🏠 <span>Type</span>
-  </button>
-
-  <div class="pill-divider"></div>
-
-  <button class="pill-item pill-settings">
-    ⚙️
-  </button>
-</div>
-
-
-
   <!-- HERO -->
   <section class="hero">
     <h1>Find student housing near your campus</h1>
     <p>Verified apartments • Safe locations • Easy access</p>
+    <form id="apartmentSearchForm" class="hero-search" role="search">
+      <input
+        id="apartmentSearchInput"
+        type="search"
+        placeholder="Search apartment title or location"
+        aria-label="Search apartment title or location"
+      />
+      <button type="button" id="clearSearchBtn" class="clear-btn" aria-label="Clear search" style="display: none;">✕</button>
+      <button type="submit" aria-label="Search">🔍</button>
+    </form>
   </section>
 
   <!-- APARTMENTS -->
@@ -91,7 +75,7 @@
   </main>
 
   <!-- ROOMMATE SECTION -->
-<section class="section roommates">
+<section id="roommateFinder" class="section roommates">
   <div class="container">
     <h2 class="section-title">How Roommate Finder Works</h2>
     <div class="grid steps-grid">
@@ -131,13 +115,13 @@
       </div>
       <div class="review-card">
         <img src="images/avatars/student2.png" alt="Tunde" class="review-avatar">
-        <p>"Roommate Finder made connecting with other students so easy."</p>
+        <p>"It made my search for apartment very stress free."</p>
         <strong>- Tunde, 300 Level</strong>
       </div>
       <div class="review-card">
         <img src="images/avatars/student3.png" alt="Chiamaka" class="review-avatar">
-        <p>"Smooth and secure experience listing my apartment."</p>
-        <strong>- Chiamaka, Landlord</strong>
+        <p>"Got an apartment close to school,by just using my phone."</p>
+        <strong>- Chiamaka, 200 Level</strong>
       </div>
     </div>
   </div>

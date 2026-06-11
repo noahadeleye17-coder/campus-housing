@@ -1,6 +1,7 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 
 const uploadDir = path.join(__dirname, "..", "uploads");
 
@@ -10,7 +11,8 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+    const uniqueName = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}`;
+    cb(null, uniqueName + path.extname(file.originalname).toLowerCase());
   }
 });
 
@@ -18,11 +20,14 @@ const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image")) {
     cb(null, true);
   } else {
-    cb("Only images allowed", false);
+    cb(new Error("Only images allowed"), false);
   }
 };
 
 module.exports = multer({
   storage,
-  fileFilter
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
 });
