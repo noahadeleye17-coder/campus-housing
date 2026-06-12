@@ -396,7 +396,9 @@ const loadProfiles = async () => {
     if (!res.ok) throw new Error("Could not load profiles.");
 
     const data = await res.json().catch(() => []);
-    allProfiles = Array.isArray(data) ? data : (data.profiles || data.roommates || []);
+    allProfiles = Array.isArray(data)
+  ? data.map(item => item.profile ? { ...item.profile, _compatScore: item.compatibility?.score } : item)
+  : [];
 
     if (!allProfiles.length) {
       renderEmpty("No roommate profiles yet. Be the first to create one!");

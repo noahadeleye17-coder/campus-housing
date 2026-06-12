@@ -2098,4 +2098,15 @@ img {
   .contact-button {
     width: 100%;
   }
+
+  .card-actions {
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.favorite-btn {
+  min-width: 0;
+  font-size: 0.8rem;
+  padding: 0 8px;
+}
 }
