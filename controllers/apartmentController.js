@@ -69,6 +69,10 @@ const getApartments = async (req, res) => {
     }
 
     const apartments = await Apartment.find().sort({ createdAt: -1 }).populate("landlord", "name email");
+    if (apartments.length === 0) {
+      return res.json(demoApartments);
+    }
+
     res.json(apartments);
   } catch (error) {
     if (isDatabaseError(error)) {

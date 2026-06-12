@@ -14,15 +14,7 @@
       <div class="logo-badge">CH</div>
       <a href="index.html" class="site-name">Off-Campus Hub</a>
     </div>
-
-    <button
-      id="hamburger"
-      class="menu-btn"
-      aria-label="Open menu"
-      aria-expanded="false"
-    >
-      ☰
-    </button>
+    <button id="hamburger" class="menu-btn" aria-label="Open menu" aria-expanded="false">☰</button>
   </header>
 
   <nav id="mobileMenu" class="mobile-menu" aria-hidden="true">
@@ -33,15 +25,12 @@
         <span id="profileStatus">Not logged in</span>
       </div>
     </div>
-
     <div class="menu-divider"></div>
-
     <a href="index.html">Apartments</a>
-    <a href="roommate.html">Roommate Profile</a>
+    <a href="roommate.html">My Roommate Profile</a>
+    <a href="roommate-browse.html">Find Roommates</a>
     <a href="about.html">About</a>
-
     <div class="menu-divider"></div>
-
     <div id="authActions" class="auth-actions"></div>
   </nav>
 
@@ -58,16 +47,9 @@
       </div>
     </section>
 
-    <section id="loginNotice" class="notice-panel" hidden>
-      <div>
-        <strong>Login required</strong>
-        <p>You need a student account before creating a roommate profile.</p>
-      </div>
-      <a href="login.html" class="btn">Login</a>
-    </section>
-
     <section class="roommate-layout">
       <form id="roommateForm" class="roommate-form">
+
         <div class="form-section">
           <div class="form-section-heading">
             <span>Basics</span>
@@ -80,13 +62,13 @@
           </label>
 
           <label class="form-field">
-            <span>Campus</span>
-            <input id="campus" type="text" placeholder="North Campus" />
+            <span>Department</span>
+            <input id="department" type="text" placeholder="Computer Science" />
           </label>
 
           <label class="form-field">
             <span>Preferred area</span>
-            <input id="preferredLocation" type="text" placeholder="Student Village" />
+            <input id="preferredLocation" type="text" placeholder="South Gate" />
           </label>
 
           <label class="form-field">
@@ -102,6 +84,27 @@
           <label class="form-field">
             <span>Move-in date</span>
             <input id="moveInDate" type="date" />
+          </label>
+
+          <label class="form-field">
+            <span>Gender</span>
+            <select id="gender">
+              <option value="">Choose one</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </label>
+
+          <label class="form-field">
+            <span>Level</span>
+            <select id="educationLevel">
+              <option value="">Choose one</option>
+              <option value="100">100 level</option>
+              <option value="200">200 level</option>
+              <option value="300">300 level</option>
+              <option value="400">400 level</option>
+              <option value="500">500 level</option>
+            </select>
           </label>
 
           <label class="form-field">
@@ -178,6 +181,7 @@
         <div class="form-actions">
           <button id="saveProfileBtn" type="submit" class="btn">Save profile</button>
           <button id="deleteProfileBtn" type="button" class="btn outline danger" hidden>Delete profile</button>
+          <a href="roommate-browse.html" class="btn outline">Browse roommates</a>
           <p id="formMessage" class="form-message" aria-live="polite"></p>
         </div>
       </form>
@@ -193,8 +197,16 @@
 
           <dl class="preview-list">
             <div>
-              <dt>Campus</dt>
-              <dd id="previewCampus">Not set</dd>
+              <dt>Department</dt>
+              <dd id="previewDepartment">Not set</dd>
+            </div>
+            <div>
+              <dt>Gender</dt>
+              <dd id="previewGender">Not set</dd>
+            </div>
+            <div>
+              <dt>Level</dt>
+              <dd id="previewEducationLevel">Not set</dd>
             </div>
             <div>
               <dt>Budget</dt>
@@ -209,6 +221,10 @@
               <dd id="previewInterests">Not set</dd>
             </div>
           </dl>
+
+          <a href="roommate-browse.html" class="btn" style="margin-top: 1rem; text-align: center; display: block;">
+            Find roommates →
+          </a>
         </div>
       </aside>
     </section>

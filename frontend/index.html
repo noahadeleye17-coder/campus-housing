@@ -135,7 +135,11 @@
   </div>
 </section>
 
-
-  <script src="app.js"></script>
+<script>
+  if (!window.API_BASE) {
+    window.API_BASE = window.location.port === "5000" ? "/api" : "http://localhost:5000/api";
+  }
+</script>
+<script src="app.js"></script>
 </body>
 </html>

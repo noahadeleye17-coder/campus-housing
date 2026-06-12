@@ -18,6 +18,8 @@ app.use(cors());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static(path.join(__dirname, "frontend")));
+// Serve the same frontend folder under /frontend so URLs like /frontend/landlord.html work
+app.use("/frontend", express.static(path.join(__dirname, "frontend")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/apartments", apartmentRoutes);
@@ -48,7 +50,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// ✅ FIX 2: Error middleware moved AFTER all routes
+// Error middleware (after all routes)
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     return res.status(400).json({ message: "Invalid JSON in request body" });
@@ -56,14 +58,66 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// ── MongoDB connection with auto-reconnect ──────────────────────────────────
+
+let isConnecting = false;
+
+const connectDB = async () => {
+  if (isConnecting) return;
+  isConnecting = true;
+
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 15000,
+  socketTimeoutMS: 45000,
+  maxPoolSize: 3,
+  heartbeatFrequencyMS: 30000,
+  minPoolSize: 1,
+  tls: true,                    // replaces the ssl=true in the URI
+  directConnection: false,
+});
+    console.log("MongoDB connected");
+  } catch (err) {
+    console.error("MongoDB connection failed:", err.message);
+    console.error("Retrying in 10 seconds...");
+    setTimeout(() => {
+      isConnecting = false;
+      connectDB();
+    }, 10000);
+    return;
+  }
+
+  isConnecting = false;
+};
+
+mongoose.connection.on("connected", () => {
+  console.log("MongoDB connection established");
+  isConnecting = false;
+});
+
+mongoose.connection.on("disconnected", () => {
+  console.warn("MongoDB disconnected. Attempting to reconnect...");
+  setTimeout(() => {
+    isConnecting = false;
+    connectDB();
+  }, 5000);
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("MongoDB connection error:", err.message);
+  // Force close so the disconnected event fires and triggers reconnect
+  mongoose.connection.close();
+});
+
+// ── Server startup ──────────────────────────────────────────────────────────
+
 const startServer = async () => {
   const PORT = process.env.PORT || 5000;
 
   if (!process.env.JWT_SECRET) {
-    console.warn("JWT_SECRET is not set; JWT authentication will fail. Set it in config.env or the environment.");
+    console.warn("JWT_SECRET is not set; JWT authentication will fail.");
   }
 
-  // ✅ FIX 3: Removed "localhost" binding so it works on deployment platforms
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
@@ -73,15 +127,7 @@ const startServer = async () => {
     return;
   }
 
-  try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 5000,
-    });
-    console.log("MongoDB connected");
-  } catch (err) {
-    console.error("MongoDB connection failed:", err.message);
-    console.error("Server is still running. Check MONGO_URI, network access, and MongoDB Atlas IP allowlist.");
-  }
+  await connectDB();
 };
 
 if (require.main === module) {

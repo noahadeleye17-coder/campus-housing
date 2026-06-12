@@ -1,6 +1,41 @@
 const API_BASE = window.API_BASE || "/api";
-const token = localStorage.getItem("token");
-const user = JSON.parse(localStorage.getItem("user") || "null");
+const token = localStorage.getItem("token") || localStorage.getItem("accessToken") || localStorage.getItem("authToken");
+const storedRole = localStorage.getItem("role") || localStorage.getItem("userRole");
+
+const safeParseJson = (value) => {
+  try {
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
+  }
+};
+
+const parseJwt = (jwt) => {
+  if (!jwt || typeof jwt !== "string") return null;
+  const parts = jwt.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return payload;
+  } catch {
+    return null;
+  }
+};
+
+let user = safeParseJson(localStorage.getItem("user"));
+if (!user && token) {
+  const tokenPayload = parseJwt(token);
+  if (tokenPayload) {
+    user = {
+      name: tokenPayload.name || tokenPayload.username || tokenPayload.email || null,
+      email: tokenPayload.email || null,
+      role: tokenPayload.role || tokenPayload.userRole || storedRole || null,
+    };
+  }
+}
+if (user && !user.role && storedRole) {
+  user.role = storedRole;
+}
 
 const form = document.getElementById("roommateForm");
 const loginNotice = document.getElementById("loginNotice");
@@ -11,11 +46,13 @@ const statusCard = document.getElementById("profileStatusCard");
 
 const fields = {
   bio: document.getElementById("bio"),
-  campus: document.getElementById("campus"),
+  department: document.getElementById("department"),
   preferredLocation: document.getElementById("preferredLocation"),
   budgetMin: document.getElementById("budgetMin"),
   budgetMax: document.getElementById("budgetMax"),
   moveInDate: document.getElementById("moveInDate"),
+  gender: document.getElementById("gender"),
+  educationLevel: document.getElementById("educationLevel"),
   visible: document.getElementById("visible"),
   sleepSchedule: document.getElementById("sleepSchedule"),
   cleanliness: document.getElementById("cleanliness"),
@@ -40,17 +77,13 @@ const labels = {
   home: "At home",
   library: "Library",
   mixed: "Mixed",
+  male: "Male",
+  female: "Female",
 };
 
 const escapeHtml = (value = "") => {
   return String(value).replace(/[&<>"']/g, (char) => {
-    const entities = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      "\"": "&quot;",
-      "'": "&#039;",
-    };
+    const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" };
     return entities[char];
   });
 };
@@ -89,36 +122,45 @@ const splitInterests = (value) => {
     .filter(Boolean);
 };
 
+const getProfileValue = (field, defaultValue = "") => {
+  if (!field) return defaultValue;
+  return field.value || defaultValue;
+};
+
 const getProfilePayload = () => ({
-  bio: fields.bio.value.trim(),
-  campus: fields.campus.value.trim(),
-  preferredLocation: fields.preferredLocation.value.trim(),
-  budgetMin: fields.budgetMin.value,
-  budgetMax: fields.budgetMax.value,
-  moveInDate: fields.moveInDate.value,
-  visible: fields.visible.value === "true",
-  sleepSchedule: fields.sleepSchedule.value,
-  cleanliness: fields.cleanliness.value,
-  noisePreference: fields.noisePreference.value,
-  guestPreference: fields.guestPreference.value,
-  studyPreference: fields.studyPreference.value,
-  interests: splitInterests(fields.interests.value),
+  bio: getProfileValue(fields.bio).trim(),
+  campus: getProfileValue(fields.department).trim(),
+  preferredLocation: getProfileValue(fields.preferredLocation).trim(),
+  budgetMin: getProfileValue(fields.budgetMin),
+  budgetMax: getProfileValue(fields.budgetMax),
+  moveInDate: getProfileValue(fields.moveInDate),
+  gender: getProfileValue(fields.gender),
+  educationLevel: getProfileValue(fields.educationLevel),
+  visible: getProfileValue(fields.visible) === "true",
+  sleepSchedule: getProfileValue(fields.sleepSchedule),
+  cleanliness: getProfileValue(fields.cleanliness),
+  noisePreference: getProfileValue(fields.noisePreference),
+  guestPreference: getProfileValue(fields.guestPreference),
+  studyPreference: getProfileValue(fields.studyPreference),
+  interests: splitInterests(getProfileValue(fields.interests)),
 });
 
 const fillForm = (profile) => {
-  fields.bio.value = profile.bio || "";
-  fields.campus.value = profile.campus || "";
-  fields.preferredLocation.value = profile.preferredLocation || "";
-  fields.budgetMin.value = profile.budgetMin || "";
-  fields.budgetMax.value = profile.budgetMax || "";
-  fields.moveInDate.value = formatDateForInput(profile.moveInDate);
-  fields.visible.value = String(profile.visible !== false);
-  fields.sleepSchedule.value = profile.sleepSchedule || "";
-  fields.cleanliness.value = profile.cleanliness || "";
-  fields.noisePreference.value = profile.noisePreference || "";
-  fields.guestPreference.value = profile.guestPreference || "";
-  fields.studyPreference.value = profile.studyPreference || "";
-  fields.interests.value = Array.isArray(profile.interests) ? profile.interests.join(", ") : "";
+  if (fields.bio) fields.bio.value = profile.bio || "";
+  if (fields.department) fields.department.value = profile.campus || profile.department || "";
+  if (fields.preferredLocation) fields.preferredLocation.value = profile.preferredLocation || "";
+  if (fields.budgetMin) fields.budgetMin.value = profile.budgetMin || "";
+  if (fields.budgetMax) fields.budgetMax.value = profile.budgetMax || "";
+  if (fields.moveInDate) fields.moveInDate.value = formatDateForInput(profile.moveInDate);
+  if (fields.gender) fields.gender.value = profile.gender || "";
+  if (fields.educationLevel) fields.educationLevel.value = profile.educationLevel || "";
+  if (fields.visible) fields.visible.value = String(profile.visible !== false);
+  if (fields.sleepSchedule) fields.sleepSchedule.value = profile.sleepSchedule || "";
+  if (fields.cleanliness) fields.cleanliness.value = profile.cleanliness || "";
+  if (fields.noisePreference) fields.noisePreference.value = profile.noisePreference || "";
+  if (fields.guestPreference) fields.guestPreference.value = profile.guestPreference || "";
+  if (fields.studyPreference) fields.studyPreference.value = profile.studyPreference || "";
+  if (fields.interests) fields.interests.value = Array.isArray(profile.interests) ? profile.interests.join(", ") : "";
 };
 
 const updatePreview = () => {
@@ -127,7 +169,7 @@ const updatePreview = () => {
   const initial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
   const budget = [formatCurrency(payload.budgetMin), formatCurrency(payload.budgetMax)]
     .filter(Boolean)
-    .join(" - ");
+    .join(" – ");
   const lifestyle = [
     labels[payload.sleepSchedule],
     labels[payload.cleanliness],
@@ -135,13 +177,20 @@ const updatePreview = () => {
   ].filter(Boolean).join(" / ");
   const interests = payload.interests.join(", ");
 
-  document.getElementById("previewInitial").textContent = initial;
-  document.getElementById("previewName").textContent = name;
-  document.getElementById("previewBio").textContent = payload.bio || "Start filling out the form to preview your roommate profile.";
-  document.getElementById("previewCampus").textContent = payload.campus || "Not set";
-  document.getElementById("previewBudget").textContent = budget || "Not set";
-  document.getElementById("previewLifestyle").textContent = lifestyle || "Not set";
-  document.getElementById("previewInterests").textContent = interests || "Not set";
+  const set = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+
+  set("previewInitial", initial);
+  set("previewName", name);
+  set("previewBio", payload.bio || "Start filling out the form to preview your roommate profile.");
+  set("previewDepartment", payload.campus || "Not set");
+  set("previewGender", labels[payload.gender] || "Not set");
+  set("previewEducationLevel", payload.educationLevel ? `${payload.educationLevel} level` : "Not set");
+  set("previewBudget", budget || "Not set");
+  set("previewLifestyle", lifestyle || "Not set");
+  set("previewInterests", interests || "Not set");
 };
 
 const setupMenu = () => {
@@ -214,7 +263,7 @@ const loadProfile = async () => {
     }
 
     fillForm(data);
-    deleteProfileBtn.hidden = false;
+    if (deleteProfileBtn) deleteProfileBtn.hidden = false;
     setStatus("Profile status", data.visible === false ? "Hidden" : "Visible");
     setMessage("Your existing profile is loaded.", "success");
     updatePreview();
@@ -224,86 +273,110 @@ const loadProfile = async () => {
   }
 };
 
-if (!token) {
-  loginNotice.hidden = false;
-  form.classList.add("is-disabled");
-  Array.from(form.elements).forEach((element) => {
-    element.disabled = true;
-  });
-  setStatus("Profile status", "Login required");
-} else if (user?.role && user.role !== "student" && user.role !== "admin") {
+const getSignInStatus = () => {
+  if (token && user) return { status: "Signed in", detail: `Welcome back, ${user.name || user.email || "student"}` };
+  if (token) return { status: "Signed in", detail: "Token found" };
+  if (user) return { status: "Signed in locally", detail: `Welcome, ${user.name || user.email || "student"}` };
+  return { status: "Not signed in", detail: "Login required" };
+};
+
+if (user?.role && user.role !== "student" && user.role !== "admin") {
   setMessage("Only student accounts can create roommate profiles.", "error");
   setStatus("Profile status", "Student only");
-  Array.from(form.elements).forEach((element) => {
-    element.disabled = true;
-  });
+  if (form) Array.from(form.elements || []).forEach((element) => { element.disabled = true; });
 } else {
-  loadProfile();
+  if (loginNotice) loginNotice.hidden = true;
+  if (token) {
+    const signIn = getSignInStatus();
+    setStatus(signIn.status, signIn.detail);
+    loadProfile();
+  } else if (user) {
+    const signIn = getSignInStatus();
+    setStatus(signIn.status, signIn.detail);
+    updatePreview();
+  } else {
+    const signIn = getSignInStatus();
+    setStatus(signIn.status, signIn.detail);
+  }
 }
 
 Object.values(fields).forEach((field) => {
+  if (!field) return;
   field.addEventListener("input", updatePreview);
   field.addEventListener("change", updatePreview);
 });
 
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  if (!token) return;
-
-  saveProfileBtn.disabled = true;
-  setMessage("Saving your profile...", "info");
-
-  try {
-    const res = await fetch(`${API_BASE}/roommates/me`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(getProfilePayload()),
-    });
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data.message || "Could not save your roommate profile.");
+if (!form) {
+  console.warn("Roommate form not found on this page.");
+} else {
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!token) {
+      window.location.href = "login.html";
+      return;
     }
 
-    fillForm(data);
-    deleteProfileBtn.hidden = false;
-    setStatus("Profile status", data.visible === false ? "Hidden" : "Visible");
-    setMessage("Profile saved. Your matches can now use these preferences.", "success");
-    updatePreview();
-  } catch (error) {
-    setMessage(error.message || "Could not save your profile.", "error");
-  } finally {
-    saveProfileBtn.disabled = false;
-  }
-});
+    if (saveProfileBtn) saveProfileBtn.disabled = true;
+    setMessage("Saving your profile...", "info");
 
-deleteProfileBtn.addEventListener("click", async () => {
-  const confirmed = window.confirm("Delete your roommate profile?");
-  if (!confirmed) return;
+    try {
+      const res = await fetch(`${API_BASE}/roommates/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(getProfilePayload()),
+      });
+      const data = await res.json().catch(() => ({}));
 
-  try {
-    const res = await fetch(`${API_BASE}/roommates/me`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || "Could not save your roommate profile.");
+      }
 
-    if (!res.ok) {
-      throw new Error(data.message || "Could not delete your profile.");
+      fillForm(data);
+      if (deleteProfileBtn) deleteProfileBtn.hidden = false;
+      setStatus("Profile status", data.visible === false ? "Hidden" : "Visible");
+      setMessage("Profile saved. Your matches can now use these preferences.", "success");
+      updatePreview();
+    } catch (error) {
+      setMessage(error.message || "Could not save your profile.", "error");
+    } finally {
+      if (saveProfileBtn) saveProfileBtn.disabled = false;
+    }
+  });
+}
+
+if (deleteProfileBtn) {
+  deleteProfileBtn.addEventListener("click", async () => {
+    const confirmed = window.confirm("Delete your roommate profile?");
+    if (!confirmed) return;
+    if (!token) {
+      window.location.href = "login.html";
+      return;
     }
 
-    form.reset();
-    deleteProfileBtn.hidden = true;
-    setStatus("Profile status", "Not created");
-    setMessage("Profile deleted.", "success");
-    updatePreview();
-  } catch (error) {
-    setMessage(error.message || "Could not delete your profile.", "error");
-  }
-});
+    try {
+      const res = await fetch(`${API_BASE}/roommates/me`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.message || "Could not delete your profile.");
+      }
+
+      if (form) form.reset();
+      deleteProfileBtn.hidden = true;
+      setStatus("Profile status", "Not created");
+      setMessage("Profile deleted.", "success");
+      updatePreview();
+    } catch (error) {
+      setMessage(error.message || "Could not delete your profile.", "error");
+    }
+  });
+}
 
 setupMenu();
 updatePreview();

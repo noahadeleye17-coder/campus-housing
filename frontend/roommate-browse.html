@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find Roommates | Campus Housing</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    .browse-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    .browse-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .browse-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0 0 0.25rem;
+    }
+
+    .browse-header p {
+      margin: 0;
+      opacity: 0.65;
+      font-size: 0.95rem;
+    }
+
+    .browse-controls {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .browse-search {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--border, #ddd);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: var(--input-bg, #fff);
+      color: inherit;
+    }
+
+    .browse-filter {
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--border, #ddd);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: var(--input-bg, #fff);
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .browse-count {
+      font-size: 0.85rem;
+      opacity: 0.55;
+      margin-left: auto;
+    }
+
+    .profiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .profile-card {
+      border: 1px solid var(--border, #e5e7eb);
+      border-radius: 14px;
+      padding: 1.5rem;
+      background: var(--card-bg, #fff);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: box-shadow 0.18s, transform 0.18s;
+      cursor: pointer;
+    }
+
+    .profile-card:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.09);
+      transform: translateY(-2px);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .card-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--accent, #1a56db);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card-name {
+      font-weight: 600;
+      font-size: 1rem;
+      margin: 0 0 0.15rem;
+    }
+
+    .card-dept {
+      font-size: 0.82rem;
+      opacity: 0.55;
+      margin: 0;
+    }
+
+    .card-bio {
+      font-size: 0.88rem;
+      line-height: 1.55;
+      opacity: 0.75;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin: 0;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      background: var(--tag-bg, #f0f4ff);
+      color: var(--tag-text, #1a56db);
+      font-weight: 500;
+    }
+
+    .card-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      border-top: 1px solid var(--border, #e5e7eb);
+      padding-top: 0.85rem;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .meta-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.45;
+      font-weight: 600;
+    }
+
+    .meta-value {
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .compatibility-badge {
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+    }
+
+    .compat-high {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .compat-mid {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+
+    .compat-low {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .view-btn {
+      font-size: 0.82rem;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      background: var(--accent, #1a56db);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: opacity 0.15s;
+    }
+
+    .view-btn:hover { opacity: 0.85; }
+
+    /* Empty / loading states */
+    .browse-state {
+      text-align: center;
+      padding: 4rem 1rem;
+      opacity: 0.5;
+      font-size: 0.95rem;
+      grid-column: 1 / -1;
+    }
+
+    .browse-state .state-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--card-bg, #fff);
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 520px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      opacity: 0.5;
+      line-height: 1;
+    }
+
+    .modal-close:hover { opacity: 1; }
+
+    .modal-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--accent, #1a56db);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .modal-name {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 0 0 0.2rem;
+    }
+
+    .modal-dept {
+      font-size: 0.88rem;
+      opacity: 0.55;
+      margin: 0 0 1rem;
+    }
+
+    .modal-bio {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      opacity: 0.8;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-field dt {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.45;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+
+    .modal-field dd {
+      font-weight: 500;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .modal-interests {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .request-btn {
+      flex: 1;
+      padding: 0.7rem;
+      border-radius: 10px;
+      background: var(--accent, #1a56db);
+      color: #fff;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .request-btn:hover { opacity: 0.85; }
+    .request-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .request-status {
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 0.75rem;
+      min-height: 1.2em;
+    }
+
+    .request-status.success { color: #15803d; }
+    .request-status.error { color: #b91c1c; }
+
+    @media (max-width: 600px) {
+      .browse-header { flex-direction: column; }
+      .modal-grid { grid-template-columns: 1fr; }
+      .profiles-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="roommate-page">
+  <div id="menuOverlay" class="menu-overlay"></div>
+
+  <header class="navbar">
+    <div class="nav-left">
+      <div class="logo-badge">CH</div>
+      <a href="index.html" class="site-name">Off-Campus Hub</a>
+    </div>
+    <button id="hamburger" class="menu-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+  </header>
+
+  <nav id="mobileMenu" class="mobile-menu" aria-hidden="true">
+    <div class="menu-profile">
+      <div class="avatar" id="avatar">U</div>
+      <div class="profile-info">
+        <strong id="profileName">Guest</strong>
+        <span id="profileStatus">Not logged in</span>
+      </div>
+    </div>
+    <div class="menu-divider"></div>
+    <a href="index.html">Apartments</a>
+    <a href="roommate.html">My Roommate Profile</a>
+    <a href="roommate-browse.html">Find Roommates</a>
+    <a href="about.html">About</a>
+    <div class="menu-divider"></div>
+    <div id="authActions" class="auth-actions"></div>
+  </nav>
+
+  <main class="browse-shell">
+    <div class="browse-header">
+      <div>
+        <p class="section-kicker">Roommate Finder</p>
+        <h1>Find your match</h1>
+        <p>Browse students looking for roommates. Profiles are ranked by compatibility with your preferences.</p>
+      </div>
+      <a href="roommate.html" class="btn outline" style="white-space:nowrap">Edit my profile</a>
+    </div>
+
+    <div class="browse-controls">
+      <input
+        id="searchInput"
+        class="browse-search"
+        type="search"
+        placeholder="Search by name, department, or interests…"
+        aria-label="Search profiles"
+      />
+      <select id="filterSleep" class="browse-filter" aria-label="Filter by sleep schedule">
+        <option value="">Any sleep schedule</option>
+        <option value="early">Early</option>
+        <option value="flexible">Flexible</option>
+        <option value="late">Late</option>
+      </select>
+      <select id="filterClean" class="browse-filter" aria-label="Filter by cleanliness">
+        <option value="">Any cleanliness</option>
+        <option value="relaxed">Relaxed</option>
+        <option value="moderate">Moderate</option>
+        <option value="very_clean">Very clean</option>
+      </select>
+      <span id="profileCount" class="browse-count"></span>
+    </div>
+
+    <div id="profilesGrid" class="profiles-grid">
+      <div class="browse-state">
+        <div class="state-icon">⏳</div>
+        <p>Loading profiles…</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Profile detail modal -->
+  <div id="profileModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalName">
+    <div class="modal-box">
+      <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+      <div class="modal-avatar" id="modalAvatar">U</div>
+      <h2 class="modal-name" id="modalName"></h2>
+      <p class="modal-dept" id="modalDept"></p>
+      <p class="modal-bio" id="modalBio"></p>
+      <dl class="modal-grid" id="modalGrid"></dl>
+      <div class="modal-interests" id="modalInterests"></div>
+      <div class="modal-actions">
+        <button class="request-btn" id="sendRequestBtn">Send roommate request</button>
+      </div>
+      <p class="request-status" id="requestStatus"></p>
+    </div>
+  </div>
+
+  <script src="roommate-browse.js"></script>
+</body>
+</html>

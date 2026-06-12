@@ -36,6 +36,16 @@ const roommateProfileSchema = new mongoose.Schema(
       default: 0,
     },
     moveInDate: Date,
+    gender: {
+      type: String,
+      enum: ["male", "female", ""],
+      default: "",
+    },
+    educationLevel: {
+      type: String,
+      enum: ["100", "200", "300", "400", "500", ""],
+      default: "",
+    },
     sleepSchedule: {
       type: String,
       enum: ["early", "flexible", "late", ""],
