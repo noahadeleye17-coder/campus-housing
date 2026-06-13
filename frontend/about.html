@@ -7,14 +7,74 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body class="about-page">
-  <header class="navbar">
-    <a class="nav-left" href="index.html" aria-label="Back to homepage">
-      <div class="logo-badge">H</div>
-      <span class="site-name">Off-Campus Hub</span>
-    </a>
+  <div id="menuOverlay" class="menu-overlay"></div>
 
-    <a class="pill-btn outline" href="index.html">Home</a>
+  <header class="navbar">
+    <div class="nav-left">
+      <a href="index.html" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
+        <svg width="44" height="58" viewBox="0 0 88 114" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="pinG" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#2357d8"/>
+              <stop offset="100%" style="stop-color:#0f9f8f"/>
+            </linearGradient>
+            <clipPath id="pinClip">
+              <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z"/>
+            </clipPath>
+          </defs>
+          <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z" fill="url(#pinG)"/>
+          <g clip-path="url(#pinClip)">
+            <rect x="0" y="0" width="88" height="104" fill="url(#pinG)"/>
+            <rect x="14" y="42" width="60" height="62" fill="#fff" opacity="0.95"/>
+            <polygon points="44,20 78,42 10,42" fill="#fff" opacity="0.85"/>
+            <polygon points="44,20 54,42 34,42" fill="#fff" opacity="0.5"/>
+            <rect x="20" y="48" width="10" height="9" rx="1" fill="url(#pinG)"/>
+            <rect x="35" y="48" width="10" height="9" rx="1" fill="url(#pinG)"/>
+            <rect x="50" y="48" width="10" height="9" rx="1" fill="url(#pinG)"/>
+            <rect x="20" y="63" width="10" height="9" rx="1" fill="url(#pinG)"/>
+            <rect x="35" y="63" width="10" height="9" rx="1" fill="url(#pinG)"/>
+            <rect x="50" y="63" width="10" height="9" rx="1" fill="url(#pinG)"/>
+            <rect x="36" y="78" width="16" height="26" rx="2" fill="url(#pinG)" opacity="0.5"/>
+          </g>
+          <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.3"/>
+        </svg>
+        <div style="line-height:1.2;">
+          <div style="font-size:0.75rem; font-weight:800; color:#596274; letter-spacing:0.07em; text-transform:uppercase;">Off-Campus</div>
+          <div style="font-size:1.15rem; font-weight:850; background:linear-gradient(135deg,#2357d8,#0f9f8f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Hub</div>
+        </div>
+      </a>
+    </div>
+
+    <button
+      id="hamburger"
+      class="menu-btn"
+      aria-label="Open menu"
+      aria-expanded="false"
+    >
+      ☰
+    </button>
   </header>
+
+  <nav id="mobileMenu" class="mobile-menu" aria-hidden="true">
+    <div class="menu-profile">
+      <div class="avatar" id="avatar">U</div>
+      <div class="profile-info">
+        <strong id="profileName">Guest</strong>
+        <span id="profileStatus">Not logged in</span>
+      </div>
+    </div>
+
+    <div class="menu-divider"></div>
+
+    <a href="index.html">Apartments</a>
+    <a href="roommate.html">My Roommate Profile</a>
+    <a href="roommate-browse.html">Find Roommates</a>
+    <a href="about.html">About</a>
+
+    <div class="menu-divider"></div>
+
+    <div id="authActions" class="auth-actions"></div>
+  </nav>
 
   <main>
     <section class="about-hero">
@@ -51,26 +111,25 @@
     <section class="about-section about-band">
       <div class="container">
         <div class="about-section-heading">
-          <span class="section-kicker">Coming soon</span>
           <h2>Roommate Finder</h2>
           <p>
-            Roommate Finder is planned to help students connect with compatible
-            roommates before splitting rent or moving into shared housing.
+            Roommate Finder helps students connect with compatible roommates
+            before splitting rent or moving into shared housing.
           </p>
         </div>
 
         <div class="about-grid">
           <article class="about-card">
             <h3>Set preferences</h3>
-            <p>Students will be able to share budget, lifestyle, study habits, cleanliness, and preferred locations.</p>
+            <p>Share budget, lifestyle, study habits, cleanliness, and preferred locations.</p>
           </article>
           <article class="about-card">
             <h3>Get better matches</h3>
-            <p>The feature will compare preferences so students can find people who fit their living style.</p>
+            <p>The feature compares preferences so students can find people who fit their living style.</p>
           </article>
           <article class="about-card">
             <h3>Connect safely</h3>
-            <p>The goal is to make first contact easier while keeping student comfort and trust in mind.</p>
+            <p>First contact is made easier while keeping student comfort and trust in mind.</p>
           </article>
         </div>
       </div>
@@ -118,5 +177,71 @@
       </div>
     </section>
   </main>
+
+  <script>
+    const safeParseJson = (v) => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
+    const parseJwt = (jwt) => {
+      if (!jwt || typeof jwt !== "string") return null;
+      const parts = jwt.split(".");
+      if (parts.length !== 3) return null;
+      try { return JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))); } catch { return null; }
+    };
+
+    const token = localStorage.getItem("token") || localStorage.getItem("accessToken") || localStorage.getItem("authToken");
+    const storedRole = localStorage.getItem("role") || localStorage.getItem("userRole");
+    let user = safeParseJson(localStorage.getItem("user"));
+    if (!user && token) {
+      const p = parseJwt(token);
+      if (p) user = { name: p.name || p.username || p.email || null, email: p.email || null, role: p.role || storedRole || null };
+    }
+    if (user && !user.role && storedRole) user.role = storedRole;
+
+    const hamburger = document.getElementById("hamburger");
+    const mobileMenu = document.getElementById("mobileMenu");
+    const menuOverlay = document.getElementById("menuOverlay");
+    const authActions = document.getElementById("authActions");
+    const profileNameEl = document.getElementById("profileName");
+    const profileStatusEl = document.getElementById("profileStatus");
+    const avatarEl = document.getElementById("avatar");
+
+    if (user) {
+      if (profileNameEl) profileNameEl.textContent = user.name || user.email || "Member";
+      if (profileStatusEl) profileStatusEl.textContent = `Logged in as ${user.role || "member"}`;
+      if (avatarEl) avatarEl.textContent = (user.name || user.email || "U").charAt(0).toUpperCase();
+    }
+
+    if (authActions) {
+      if (user) {
+        authActions.innerHTML = `<button class="pill-btn primary" id="logoutBtn">Logout</button>`;
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+          window.location.href = "login.html";
+        });
+      } else {
+        authActions.innerHTML = `
+          <a href="login.html" class="pill-btn outline">Login</a>
+          <a href="register.html" class="pill-btn primary">Sign Up</a>
+        `;
+      }
+    }
+
+    const closeMenu = () => {
+      mobileMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
+      hamburger.setAttribute("aria-expanded", "false");
+      mobileMenu.setAttribute("aria-hidden", "true");
+    };
+
+    hamburger.addEventListener("click", () => {
+      const isOpen = mobileMenu.classList.toggle("open");
+      menuOverlay.classList.toggle("show", isOpen);
+      hamburger.setAttribute("aria-expanded", String(isOpen));
+      mobileMenu.setAttribute("aria-hidden", String(!isOpen));
+    });
+
+    menuOverlay.addEventListener("click", closeMenu);
+  </script>
 </body>
 </html>

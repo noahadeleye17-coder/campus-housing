@@ -2013,8 +2013,9 @@ img {
   }
 
   .card-body {
-    padding: 12px;
-  }
+  padding: 10px 12px 12px;
+  gap: 2px;
+}
 
   .card-body h3,
   .apartment h3 {
@@ -2032,7 +2033,7 @@ img {
 
   .price,
   .apartment .price {
-    margin: 6px 0 8px;
+    margin: 4px 0 4px;
     font-size: 0.95rem;
   }
 
