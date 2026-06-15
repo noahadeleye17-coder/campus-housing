@@ -6,7 +6,10 @@ const demoApartments = [
     location: "University Road, 8 minutes from campus gate",
     distanceFromCampus: 1.2,
     amenities: ["Wi-Fi", "Water", "Security", "Kitchenette"],
-    image: "",
+    images: [
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
+    ],
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
     coordinates: {
       latitude: 6.5244,
       longitude: 3.3792,
@@ -23,7 +26,10 @@ const demoApartments = [
     location: "Student Village Extension",
     distanceFromCampus: 2.4,
     amenities: ["Furnished", "Prepaid meter", "Water", "Wardrobe"],
-    image: "",
+    images: [
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
+    ],
+    image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
     coordinates: {
       latitude: 6.5271,
       longitude: 3.3847,
@@ -40,7 +46,10 @@ const demoApartments = [
     location: "South Gate Area",
     distanceFromCampus: 0.8,
     amenities: ["Private bathroom", "Tiles", "Water", "Secure compound"],
-    image: "",
+    images: [
+      "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&q=80",
+    ],
+    image: "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&q=80",
     coordinates: null,
     landlord: {
       name: "Demo Property Owner",
@@ -54,7 +63,10 @@ const demoApartments = [
     location: "North Gate Area",
     distanceFromCampus: 3.1,
     amenities: ["Study desk", "Kitchen", "Parking", "Security"],
-    image: "",
+    images: [
+      "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80",
+    ],
+    image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80",
     coordinates: {
       latitude: 6.5312,
       longitude: 3.3726,
@@ -71,7 +83,10 @@ const demoApartments = [
     location: "Apatapiti Student Area",
     distanceFromCampus: 1.9,
     amenities: ["Shared bathroom", "Water", "Prepaid meter", "Gated compound"],
-    image: "",
+    images: [
+      "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80",
+    ],
+    image: "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80",
     coordinates: {
       latitude: 6.5198,
       longitude: 3.3881,
@@ -88,7 +103,10 @@ const demoApartments = [
     location: "West Gate Area",
     distanceFromCampus: 0.6,
     amenities: ["Air conditioning", "Private kitchen", "Backup power", "CCTV"],
-    image: "",
+    images: [
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
+    ],
+    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
     coordinates: {
       latitude: 6.5265,
       longitude: 3.3764,

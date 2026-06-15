@@ -60,6 +60,7 @@ const demoApartments = [
     location: "University Road, 8 minutes from campus gate",
     distanceFromCampus: 1.2,
     amenities: ["Wi-Fi", "Water", "Security", "Kitchenette"],
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
   },
   {
     _id: "demo-2",
@@ -68,6 +69,7 @@ const demoApartments = [
     location: "Student Village Extension",
     distanceFromCampus: 2.4,
     amenities: ["Furnished", "Prepaid meter", "Water", "Wardrobe"],
+    image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
   },
   {
     _id: "demo-3",
@@ -76,6 +78,7 @@ const demoApartments = [
     location: "Campus Back Gate Area",
     distanceFromCampus: 0.8,
     amenities: ["Private bathroom", "Tiles", "Water", "Secure compound"],
+    image: "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&q=80",
   },
   {
     _id: "demo-4",
@@ -84,6 +87,7 @@ const demoApartments = [
     location: "Green Estate, short bus ride to campus",
     distanceFromCampus: 3.1,
     amenities: ["Study desk", "Kitchen", "Parking", "Security"],
+    image: "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80",
   },
   {
     _id: "demo-5",
@@ -92,6 +96,7 @@ const demoApartments = [
     location: "Oke-Afa Student Area",
     distanceFromCampus: 1.9,
     amenities: ["Shared bathroom", "Water", "Prepaid meter", "Gated compound"],
+    image: "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80",
   },
   {
     _id: "demo-6",
@@ -100,9 +105,9 @@ const demoApartments = [
     location: "Campus View Apartments",
     distanceFromCampus: 0.6,
     amenities: ["Air conditioning", "Private kitchen", "Backup power", "CCTV"],
+    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
   },
 ];
-
 // ============================
 // MOBILE MENU
 // ============================
