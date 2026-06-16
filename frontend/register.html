@@ -14,27 +14,119 @@
       <p>Sign up to discover apartments, connect with landlords, and manage your housing search.</p>
     </div>
 
-    <div id="googleSignInButton"></div>
-    <div class="divider"><span>or</span></div>
+    <!DOCTYPE html>
 
-    <form id="registerForm" class="auth-form">
-      <input type="text" id="name" placeholder="Full name" required />
-      <input type="email" id="email" placeholder="Email address" required />
-      <input type="password" id="password" placeholder="Password" required />
-      <select id="role">
-        <option value="student">Student</option>
-        <option value="landlord">Landlord</option>
-      </select>
-      <button type="submit" class="btn btn-primary">Create account</button>
-      <p id="error" class="form-error"></p>
-    </form>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register | Campus Housing</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-    <p class="secondary-text">
-      Already have an account? <a href="login.html">Login</a>
-    </p>
+  <style>
+    .password-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-container input {
+      width: 100%;
+      box-sizing: border-box;
+      padding-right: 45px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      user-select: none;
+      font-size: 18px;
+    }
+  </style>
+
+</head>
+<body class="auth-page">
+  <div class="auth-card">
+    <div>
+      <h1>Create your account</h1>
+      <p>Sign up to discover apartments, connect with landlords, and manage your housing search.</p>
+    </div>
+
+```
+<div id="googleSignInButton"></div>
+<div class="divider"><span>or</span></div>
+
+<form id="registerForm" class="auth-form">
+  <input type="text" id="name" placeholder="Full name" required />
+
+  <input type="email" id="email" placeholder="Email address" required />
+
+  <div class="password-container">
+    <input
+      type="password"
+      id="password"
+      placeholder="Password"
+      required
+    />
+    <span
+      class="toggle-password"
+      onclick="togglePassword('password', this)"
+    >👁</span>
   </div>
 
+  <div class="password-container">
+    <input
+      type="password"
+      id="confirmPassword"
+      placeholder="Confirm Password"
+      required
+    />
+    <span
+      class="toggle-password"
+      onclick="togglePassword('confirmPassword', this)"
+    >👁</span>
+  </div>
+
+  <select id="role">
+    <option value="student">Student</option>
+    <option value="landlord">Landlord</option>
+  </select>
+
+  <button type="submit" class="btn btn-primary">
+    Create account
+  </button>
+
+  <p id="error" class="form-error"></p>
+</form>
+
+<p class="secondary-text">
+  Already have an account?
+  <a href="login.html">Login</a>
+</p>
+```
+
+  </div>
+
+  <script>
+    function togglePassword(id, icon) {
+      const input = document.getElementById(id);
+
+      if (input.type === "password") {
+        input.type = "text";
+        icon.textContent = "🙈";
+      } else {
+        input.type = "password";
+        icon.textContent = "👁";
+      }
+    }
+  </script>
+
   <script src="google-auth.js"></script>
+
   <script src="register.js"></script>
+
 </body>
 </html>
