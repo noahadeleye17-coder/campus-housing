@@ -6,6 +6,55 @@
   <title>Login | Campus Housing</title>
   <link rel="stylesheet" href="./style.css" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    .password-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-container input {
+      width: 100%;
+      box-sizing: border-box;
+      padding-right: 45px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8a8f98;
+      transition: color 0.15s ease;
+    }
+
+    .toggle-password:hover {
+      color: #4b5563;
+    }
+
+    .toggle-password svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+
+    .toggle-password .icon-hide {
+      display: none;
+    }
+
+    .toggle-password.active .icon-show {
+      display: none;
+    }
+
+    .toggle-password.active .icon-hide {
+      display: block;
+    }
+  </style>
 </head>
 <body class="auth-page">
   <div class="auth-card">
@@ -19,7 +68,21 @@
 
     <form id="loginForm" class="auth-form">
       <input type="email" id="email" placeholder="Email address" required />
-      <input type="password" id="password" placeholder="Password" required />
+
+      <div class="password-container">
+        <input type="password" id="password" placeholder="Password" required />
+        <span class="toggle-password" onclick="togglePassword('password', this)">
+          <svg class="icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <svg class="icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+        </span>
+      </div>
+
       <button type="submit" class="btn btn-primary">Login</button>
       <p id="error" class="form-error"></p>
     </form>
@@ -28,6 +91,19 @@
       Don't have an account? <a href="register.html">Sign up</a>
     </p>
   </div>
+
+  <script>
+    function togglePassword(id, icon) {
+      const input = document.getElementById(id);
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.add("active");
+      } else {
+        input.type = "password";
+        icon.classList.remove("active");
+      }
+    }
+  </script>
 
   <script src="google-auth.js"></script>
   <script src="login.js"></script>

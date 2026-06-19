@@ -6,23 +6,6 @@
   <title>Register | Campus Housing</title>
   <link rel="stylesheet" href="./style.css" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-</head>
-<body class="auth-page">
-  <div class="auth-card">
-    <div>
-      <h1>Create your account</h1>
-      <p>Sign up to discover apartments, connect with landlords, and manage your housing search.</p>
-    </div>
-
-    <!DOCTYPE html>
-
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register | Campus Housing</title>
-  <link rel="stylesheet" href="./style.css" />
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
     .password-container {
@@ -38,15 +21,40 @@
 
     .toggle-password {
       position: absolute;
-      right: 15px;
+      right: 14px;
       top: 50%;
       transform: translateY(-50%);
       cursor: pointer;
       user-select: none;
-      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8a8f98;
+      transition: color 0.15s ease;
+    }
+
+    .toggle-password:hover {
+      color: #4b5563;
+    }
+
+    .toggle-password svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+
+    .toggle-password .icon-hide {
+      display: none;
+    }
+
+    .toggle-password.active .icon-show {
+      display: none;
+    }
+
+    .toggle-password.active .icon-hide {
+      display: block;
     }
   </style>
-
 </head>
 <body class="auth-page">
   <div class="auth-card">
@@ -55,78 +63,72 @@
       <p>Sign up to discover apartments, connect with landlords, and manage your housing search.</p>
     </div>
 
-```
-<div id="googleSignInButton"></div>
-<div class="divider"><span>or</span></div>
+    <div id="googleSignInButton"></div>
+    <div class="divider"><span>or</span></div>
 
-<form id="registerForm" class="auth-form">
-  <input type="text" id="name" placeholder="Full name" required />
+    <form id="registerForm" class="auth-form">
+      <input type="text" id="name" placeholder="Full name" required />
 
-  <input type="email" id="email" placeholder="Email address" required />
+      <input type="email" id="email" placeholder="Email address" required />
 
-  <div class="password-container">
-    <input
-      type="password"
-      id="password"
-      placeholder="Password"
-      required
-    />
-    <span
-      class="toggle-password"
-      onclick="togglePassword('password', this)"
-    >👁</span>
-  </div>
+      <div class="password-container">
+        <input type="password" id="password" placeholder="Password" required />
+        <span class="toggle-password" onclick="togglePassword('password', this)">
+          <svg class="icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <svg class="icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+        </span>
+      </div>
 
-  <div class="password-container">
-    <input
-      type="password"
-      id="confirmPassword"
-      placeholder="Confirm Password"
-      required
-    />
-    <span
-      class="toggle-password"
-      onclick="togglePassword('confirmPassword', this)"
-    >👁</span>
-  </div>
+      <div class="password-container">
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+        <span class="toggle-password" onclick="togglePassword('confirmPassword', this)">
+          <svg class="icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <svg class="icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+        </span>
+      </div>
 
-  <select id="role">
-    <option value="student">Student</option>
-    <option value="landlord">Landlord</option>
-  </select>
+      <select id="role">
+        <option value="student">Student</option>
+        <option value="landlord">Landlord</option>
+      </select>
 
-  <button type="submit" class="btn btn-primary">
-    Create account
-  </button>
+      <button type="submit" class="btn btn-primary">Create account</button>
 
-  <p id="error" class="form-error"></p>
-</form>
+      <p id="error" class="form-error"></p>
+    </form>
 
-<p class="secondary-text">
-  Already have an account?
-  <a href="login.html">Login</a>
-</p>
-```
-
+    <p class="secondary-text">
+      Already have an account?
+      <a href="login.html">Login</a>
+    </p>
   </div>
 
   <script>
     function togglePassword(id, icon) {
       const input = document.getElementById(id);
-
       if (input.type === "password") {
         input.type = "text";
-        icon.textContent = "🙈";
+        icon.classList.add("active");
       } else {
         input.type = "password";
-        icon.textContent = "👁";
+        icon.classList.remove("active");
       }
     }
   </script>
 
   <script src="google-auth.js"></script>
-
   <script src="register.js"></script>
-
 </body>
 </html>

@@ -24,7 +24,6 @@ headers: {
 body: JSON.stringify({ name, email, password, role })
 });
 
-```
 const contentType = res.headers.get("content-type") || "";
 let data;
 
@@ -47,7 +46,6 @@ if (!res.ok) {
 
 alert("Registration successful. Please login.");
 window.location.href = "login.html";
-```
 
 } catch (error) {
 if (errorText) {
@@ -96,7 +94,6 @@ if (data.user.role.toLowerCase() === "landlord") {
 } else {
   window.location.href = "index.html";
 }
-```
 
 } catch (error) {
 if (errorText) {
