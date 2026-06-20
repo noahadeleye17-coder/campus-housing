@@ -244,11 +244,46 @@ const setupMenu = () => {
   menuOverlay.addEventListener("click", closeMenu);
 };
 
+// Clears a dead/expired session quietly and resets the UI to "not signed in",
+// instead of showing a raw backend error like "Not authorized, token failed".
+const handleExpiredSession = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("user");
+  localStorage.removeItem("role");
+  localStorage.removeItem("userRole");
+
+  setStatus("Not signed in", "Your session expired");
+  setMessage("Your session expired. Please log in again to see your saved profile.", "error");
+
+  if (form) {
+    Array.from(form.elements || []).forEach((element) => {
+      element.disabled = true;
+    });
+  }
+  if (deleteProfileBtn) deleteProfileBtn.hidden = true;
+
+  const authActions = document.getElementById("authActions");
+  if (authActions) {
+    authActions.innerHTML = `
+      <a href="login.html" class="pill-btn outline">Login</a>
+      <a href="register.html" class="pill-btn primary">Sign Up</a>
+    `;
+  }
+};
+
 const loadProfile = async () => {
   try {
     const res = await fetch(`${API_BASE}/roommates/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (res.status === 401) {
+      handleExpiredSession();
+      return;
+    }
+
     const data = await res.json().catch(() => ({}));
 
     if (res.status === 404) {
@@ -328,6 +363,12 @@ if (!form) {
         },
         body: JSON.stringify(getProfilePayload()),
       });
+
+      if (res.status === 401) {
+        handleExpiredSession();
+        return;
+      }
+
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
@@ -361,6 +402,12 @@ if (deleteProfileBtn) {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (res.status === 401) {
+        handleExpiredSession();
+        return;
+      }
+
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
