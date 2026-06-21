@@ -40,8 +40,17 @@ const buildApartmentData = (req) => {
   if (location !== undefined) data.location = location;
   if (distanceFromCampus !== undefined) data.distanceFromCampus = Number(distanceFromCampus);
   if (amenities !== undefined) data.amenities = parseAmenities(amenities);
-  if (req.file) {
-    data.image = `/uploads/${req.file.filename}`;
+
+  // New images were uploaded in this request
+  if (req.processedImages && req.processedImages.length > 0) {
+    const imagePaths = req.processedImages.map((filename) => `/uploads/${filename}`);
+    data.images = imagePaths;
+    data.image = imagePaths[0]; // keep legacy single-image field in sync
+  }
+
+  // New video was uploaded in this request
+  if (req.processedVideo) {
+    data.video = `/uploads/${req.processedVideo}`;
   }
 
   if (hasCoordinates) {
