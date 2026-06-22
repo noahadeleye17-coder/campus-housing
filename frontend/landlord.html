@@ -231,7 +231,35 @@
       box-shadow: 0 20px 40px rgba(15, 23, 42, 0.1);
     }
 
-    .apartment-card img,
+    .media-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .media-strip img,
+    .media-strip .video-thumb {
+      width: 110px;
+      height: 90px;
+      flex: 0 0 auto;
+      border-radius: 12px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #e2e8f0 10%, #cbd5e1 100%);
+    }
+
+    .media-strip .video-thumb {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0369a1;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: #e0f2fe;
+      text-align: center;
+      padding: 6px;
+    }
+
     .card-placeholder {
       width: 100%;
       border-radius: 16px;
@@ -265,21 +293,6 @@
       font-size: 1rem;
       font-weight: 700;
       color: #0f172a;
-    }
-
-    .delete-listing {
-      justify-self: start;
-      border: 1px solid #fecaca;
-      border-radius: 12px;
-      padding: 10px 14px;
-      color: #b91c1c;
-      background: #fff1f2;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .delete-listing:hover {
-      background: #ffe4e6;
     }
 
     .listing-actions {
@@ -376,7 +389,7 @@
   <div class="page-shell">
     <section class="page-header">
       <h1>Landlord Dashboard</h1>
-      <p>Use this form to quickly add new apartments, update listings, and keep your rental inventory organized. Each listing is saved with a title, price, location, and optional image.</p>
+      <p>Use this form to quickly add new apartments, update listings, and keep your rental inventory organized. Each listing is saved with a title, price, location, and optional photos or a video.</p>
     </section>
 
     <div class="stats-grid">
@@ -437,9 +450,15 @@
           </div>
 
           <div class="field">
-            <label for="image">Apartment image</label>
-            <input id="image" name="image" type="file" accept="image/*" />
-            <small>Select a photo to highlight the listing.</small>
+            <label for="images">Apartment photos</label>
+            <input id="images" name="images" type="file" accept="image/*" multiple />
+            <small>Select up to 6 photos. Any size or shape works — they won't be cropped.</small>
+          </div>
+
+          <div class="field">
+            <label for="video">Apartment video (optional)</label>
+            <input id="video" name="video" type="file" accept="video/*" />
+            <small>One short video clip, up to 50MB.</small>
           </div>
 
           <div class="submit-row">

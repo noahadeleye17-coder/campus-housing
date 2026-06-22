@@ -13,7 +13,8 @@ const fields = {
   amenities: document.getElementById("amenities"),
   latitude: document.getElementById("latitude"),
   longitude: document.getElementById("longitude"),
-  image: document.getElementById("image"),
+  images: document.getElementById("images"),
+  video: document.getElementById("video"),
 };
 
 const submitBtn = document.getElementById("submitBtn");
@@ -62,7 +63,8 @@ const setFormMode = (id = null, apartment = null) => {
       : apartment.amenities || "";
     fields.latitude.value = apartment.coordinates?.latitude ?? "";
     fields.longitude.value = apartment.coordinates?.longitude ?? "";
-    fields.image.value = "";
+    fields.images.value = "";
+    fields.video.value = "";
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
@@ -86,8 +88,14 @@ form.addEventListener("submit", async (e) => {
   formData.append("latitude", fields.latitude.value);
   formData.append("longitude", fields.longitude.value);
 
-  if (fields.image.files[0]) {
-    formData.append("image", fields.image.files[0]);
+  // Multiple images — note the field name "images" (plural) matches the
+  // backend's upload.fields([{ name: "images" }, { name: "video" }])
+  Array.from(fields.images.files).forEach((file) => {
+    formData.append("images", file);
+  });
+
+  if (fields.video.files[0]) {
+    formData.append("video", fields.video.files[0]);
   }
 
   const method = editingId ? "PATCH" : "POST";
@@ -95,7 +103,6 @@ form.addEventListener("submit", async (e) => {
     ? `${API_BASE}/apartments/${encodeURIComponent(editingId)}`
     : `${API_BASE}/apartments`;
 
-  // ✅ FIX 4: Added try/catch for network errors on form submit
   try {
     const res = await fetch(url, {
       method,
@@ -124,7 +131,6 @@ if (cancelEditBtn) {
 }
 
 async function loadApartments() {
-  // ✅ FIX 5: Added try/catch for network errors on load + build HTML string first
   try {
     const res = await fetch(`${API_BASE}/apartments/mine`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -150,11 +156,25 @@ async function loadApartments() {
       return;
     }
 
-    // ✅ FIX 5: Build full HTML string first, then set innerHTML once (not += in loop)
     const html = data.map((a) => {
-      const imageMarkup = a.image
-        ? `<img src="${escapeHtml(a.image)}" alt="${escapeHtml(a.title)}" />`
-        : `<div class="card-placeholder" aria-label="Apartment image placeholder"></div>`;
+      const images = Array.isArray(a.images) && a.images.length
+        ? a.images
+        : a.image
+          ? [a.image]
+          : [];
+
+      let mediaMarkup;
+      if (images.length || a.video) {
+        const imageThumbs = images
+          .map((src) => `<img src="${escapeHtml(src)}" alt="${escapeHtml(a.title)}" />`)
+          .join("");
+        const videoThumb = a.video
+          ? `<div class="video-thumb">▶ Video<br>attached</div>`
+          : "";
+        mediaMarkup = `<div class="media-strip">${imageThumbs}${videoThumb}</div>`;
+      } else {
+        mediaMarkup = `<div class="card-placeholder" aria-label="Apartment image placeholder"></div>`;
+      }
 
       const amenities = normalizeAmenities(a.amenities);
       const amenitiesMarkup = amenities.length
@@ -169,7 +189,7 @@ async function loadApartments() {
 
       return `
         <article class="apartment-card">
-          ${imageMarkup}
+          ${mediaMarkup}
           <div>
             <h3>${escapeHtml(a.title)}</h3>
             <div class="apartment-meta">

@@ -15,7 +15,18 @@ const apartmentSchema = new mongoose.Schema({
   },
   distanceFromCampus: Number,
   amenities: [String],
+
+  // Kept for backward compatibility with existing frontend code (app.js
+  // home page cards read apartment.image). Automatically set to the first
+  // entry in `images` whenever a listing is created/updated.
   image: String,
+
+  // Multiple images per listing
+  images: [String],
+
+  // One optional video per listing
+  video: String,
+
   coordinates: {
     latitude: Number,
     longitude: Number,
