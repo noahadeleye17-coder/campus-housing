@@ -8,13 +8,16 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const apartmentRoutes = require("./routes/apartmentroutes");
 const roommateRoutes = require("./routes/roommateRoutes");
+const { apiLimiter } = require("./middleware/rateLimit");
+const uploadErrorHandler = require("./middleware/uploadErrors");
 
 const app = express();
 mongoose.set("bufferCommands", false);
 
+app.use(cors());
+app.use("/api", apiLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static(path.join(__dirname, "frontend")));
@@ -55,7 +58,8 @@ app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     return res.status(400).json({ message: "Invalid JSON in request body" });
   }
-  next(err);
+
+  uploadErrorHandler(err, req, res, next);
 });
 
 // ── MongoDB connection with auto-reconnect ──────────────────────────────────

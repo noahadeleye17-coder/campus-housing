@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Apartment = require("../models/Apartment");
 const demoApartments = require("../data/demoApartments");
+const { cleanupProcessedMedia } = require("../upload/ResizeImage");
 
 const isDatabaseError = (error) => {
   return error.name === "MongooseError" || error.name === "MongoServerSelectionError";
@@ -78,11 +79,13 @@ const getApartments = async (req, res) => {
     }
 
     const apartments = await Apartment.find().sort({ createdAt: -1 }).populate("landlord", "name email");
-    if (apartments.length === 0) {
-      return res.json(demoApartments);
-    }
 
-    res.json(apartments);
+    // Real listings are shown first, demo listings fill out the rest of the
+    // page so it never looks empty while there's only a handful of real
+    // apartments. Once there are enough real listings, demo data can simply
+    // be removed from data/demoApartments.js (or filtered out here) without
+    // touching this logic.
+    res.json([...apartments, ...demoApartments]);
   } catch (error) {
     if (isDatabaseError(error)) {
       return res.status(503).json({ message: "Database is not connected" });
@@ -97,13 +100,19 @@ const getApartmentById = async (req, res) => {
       return res.status(400).json({ message: "Invalid apartment ID" });
     }
 
-    if (!isDatabaseConnected()) {
+    // Demo listings are always looked up directly from the static demo
+    // array, regardless of whether the database is connected — they never
+    // exist as real Mongo documents.
+    if (req.params.id.startsWith("demo-")) {
       const apartment = demoApartments.find((item) => item._id === req.params.id);
       if (!apartment) {
         return res.status(404).json({ message: "Apartment not found" });
       }
-
       return res.json(apartment);
+    }
+
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({ message: "Database is not connected" });
     }
 
     const apartment = await Apartment.findById(req.params.id).populate("landlord", "name email");
@@ -134,6 +143,7 @@ const createApartment = async (req, res) => {
 
     res.status(201).json(apartment);
   } catch (error) {
+    cleanupProcessedMedia(req);
     if (isDatabaseError(error)) {
       return res.status(503).json({ message: "Database is not connected" });
     }
@@ -180,6 +190,7 @@ const updateApartment = async (req, res) => {
 
     res.json(apartment);
   } catch (error) {
+    cleanupProcessedMedia(req);
     if (isDatabaseError(error)) {
       return res.status(503).json({ message: "Database is not connected" });
     }

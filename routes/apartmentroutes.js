@@ -2,8 +2,10 @@
 const express = require("express");
 const router = express.Router();
 const { protect, isLandlord } = require("../middleware/authmiddleware");
+const { uploadLimiter, writeLimiter } = require("../middleware/rateLimit");
+const { apartmentCreateRules, apartmentUpdateRules, validate } = require("../middleware/validateInput");
 const upload = require("../upload/upload");
-const resizeImage = require("../upload/resizeImage");
+const resizeImage = require("../upload/ResizeImage");
 const {
   getApartments,
   getApartmentById,
@@ -36,16 +38,16 @@ router.get("/:id", getApartmentById);
 // @route   POST /api/apartments
 // @desc    Create a new apartment
 // @access  Private (landlord only)
-router.post("/", protect, isLandlord, mediaFields, resizeImage, createApartment);
+router.post("/", protect, isLandlord, writeLimiter, uploadLimiter, mediaFields, apartmentCreateRules, validate, resizeImage, createApartment);
 
 // @route   PATCH /api/apartments/:id
 // @desc    Update an apartment listing
 // @access  Private (landlord only)
-router.patch("/:id", protect, isLandlord, mediaFields, resizeImage, updateApartment);
+router.patch("/:id", protect, isLandlord, writeLimiter, uploadLimiter, mediaFields, apartmentUpdateRules, validate, resizeImage, updateApartment);
 
 // @route   DELETE /api/apartments/:id
 // @desc    Delete an apartment listing
 // @access  Private (landlord only)
-router.delete("/:id", protect, isLandlord, deleteApartment);
+router.delete("/:id", protect, isLandlord, writeLimiter, deleteApartment);
 
 module.exports = router;

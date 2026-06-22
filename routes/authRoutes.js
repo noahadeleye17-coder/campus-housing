@@ -9,11 +9,13 @@ const {
   resetPassword,
 } = require("../controllers/authController");
 const { registerRules, loginRules, validate } = require("../middleware/validateAuth");
+const { authLimiter, passwordResetLimiter } = require("../middleware/rateLimit");
+const { forgotPasswordRules, resetPasswordRules } = require("../middleware/validateInput");
 
-router.post("/register", registerRules, validate, register);
-router.post("/login", loginRules, validate, login);
-router.post("/google", googleLogin);
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
+router.post("/register", authLimiter, registerRules, validate, register);
+router.post("/login", authLimiter, loginRules, validate, login);
+router.post("/google", authLimiter, googleLogin);
+router.post("/forgot-password", passwordResetLimiter, forgotPasswordRules, validate, forgotPassword);
+router.post("/reset-password", passwordResetLimiter, resetPasswordRules, validate, resetPassword);
 
 module.exports = router;

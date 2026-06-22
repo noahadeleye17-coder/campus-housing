@@ -1553,6 +1553,7 @@ img {
 }
 
 .detail-hero-image img,
+.detail-hero-image video,
 .detail-placeholder {
   max-width: 100%;
   max-height: 100%;
@@ -1593,7 +1594,8 @@ img {
   background: #14181f;
 }
 
-.carousel-slide img {
+.carousel-slide img,
+.carousel-slide video {
   max-width: 100%;
   max-height: 100%;
   width: auto;

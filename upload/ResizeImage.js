@@ -4,8 +4,33 @@ const crypto = require("crypto");
 const sharp = require("sharp");
 
 const uploadDir = path.join(__dirname, "..", "uploads");
+const videoExtensionsByMime = {
+  "video/mp4": ".mp4",
+  "video/quicktime": ".mov",
+  "video/webm": ".webm",
+};
 
 const makeUniqueName = (ext) => `${Date.now()}-${crypto.randomBytes(8).toString("hex")}${ext}`;
+
+const deleteUploadedFile = (filename) => {
+  if (!filename) return;
+
+  const target = path.resolve(uploadDir, filename);
+  if (!target.startsWith(path.resolve(uploadDir) + path.sep)) return;
+
+  try {
+    fs.unlinkSync(target);
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      console.warn("Could not delete uploaded file:", error.message);
+    }
+  }
+};
+
+const cleanupProcessedMedia = (req) => {
+  (req.processedImages || []).forEach(deleteUploadedFile);
+  deleteUploadedFile(req.processedVideo);
+};
 
 const processImage = async (file) => {
   const uniqueName = makeUniqueName(".jpg");
@@ -26,7 +51,11 @@ const processImage = async (file) => {
 };
 
 const processVideo = (file) => {
-  const ext = path.extname(file.originalname).toLowerCase() || ".mp4";
+  const ext = videoExtensionsByMime[file.mimetype];
+  if (!ext) {
+    throw new Error("Unsupported video type");
+  }
+
   const uniqueName = makeUniqueName(ext);
   const outputPath = path.join(uploadDir, uniqueName);
   fs.writeFileSync(outputPath, file.buffer);
@@ -52,14 +81,22 @@ const resizeImage = async (req, res, next) => {
     const imageFiles = req.files?.images || [];
     const videoFiles = req.files?.video || [];
 
-    req.processedImages = await Promise.all(imageFiles.map(processImage));
+    req.processedImages = [];
+    req.processedVideo = null;
+
+    for (const imageFile of imageFiles) {
+      req.processedImages.push(await processImage(imageFile));
+    }
+
     req.processedVideo = videoFiles.length ? processVideo(videoFiles[0]) : null;
 
     next();
   } catch (error) {
+    cleanupProcessedMedia(req);
     console.error("Media processing failed:", error);
     res.status(400).json({ message: "Could not process uploaded files" });
   }
 };
 
 module.exports = resizeImage;
+module.exports.cleanupProcessedMedia = cleanupProcessedMedia;

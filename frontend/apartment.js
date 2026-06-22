@@ -121,33 +121,39 @@ const showError = (message) => {
 };
 
 // ── Carousel ─────────────────────────────────────────────────────────────────
+// `media` is an array of { type: "image" | "video", src: string }
 
-const buildCarousel = (images, title) => {
-  if (!images || images.length === 0) {
+const buildCarousel = (media, title) => {
+  if (!media || media.length === 0) {
     return `<div class="detail-placeholder" aria-label="Apartment image placeholder"></div>`;
   }
 
-  if (images.length === 1) {
-    return `<img src="${escapeHtml(images[0])}" alt="${escapeHtml(title)}" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;">`;
+  if (media.length === 1) {
+    const item = media[0];
+    if (item.type === "video") {
+      return `<video src="${escapeHtml(item.src)}" controls playsinline style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;"></video>`;
+    }
+    return `<img src="${escapeHtml(item.src)}" alt="${escapeHtml(title)}" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;">`;
   }
 
-  const slides = images.map((src, i) => `
-    <div class="carousel-slide">
-      <img src="${escapeHtml(src)}" alt="${escapeHtml(title)} — photo ${i + 1}" loading="${i === 0 ? 'eager' : 'lazy'}">
-    </div>
-  `).join("");
+  const slides = media.map((item, i) => {
+    const inner = item.type === "video"
+      ? `<video src="${escapeHtml(item.src)}" controls playsinline></video>`
+      : `<img src="${escapeHtml(item.src)}" alt="${escapeHtml(title)} — photo ${i + 1}" loading="${i === 0 ? 'eager' : 'lazy'}">`;
+    return `<div class="carousel-slide">${inner}</div>`;
+  }).join("");
 
-  const dots = images.map((_, i) => `
-    <button class="carousel-dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Go to photo ${i + 1}"></button>
+  const dots = media.map((_, i) => `
+    <button class="carousel-dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Go to slide ${i + 1}"></button>
   `).join("");
 
   return `
     <div class="carousel" id="imgCarousel">
       <div class="carousel-track" id="carouselTrack">${slides}</div>
-      <button class="carousel-btn prev" id="carouselPrev" aria-label="Previous photo">&#8249;</button>
-      <button class="carousel-btn next" id="carouselNext" aria-label="Next photo">&#8250;</button>
+      <button class="carousel-btn prev" id="carouselPrev" aria-label="Previous">&#8249;</button>
+      <button class="carousel-btn next" id="carouselNext" aria-label="Next">&#8250;</button>
       <div class="carousel-dots" id="carouselDots">${dots}</div>
-      <span class="carousel-count" id="carouselCount">1 / ${images.length}</span>
+      <span class="carousel-count" id="carouselCount">1 / ${media.length}</span>
     </div>
   `;
 };
@@ -164,7 +170,12 @@ const initCarousel = (total) => {
 
   let current = 0;
 
+  const pauseVideos = () => {
+    track.querySelectorAll("video").forEach((video) => video.pause());
+  };
+
   const goTo = (index) => {
+    pauseVideos();
     current = Math.max(0, Math.min(index, total - 1));
     track.style.transform = `translateX(-${current * 100}%)`;
     dots.forEach((d, i) => d.classList.toggle("active", i === current));
@@ -225,7 +236,13 @@ const renderApartment = (apartment) => {
       ? [apartment.image]
       : [];
 
-  const imageMarkup = buildCarousel(images, apartment.title);
+  // Combine images and video into one media list: images first, video last
+  const media = [
+    ...images.map((src) => ({ type: "image", src })),
+    ...(apartment.video ? [{ type: "video", src: apartment.video }] : []),
+  ];
+
+  const imageMarkup = buildCarousel(media, apartment.title);
 
   container.innerHTML = `
     <div class="detail-hero-image">
@@ -279,7 +296,7 @@ const renderApartment = (apartment) => {
   `;
 
   // Init carousel after DOM is updated
-  initCarousel(images.length);
+  initCarousel(media.length);
   renderMap(apartment);
 };
 
