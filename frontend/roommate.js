@@ -43,6 +43,7 @@ const formMessage = document.getElementById("formMessage");
 const saveProfileBtn = document.getElementById("saveProfileBtn");
 const deleteProfileBtn = document.getElementById("deleteProfileBtn");
 const statusCard = document.getElementById("profileStatusCard");
+const roommatePreview = document.querySelector(".roommate-preview");
 
 const fields = {
   bio: document.getElementById("bio"),
@@ -256,6 +257,9 @@ const handleExpiredSession = () => {
 
   setStatus("Not signed in", "Your session expired");
   setMessage("Your session expired. Please log in again to see your saved profile.", "error");
+  if (loginNotice) loginNotice.hidden = false;
+  if (form) form.hidden = true;
+  if (roommatePreview) roommatePreview.hidden = true;
 
   if (form) {
     Array.from(form.elements || []).forEach((element) => {
@@ -332,6 +336,9 @@ if (user?.role && user.role !== "student" && user.role !== "admin") {
   } else {
     const signIn = getSignInStatus();
     setStatus(signIn.status, signIn.detail);
+    if (loginNotice) loginNotice.hidden = false;
+    if (form) form.hidden = true;
+    if (roommatePreview) roommatePreview.hidden = true;
   }
 }
 

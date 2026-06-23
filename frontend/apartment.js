@@ -36,9 +36,9 @@ const demoApartments = [
   },
   {
     _id: "demo-3",
-    title: "Self Contained Room",
+    title: "Self-Contain Room",
     price: 280000,
-    location: "Campus Back Gate Area",
+    location: "South Gate Area",
     distanceFromCampus: 0.8,
     amenities: ["Private bathroom", "Tiles", "Water", "Secure compound"],
     images: [
@@ -52,7 +52,7 @@ const demoApartments = [
     _id: "demo-4",
     title: "Quiet Mini Flat With Study Space",
     price: 520000,
-    location: "Green Estate, short bus ride to campus",
+    location: "North Gate Area",
     distanceFromCampus: 3.1,
     amenities: ["Study desk", "Kitchen", "Parking", "Security"],
     images: [
@@ -67,7 +67,7 @@ const demoApartments = [
     _id: "demo-5",
     title: "Budget Friendly Single Room",
     price: 180000,
-    location: "Oke-Afa Student Area",
+    location: "Apatapiti Student Area",
     distanceFromCampus: 1.9,
     amenities: ["Shared bathroom", "Water", "Prepaid meter", "Gated compound"],
     images: [
@@ -254,6 +254,11 @@ const renderApartment = (apartment) => {
         <div>
           <h2>${escapeHtml(apartment.title)}</h2>
           <p class="location">${escapeHtml(apartment.location)}</p>
+          <div class="detail-trust" aria-label="Apartment trust signals">
+            <span>Verified listing</span>
+            <span>Photos checked</span>
+            <span>Landlord confirmed</span>
+          </div>
         </div>
         <span class="detail-status">Available</span>
       </div>

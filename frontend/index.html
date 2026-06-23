@@ -89,7 +89,12 @@
   <!-- HERO -->
   <section class="hero">
     <h1>Find student housing near your campus</h1>
-    <p>Verified apartments • Safe locations • Easy access</p>
+    <p>Verified apartments &bull; Safe locations &bull; Easy access</p>
+    <div class="trust-strip" aria-label="Housing trust signals">
+      <span>Verified listings</span>
+      <span>Photos checked</span>
+      <span>Student-friendly areas</span>
+    </div>
     <form id="apartmentSearchForm" class="hero-search" role="search">
       <input
         id="apartmentSearchInput"
@@ -110,28 +115,32 @@
   <!-- ROOMMATE SECTION -->
 <section id="roommateFinder" class="section roommates">
   <div class="container">
-    <h2 class="section-title">How Roommate Finder Works</h2>
+    <div class="section-header centered">
+      <p class="section-kicker">Roommate finder</p>
+      <h2>How Roommate Finder Works</h2>
+      <p class="section-lead">Build a profile, set your preferences, and jump into matches that make shared housing feel less random.</p>
+    </div>
     <div class="grid steps-grid">
-      <div class="step-card">
+      <a class="step-card" href="roommate.html" aria-label="Open Roommate Finder to sign up">
         <img src="icons/signup.png" alt="Sign Up">
         <h3>Sign Up</h3>
         <p>Create an account to start your roommate search.</p>
-      </div>
-      <div class="step-card">
+      </a>
+      <a class="step-card" href="roommate.html" aria-label="Open Roommate Finder to set preferences">
         <img src="icons/preferences.png" alt="Set Preferences">
         <h3>Set Preferences</h3>
         <p>Tell us your habits, budget, and lifestyle.</p>
-      </div>
-      <div class="step-card">
+      </a>
+      <a class="step-card" href="roommate.html" aria-label="Open Roommate Finder to get matches">
         <img src="icons/match.png" alt="Get Matches">
         <h3>Get Matches</h3>
         <p>See potential roommates that fit your style.</p>
-      </div>
-      <div class="step-card">
+      </a>
+      <a class="step-card" href="roommate.html" aria-label="Open Roommate Finder to connect">
         <img src="icons/connect.png" alt="Connect">
         <h3>Connect</h3>
         <p>Message and meet safely through our platform.</p>
-      </div>
+      </a>
     </div>
   </div>
 </section>
@@ -139,7 +148,11 @@
 <!-- REVIEWS SECTION -->
 <section class="section reviews">
   <div class="container">
-    <h2 class="section-title">What Students Say</h2>
+    <div class="section-header centered">
+      <p class="section-kicker">Student stories</p>
+      <h2>What Students Say</h2>
+      <p class="section-lead">A quick pulse check from students using the platform to move faster and with more confidence.</p>
+    </div>
     <div class="grid reviews-grid">
       <div class="review-card">
         <img src="images/avatars/student1.png" alt="Ada" class="review-avatar">
@@ -148,12 +161,12 @@
       </div>
       <div class="review-card">
         <img src="images/avatars/student2.png" alt="Tunde" class="review-avatar">
-        <p>"It made my search for apartment very stress free."</p>
+        <p>"It made my apartment search very stress-free."</p>
         <strong>- Tunde, 300 Level</strong>
       </div>
       <div class="review-card">
         <img src="images/avatars/student3.png" alt="Chiamaka" class="review-avatar">
-        <p>"Got an apartment close to school,by just using my phone."</p>
+        <p>"I got an apartment close to school just by using my phone."</p>
         <strong>- Chiamaka, 200 Level</strong>
       </div>
     </div>
@@ -163,8 +176,8 @@
 <!-- CTA SECTION -->
 <section class="section cta">
   <div class="container cta-container">
-    <h2>Ready to Find Your Perfect Apartment?</h2>
-    <a href="register.html" class="btn btn-primary">Sign Up Now</a>
+    <h2 id="ctaTitle">Ready to Find Your Perfect Apartment?</h2>
+    <a href="register.html" class="btn btn-primary" id="ctaAction">Sign Up Now</a>
   </div>
 </section>
 

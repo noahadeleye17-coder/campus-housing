@@ -73,9 +73,9 @@ const demoApartments = [
   },
   {
     _id: "demo-3",
-    title: "Self Contained Room",
+    title: "Self-Contain Room",
     price: 280000,
-    location: "Campus Back Gate Area",
+    location: "South Gate Area",
     distanceFromCampus: 0.8,
     amenities: ["Private bathroom", "Tiles", "Water", "Secure compound"],
     image: "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&q=80",
@@ -84,7 +84,7 @@ const demoApartments = [
     _id: "demo-4",
     title: "Quiet Mini Flat With Study Space",
     price: 520000,
-    location: "Green Estate, short bus ride to campus",
+    location: "North Gate Area",
     distanceFromCampus: 3.1,
     amenities: ["Study desk", "Kitchen", "Parking", "Security"],
     image: "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80",
@@ -93,7 +93,7 @@ const demoApartments = [
     _id: "demo-5",
     title: "Budget Friendly Single Room",
     price: 180000,
-    location: "Oke-Afa Student Area",
+    location: "Apatapiti Student Area",
     distanceFromCampus: 1.9,
     amenities: ["Shared bathroom", "Water", "Prepaid meter", "Gated compound"],
     image: "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80",
@@ -144,6 +144,8 @@ const user = JSON.parse(localStorage.getItem("user"));
 const profileNameEl = document.getElementById("profileName");
 const profileStatusEl = document.getElementById("profileStatus");
 const avatarEl = document.getElementById("avatar");
+const ctaTitleEl = document.getElementById("ctaTitle");
+const ctaActionEl = document.getElementById("ctaAction");
 
 if (user) {
   if (profileNameEl) {
@@ -177,6 +179,40 @@ if (authActions) {
     `;
   }
 }
+
+function updateCta() {
+  if (!ctaTitleEl || !ctaActionEl) return;
+
+  const ctaByRole = {
+    student: {
+      title: "Ready to Find a Compatible Roommate?",
+      label: "Open Roommate Finder",
+      href: "roommate.html",
+    },
+    landlord: {
+      title: "Have a Place Students Should See?",
+      label: "Post a Listing",
+      href: "landlord.html",
+    },
+    admin: {
+      title: "Welcome Back",
+      label: "Browse Listings",
+      href: "#apartments",
+    },
+  };
+
+  const cta = user ? ctaByRole[user.role] || ctaByRole.admin : {
+    title: "Ready to Find Your Perfect Apartment?",
+    label: "Sign Up Now",
+    href: "register.html",
+  };
+
+  ctaTitleEl.textContent = cta.title;
+  ctaActionEl.textContent = cta.label;
+  ctaActionEl.href = cta.href;
+}
+
+updateCta();
 
 // ============================
 // FETCH APARTMENTS
@@ -250,6 +286,11 @@ function renderApartments(apartments) {
     const isSaved = getSavedIds().has(String(apartment._id));
     const div = document.createElement("div");
     div.className = "apartment";
+    const detailUrl = `apartment.html?id=${encodeURIComponent(apartment._id)}`;
+    div.dataset.href = detailUrl;
+    div.setAttribute("role", "link");
+    div.setAttribute("tabindex", "0");
+    div.setAttribute("aria-label", `View details for ${apartment.title}`);
     const imageMarkup = apartment.image
       ? `<img src="${escapeHtml(apartment.image)}" alt="${escapeHtml(apartment.title)}">`
       : `<div class="card-placeholder" aria-label="Apartment image placeholder"></div>`;
@@ -259,15 +300,20 @@ function renderApartments(apartments) {
       <div class="card-image">
         ${imageMarkup}
         <span class="distance-badge">${escapeHtml(apartment.distanceFromCampus ?? "N/A")}km</span>
+        <span class="verified-badge">Verified</span>
       </div>
 
       <div class="card-body">
         <h3>${escapeHtml(apartment.title)}</h3>
         <p class="location">${escapeHtml(apartment.location)}</p>
         <p class="price">&#8358;${Number.isNaN(price) ? "N/A" : price.toLocaleString()}</p>
+        <div class="card-trust" aria-label="Listing trust signals">
+          <span>Photos checked</span>
+          <span>Landlord confirmed</span>
+        </div>
 
         <div class="card-actions">
-          <a href="apartment.html?id=${encodeURIComponent(apartment._id)}" class="btn">
+          <a href="${detailUrl}" class="btn">
             View Details
           </a>
           <button type="button" class="btn favorite-btn ${isSaved ? "saved" : ""}" data-id="${escapeHtml(apartment._id)}">
@@ -348,13 +394,34 @@ if (searchForm && searchInput) {
 if (apartmentContainer) {
   apartmentContainer.addEventListener("click", (event) => {
     const button = event.target.closest(".favorite-btn");
-    if (!button) return;
+    if (button) {
+      const apartmentId = button.dataset.id;
+      if (!apartmentId) return;
 
-    const apartmentId = button.dataset.id;
-    if (!apartmentId) return;
+      event.preventDefault();
+      event.stopPropagation();
+      toggleSavedId(String(apartmentId));
+      searchApartments();
+      return;
+    }
 
-    toggleSavedId(String(apartmentId));
-    searchApartments();
+    if (event.target.closest("a")) return;
+
+    const card = event.target.closest(".apartment[data-href]");
+    if (card?.dataset.href) {
+      window.location.href = card.dataset.href;
+    }
+  });
+
+  apartmentContainer.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (event.target.closest("button, a, input, select, textarea")) return;
+
+    const card = event.target.closest(".apartment[data-href]");
+    if (!card?.dataset.href) return;
+
+    event.preventDefault();
+    window.location.href = card.dataset.href;
   });
 }
 

@@ -466,12 +466,12 @@ img {
 
 .hero {
   position: relative;
-  min-height: 430px;
+  min-height: 350px;
   display: grid;
   align-content: center;
-  margin: 22px auto 34px;
+  margin: 20px auto 28px;
   width: min(100% - 32px, calc(var(--container) + 80px));
-  padding: 92px 24px 112px;
+  padding: 62px 24px 72px;
   overflow: hidden;
   color: #ffffff;
   text-align: center;
@@ -506,9 +506,9 @@ img {
 .hero h1 {
   position: relative;
   z-index: 1;
-  width: min(820px, 100%);
-  margin: 0 auto 16px;
-  font-size: clamp(2.25rem, 5vw, 4.6rem);
+  width: min(760px, 100%);
+  margin: 0 auto 12px;
+  font-size: clamp(2.15rem, 4.5vw, 4rem);
   font-weight: 850;
   letter-spacing: 0;
   line-height: 1.04;
@@ -531,12 +531,44 @@ img {
   display: grid;
   grid-template-columns: 1fr auto auto;
   gap: 12px;
-  margin: 28px auto 0;
+  margin: 22px auto 0;
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 20px;
   background: rgba(255, 253, 247, 0.94);
   box-shadow: 0 28px 70px rgba(16, 24, 40, 0.26);
+}
+
+.trust-strip,
+.card-trust,
+.detail-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trust-strip {
+  position: relative;
+  z-index: 1;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.trust-strip span,
+.card-trust span,
+.detail-trust span {
+  border: 1px solid rgba(15, 159, 143, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.trust-strip span {
+  padding: 8px 11px;
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .hero-search input {
@@ -689,13 +721,20 @@ img {
   display: flex;
   flex-direction: column;
   height: 100%;
+  cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.apartment:hover {
+.apartment:hover,
+.apartment:focus-visible {
   transform: translateY(-6px);
   border-color: rgba(15, 159, 143, 0.42);
   box-shadow: 0 28px 60px rgba(16, 24, 40, 0.17);
+}
+
+.apartment:focus-visible {
+  outline: 3px solid rgba(35, 87, 216, 0.35);
+  outline-offset: 4px;
 }
 
 .card-image {
@@ -774,6 +813,21 @@ img {
   backdrop-filter: blur(8px);
 }
 
+.verified-badge {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 1;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 999px;
+  background: rgba(15, 159, 143, 0.9);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 850;
+  backdrop-filter: blur(8px);
+}
+
 .card-body {
   display: flex;
   min-height: 214px;
@@ -801,10 +855,22 @@ img {
 
 .price,
 .apartment .price {
-  margin: 14px 0 16px;
+  margin: 14px 0 10px;
   color: var(--accent-strong);
   font-size: 1.22rem;
   font-weight: 850;
+}
+
+.card-trust {
+  margin-bottom: 16px;
+}
+
+.card-trust span,
+.detail-trust span {
+  padding: 7px 9px;
+  background: rgba(15, 159, 143, 0.1);
+  color: var(--accent-strong);
+  font-size: 0.72rem;
 }
 
 .card-actions {
@@ -812,6 +878,7 @@ img {
   grid-template-columns: 1fr auto;
   gap: 10px;
   margin-top: auto;
+  align-items: stretch;
 }
 
 .favorite-btn {
@@ -939,6 +1006,55 @@ img {
   background: linear-gradient(135deg, #fff7e6, #ffffff);
 }
 
+.roommate-login-card {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  padding: 28px;
+  border: 1px solid rgba(22, 33, 62, 0.12);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, rgba(255, 240, 206, 0.9), rgba(230, 244, 239, 0.9)),
+    var(--surface);
+  box-shadow: 0 18px 40px rgba(16, 24, 40, 0.1);
+}
+
+.roommate-login-card[hidden] {
+  display: none;
+}
+
+.roommate-login-card span {
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.roommate-login-card h2 {
+  color: var(--ink);
+  font-size: clamp(1.45rem, 3vw, 2.25rem);
+  line-height: 1.12;
+}
+
+.roommate-login-card p {
+  max-width: 620px;
+  color: var(--muted);
+}
+
+.locked-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.locked-actions .btn {
+  width: auto;
+  min-width: 150px;
+  padding: 0 18px;
+}
+
 .notice-panel p {
   color: var(--muted);
 }
@@ -955,6 +1071,11 @@ img {
   gap: 22px;
   padding: 24px;
   border-radius: var(--radius-lg);
+}
+
+.roommate-form[hidden],
+.roommate-preview[hidden] {
+  display: none;
 }
 
 .roommate-form.is-disabled {
@@ -1148,6 +1269,21 @@ img {
 .step-card {
   padding: 24px 20px;
   text-align: center;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.step-card:hover,
+.step-card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(16, 24, 40, 0.12);
+}
+
+.step-card:focus-visible {
+  outline: 3px solid rgba(35, 87, 216, 0.35);
+  outline-offset: 4px;
 }
 
 .step-card:nth-child(1) {
@@ -1751,6 +1887,10 @@ img {
   font-weight: 850;
 }
 
+.detail-trust {
+  margin-top: 12px;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2154,21 +2294,22 @@ img {
   }
 
   .card-body {
-  padding: 10px 12px 12px;
-  gap: 2px;
-}
+    min-height: 286px;
+    padding: 10px 12px 12px;
+    gap: 2px;
+  }
 
   .card-body h3,
   .apartment h3 {
     font-size: 0.9rem;
-    min-height: auto;
+    min-height: 3.45em;
     margin-bottom: 4px;
   }
 
   .location,
   .apartment .location {
     font-size: 0.8rem;
-    min-height: auto;
+    min-height: 4.2em;
     margin-top: 0;
   }
 
@@ -2176,6 +2317,17 @@ img {
   .apartment .price {
     margin: 4px 0 4px;
     font-size: 0.95rem;
+  }
+
+  .card-trust {
+    align-content: flex-start;
+    min-height: 60px;
+    margin-bottom: 10px;
+  }
+
+  .card-trust span {
+    padding: 6px 8px;
+    font-size: 0.66rem;
   }
 
   .card-body .btn {
@@ -2242,15 +2394,15 @@ img {
   }
 
   .card-actions {
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
 
-.favorite-btn {
-  min-width: 0;
-  font-size: 0.8rem;
-  padding: 0 8px;
-}
+  .favorite-btn {
+    min-width: 0;
+    font-size: 0.8rem;
+    padding: 0 8px;
+  }
 }
 .password-container {
   position: relative;
