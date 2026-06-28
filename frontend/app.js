@@ -46,6 +46,14 @@ const searchInput = document.getElementById("apartmentSearchInput");
 const savedCountEl = document.getElementById("savedCount");
 const savedFilterBtn = document.getElementById("savedFilterBtn");
 
+// --- Filter panel elements ---
+const filterToggleBtn = document.getElementById("filterToggleBtn");
+const filterPanel = document.getElementById("filterPanel");
+const minPriceInput = document.getElementById("minPriceInput");
+const maxPriceInput = document.getElementById("maxPriceInput");
+const maxDistanceInput = document.getElementById("maxDistanceInput");
+const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+
 let allApartments = [];
 let showOnlySaved = false; // ✅ FIX 1: removed duplicate declaration
 
@@ -329,16 +337,40 @@ function renderApartments(apartments) {
 
 function getActiveFilters() {
   const query = searchInput.value.trim().toLowerCase();
-  return { query };
+
+  const minPrice = minPriceInput && minPriceInput.value !== ""
+    ? Number(minPriceInput.value)
+    : null;
+  const maxPrice = maxPriceInput && maxPriceInput.value !== ""
+    ? Number(maxPriceInput.value)
+    : null;
+  const maxDistance = maxDistanceInput && maxDistanceInput.value !== ""
+    ? Number(maxDistanceInput.value)
+    : null;
+
+  return { query, minPrice, maxPrice, maxDistance };
 }
 
 function filterApartments(list) {
-  const { query } = getActiveFilters();
+  const { query, minPrice, maxPrice, maxDistance } = getActiveFilters();
 
   return list.filter((apartment) => {
     const title = apartment.title?.toLowerCase() || "";
     const location = apartment.location?.toLowerCase() || "";
     if (query && !title.includes(query) && !location.includes(query)) {
+      return false;
+    }
+
+    const price = Number(apartment.price);
+    if (minPrice !== null && !Number.isNaN(price) && price < minPrice) {
+      return false;
+    }
+    if (maxPrice !== null && !Number.isNaN(price) && price > maxPrice) {
+      return false;
+    }
+
+    const distance = Number(apartment.distanceFromCampus);
+    if (maxDistance !== null && !Number.isNaN(distance) && distance > maxDistance) {
       return false;
     }
 
@@ -356,11 +388,23 @@ function searchApartments() {
 
   renderApartments(filteredApartments);
   updateSavedUi();
+  updateFilterToggleState();
 }
 
 function resetFilters() {
   if (searchInput) searchInput.value = "";
+  if (minPriceInput) minPriceInput.value = "";
+  if (maxPriceInput) maxPriceInput.value = "";
+  if (maxDistanceInput) maxDistanceInput.value = "";
   searchApartments();
+}
+
+// --- Highlights the filter toggle button when any filter is active ---
+function updateFilterToggleState() {
+  if (!filterToggleBtn) return;
+  const { minPrice, maxPrice, maxDistance } = getActiveFilters();
+  const hasActiveFilter = minPrice !== null || maxPrice !== null || maxDistance !== null;
+  filterToggleBtn.classList.toggle("active", hasActiveFilter);
 }
 
 if (searchForm && searchInput) {
@@ -389,6 +433,36 @@ if (searchForm && searchInput) {
       searchInput.focus();
     });
   }
+}
+
+// --- Filter panel toggle + listeners ---
+if (filterToggleBtn && filterPanel) {
+  filterToggleBtn.addEventListener("click", () => {
+    const isHidden = filterPanel.hasAttribute("hidden");
+    if (isHidden) {
+      filterPanel.removeAttribute("hidden");
+      filterToggleBtn.setAttribute("aria-expanded", "true");
+    } else {
+      filterPanel.setAttribute("hidden", "");
+      filterToggleBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
+[minPriceInput, maxPriceInput, maxDistanceInput].forEach((input) => {
+  if (!input) return;
+  input.addEventListener("input", () => {
+    searchApartments();
+  });
+});
+
+if (clearFiltersBtn) {
+  clearFiltersBtn.addEventListener("click", () => {
+    if (minPriceInput) minPriceInput.value = "";
+    if (maxPriceInput) maxPriceInput.value = "";
+    if (maxDistanceInput) maxDistanceInput.value = "";
+    searchApartments();
+  });
 }
 
 if (apartmentContainer) {

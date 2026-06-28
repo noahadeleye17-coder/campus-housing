@@ -103,8 +103,27 @@
         aria-label="Search apartment title or location"
       />
       <button type="button" id="clearSearchBtn" class="clear-btn" aria-label="Clear search" style="display: none;">✕</button>
+      <button type="button" id="filterToggleBtn" class="filter-toggle-btn" aria-label="Toggle filters" aria-expanded="false">⚙</button>
       <button type="submit" aria-label="Search">🔍</button>
     </form>
+
+    <div id="filterPanel" class="filter-panel" hidden>
+      <div class="filter-grid">
+        <label class="filter-field">
+          <span>Min Price (₦)</span>
+          <input type="number" id="minPriceInput" placeholder="e.g. 100000" min="0" inputmode="numeric" />
+        </label>
+        <label class="filter-field">
+          <span>Max Price (₦)</span>
+          <input type="number" id="maxPriceInput" placeholder="e.g. 500000" min="0" inputmode="numeric" />
+        </label>
+        <label class="filter-field">
+          <span>Max Distance (km)</span>
+          <input type="number" id="maxDistanceInput" placeholder="e.g. 2" min="0" step="0.1" inputmode="decimal" />
+        </label>
+      </div>
+      <button type="button" id="clearFiltersBtn" class="btn outline">Clear Filters</button>
+    </div>
   </section>
 
   <!-- APARTMENTS -->

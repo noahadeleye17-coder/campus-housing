@@ -529,7 +529,7 @@ img {
   z-index: 1;
   width: min(660px, calc(100% - 24px));
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
   gap: 12px;
   margin: 22px auto 0;
   padding: 12px;
@@ -635,6 +635,52 @@ img {
 .clear-btn:hover {
   background: rgba(180, 35, 24, 0.2);
   transform: scale(1.08);
+}
+
+.filter-toggle-btn {
+  height: 46px;
+  width: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(35, 87, 216, 0.1);
+  color: var(--primary-dark);
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.filter-toggle-btn:hover {
+  background: rgba(35, 87, 216, 0.18);
+  transform: scale(1.08);
+}
+
+.filter-toggle-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.filter-panel[hidden] {
+  display: none;
+}
+
+.filter-panel {
+  animation: filterSlideDown 0.22s ease;
+}
+
+@keyframes filterSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .filter-panel {
@@ -2165,7 +2211,7 @@ img {
   }
 
   .hero-search {
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     border-radius: var(--radius-lg);
   }
 
@@ -2174,7 +2220,8 @@ img {
   }
 
   .hero-search button,
-  .clear-btn {
+  .clear-btn,
+  .filter-toggle-btn {
     width: 40px;
     height: 40px;
     font-size: 1rem;
