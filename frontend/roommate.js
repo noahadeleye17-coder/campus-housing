@@ -52,6 +52,7 @@ const fields = {
   budgetMin: document.getElementById("budgetMin"),
   budgetMax: document.getElementById("budgetMax"),
   moveInDate: document.getElementById("moveInDate"),
+  whatsappNumber: document.getElementById("whatsappNumber"),
   gender: document.getElementById("gender"),
   educationLevel: document.getElementById("educationLevel"),
   visible: document.getElementById("visible"),
@@ -135,6 +136,7 @@ const getProfilePayload = () => ({
   budgetMin: getProfileValue(fields.budgetMin),
   budgetMax: getProfileValue(fields.budgetMax),
   moveInDate: getProfileValue(fields.moveInDate),
+  whatsappNumber: getProfileValue(fields.whatsappNumber).trim(),
   gender: getProfileValue(fields.gender),
   educationLevel: getProfileValue(fields.educationLevel),
   visible: getProfileValue(fields.visible) === "true",
@@ -153,6 +155,7 @@ const fillForm = (profile) => {
   if (fields.budgetMin) fields.budgetMin.value = profile.budgetMin || "";
   if (fields.budgetMax) fields.budgetMax.value = profile.budgetMax || "";
   if (fields.moveInDate) fields.moveInDate.value = formatDateForInput(profile.moveInDate);
+  if (fields.whatsappNumber) fields.whatsappNumber.value = profile.whatsappNumber || "";
   if (fields.gender) fields.gender.value = profile.gender || "";
   if (fields.educationLevel) fields.educationLevel.value = profile.educationLevel || "";
   if (fields.visible) fields.visible.value = String(profile.visible !== false);
@@ -379,7 +382,7 @@ if (!form) {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data.message || "Could not save your roommate profile.");
+        throw new Error(data.message || (data.errors && data.errors[0]?.msg) || "Could not save your roommate profile.");
       }
 
       fillForm(data);

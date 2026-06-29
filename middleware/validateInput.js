@@ -92,6 +92,12 @@ const roommateProfileRules = [
     return true;
   }),
   body("moveInDate").optional({ values: "falsy" }).isISO8601().withMessage("Move-in date must be a valid date"),
+  body("whatsappNumber")
+    .trim()
+    .notEmpty()
+    .withMessage("WhatsApp number is required so matched roommates can reach you")
+    .matches(/^(\+234|0)[7-9][0-1]\d{8}$/)
+    .withMessage("Enter a valid Nigerian WhatsApp number (e.g. 080XXXXXXXX or +234XXXXXXXXXX)"),
   optionalEnum("gender", ["male", "female"], "Gender"),
   optionalEnum("educationLevel", ["100", "200", "300", "400", "500"], "Education level"),
   optionalEnum("sleepSchedule", ["early", "flexible", "late"], "Sleep schedule"),

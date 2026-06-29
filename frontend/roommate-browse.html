@@ -369,6 +369,106 @@
     .request-status.success { color: #15803d; }
     .request-status.error { color: #b91c1c; }
 
+    .requests-toggle-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .requests-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+
+    .requests-panel {
+      display: none;
+      border: 1px solid var(--border, #e5e7eb);
+      border-radius: 14px;
+      background: var(--card-bg, #fff);
+      padding: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .requests-panel.open { display: block; }
+
+    .requests-panel h2 {
+      font-size: 1.05rem;
+      margin: 0 0 1rem;
+    }
+
+    .request-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--border, #eee);
+    }
+
+    .request-card:last-child { border-bottom: none; }
+
+    .request-card-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+    }
+
+    .request-card-name { font-weight: 600; font-size: 0.92rem; margin: 0; }
+    .request-card-sub { font-size: 0.78rem; opacity: 0.55; margin: 0; }
+
+    .request-card-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .req-action-btn {
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .req-accept { background: #15803d; color: #fff; }
+    .req-decline { background: var(--input-bg, #f3f4f6); color: #b91c1c; border-color: #fca5a5; }
+    .req-pending-label { font-size: 0.8rem; opacity: 0.55; }
+    .req-declined-label { font-size: 0.8rem; color: #b91c1c; opacity: 0.7; }
+
+    .req-whatsapp-btn {
+      background: #15803d;
+      color: #fff;
+      text-decoration: none;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .requests-empty {
+      text-align: center;
+      opacity: 0.5;
+      font-size: 0.88rem;
+      padding: 1.5rem 0;
+    }
+
     @media (max-width: 600px) {
       .browse-header { flex-direction: column; }
       .modal-grid { grid-template-columns: 1fr; }
@@ -445,6 +545,15 @@
         <p>Browse students looking for roommates. Profiles are ranked by compatibility with your preferences.</p>
       </div>
       <a href="roommate.html" class="btn outline" style="white-space:nowrap">Edit my profile</a>
+      <span class="requests-toggle-wrap">
+        <button id="requestsToggleBtn" class="btn outline" style="white-space:nowrap">My Requests</button>
+        <span id="requestsBadge" class="requests-badge" hidden>0</span>
+      </span>
+    </div>
+
+    <div id="requestsPanel" class="requests-panel">
+      <h2>Roommate requests</h2>
+      <div id="requestsList"></div>
     </div>
 
     <div class="browse-controls">

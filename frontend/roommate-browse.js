@@ -95,24 +95,38 @@ const modal = document.getElementById("profileModal");
 const modalClose = document.getElementById("modalClose");
 const sendRequestBtn = document.getElementById("sendRequestBtn");
 const requestStatus = document.getElementById("requestStatus");
+const requestsToggleBtn = document.getElementById("requestsToggleBtn");
+const requestsBadge = document.getElementById("requestsBadge");
+const requestsPanel = document.getElementById("requestsPanel");
+const requestsList = document.getElementById("requestsList");
 
 let allProfiles = [];
 let activeProfileId = null;
+let requestStatusByUser = new Map(); // counterpart userId -> { status, requestId }
 
 // ── Render helpers ───────────────────────────────────────────────────────────
 
+const getCounterpartId = (profile) => profile.user?._id || profile.user || profile._id;
+
+const getRequestState = (profile) => {
+  const id = getCounterpartId(profile);
+  return requestStatusByUser.get(String(id)) || null;
+};
+
 const initial = (profile) => {
-  const name = profile.userId?.name || profile.name || "";
+  const name = profile.user?.name || profile.name || "";
   return name ? name.charAt(0).toUpperCase() : "S";
 };
 
-const displayName = (profile) => profile.userId?.name || profile.name || "Student";
+const displayName = (profile) => profile.user?.name || profile.name || "Student";
 
 const renderCard = (profile) => {
   const score = compatScore(profile);
   const interests = Array.isArray(profile.interests) ? profile.interests.slice(0, 3) : [];
   const budget = [formatCurrency(profile.budgetMin), formatCurrency(profile.budgetMax)]
     .filter(Boolean).join(" – ");
+  const reqState = getRequestState(profile);
+  const viewBtnLabel = reqState?.status === "accepted" ? "Matched 💬" : reqState?.status === "pending" ? "Requested" : "View profile";
 
   const card = document.createElement("div");
   card.className = "profile-card";
@@ -154,7 +168,7 @@ const renderCard = (profile) => {
     </div>
     <div class="card-footer">
       ${score !== null ? `<span class="compatibility-badge ${compatClass(score)}">${compatText(score)}</span>` : "<span></span>"}
-      <button class="view-btn">View profile</button>
+      <button class="view-btn" ${reqState ? 'style="opacity:0.6;"' : ""}>${viewBtnLabel}</button>
     </div>
   `;
 
@@ -221,8 +235,18 @@ const openModal = (profile) => {
   activeProfileId = profile._id;
   requestStatus.textContent = "";
   requestStatus.className = "request-status";
-  sendRequestBtn.disabled = false;
-  sendRequestBtn.textContent = "Send roommate request";
+
+  const reqState = getRequestState(profile);
+  if (reqState?.status === "pending") {
+    sendRequestBtn.disabled = true;
+    sendRequestBtn.textContent = "Request pending";
+  } else if (reqState?.status === "accepted") {
+    sendRequestBtn.disabled = true;
+    sendRequestBtn.textContent = "Already matched";
+  } else {
+    sendRequestBtn.disabled = false;
+    sendRequestBtn.textContent = "Send roommate request";
+  }
 
   document.getElementById("modalAvatar").textContent = initial(profile);
   document.getElementById("modalName").textContent = displayName(profile);
@@ -258,9 +282,9 @@ const openModal = (profile) => {
     : "<span style='opacity:0.45;font-size:0.85rem'>No interests listed</span>";
 
   // Hide request button if not logged in or viewing own profile
-  const myId = parseJwt(token)?.id || parseJwt(token)?._id;
-  const theirId = profile.userId?._id || profile.userId || profile._id;
-  if (!token || (myId && myId === String(theirId))) {
+  const ownId = parseJwt(token)?.id || parseJwt(token)?._id;
+  const theirId = getCounterpartId(profile);
+  if (!token || (ownId && ownId === String(theirId))) {
     sendRequestBtn.style.display = "none";
   } else {
     sendRequestBtn.style.display = "";
@@ -305,6 +329,7 @@ sendRequestBtn.addEventListener("click", async () => {
     requestStatus.textContent = "Request sent! They'll be notified.";
     requestStatus.className = "request-status success";
     sendRequestBtn.textContent = "Request sent";
+    loadRequests();
   } catch (err) {
     requestStatus.textContent = err.message || "Something went wrong.";
     requestStatus.className = "request-status error";
@@ -312,6 +337,125 @@ sendRequestBtn.addEventListener("click", async () => {
     sendRequestBtn.textContent = "Send roommate request";
   }
 });
+
+// ── My Requests panel ────────────────────────────────────────────────────────
+
+const myId = () => parseJwt(token)?.id || parseJwt(token)?._id;
+
+const waLink = (number) => {
+  const digits = String(number || "").replace(/\D/g, "");
+  const intl = digits.startsWith("0") ? `234${digits.slice(1)}` : digits.replace(/^234?/, "234");
+  return `https://wa.me/${intl}`;
+};
+
+const renderRequestCard = (req) => {
+  const meId = myId();
+  const isIncoming = req.toUser?._id === meId || req.toUser?._id === String(meId);
+  const counterpart = isIncoming ? req.fromUser : req.toUser;
+  const card = document.createElement("div");
+  card.className = "request-card";
+
+  let actionsHtml = "";
+  if (req.status === "pending" && isIncoming) {
+    actionsHtml = `
+      <button class="req-action-btn req-accept" data-id="${req._id}" data-action="accepted">Accept</button>
+      <button class="req-action-btn req-decline" data-id="${req._id}" data-action="declined">Decline</button>
+    `;
+  } else if (req.status === "pending") {
+    actionsHtml = `<span class="req-pending-label">Waiting for response…</span>`;
+  } else if (req.status === "accepted") {
+    actionsHtml = req.matchedWhatsapp
+      ? `<a class="req-whatsapp-btn" href="${waLink(req.matchedWhatsapp)}" target="_blank" rel="noopener">💬 Chat on WhatsApp</a>`
+      : `<span class="req-pending-label">Matched</span>`;
+  } else {
+    actionsHtml = `<span class="req-declined-label">Declined</span>`;
+  }
+
+  card.innerHTML = `
+    <div class="request-card-info">
+      <div class="card-avatar" style="width:38px;height:38px;font-size:0.95rem;">${(counterpart?.name || "S").charAt(0).toUpperCase()}</div>
+      <div>
+        <p class="request-card-name">${counterpart?.name || "Student"}</p>
+        <p class="request-card-sub">${isIncoming ? "Wants to be your roommate" : "Roommate request sent"}</p>
+      </div>
+    </div>
+    <div class="request-card-actions">${actionsHtml}</div>
+  `;
+  return card;
+};
+
+const renderRequests = (requests) => {
+  if (!requests.length) {
+    requestsList.innerHTML = `<p class="requests-empty">No roommate requests yet.</p>`;
+    return;
+  }
+  requestsList.innerHTML = "";
+  requests.forEach((req) => requestsList.appendChild(renderRequestCard(req)));
+
+  requestsList.querySelectorAll("[data-action]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}/roommates/requests/${btn.dataset.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: btn.dataset.action }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || "Could not update request.");
+        await loadRequests();
+        await loadProfiles(); // matched profiles drop out of browse immediately
+      } catch (err) {
+        btn.disabled = false;
+        alert(err.message || "Something went wrong.");
+      }
+    });
+  });
+};
+
+const loadRequests = async () => {
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_BASE}/roommates/requests`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const requests = await res.json().catch(() => []);
+    renderRequests(requests);
+
+    const meId = myId();
+    requestStatusByUser = new Map();
+    requests.forEach((r) => {
+      const counterpart = r.toUser?._id === meId || r.toUser?._id === String(meId) ? r.fromUser : r.toUser;
+      const counterpartId = String(counterpart?._id || counterpart);
+      // An accepted match always takes priority over any other stray request with the same person
+      const existing = requestStatusByUser.get(counterpartId);
+      if (!existing || r.status === "accepted") {
+        requestStatusByUser.set(counterpartId, { status: r.status, requestId: r._id });
+      }
+    });
+    if (allProfiles.length) applyFilters(); // refresh card labels now that request states are known
+
+    const pendingIncoming = requests.filter(
+      (r) => r.status === "pending" && (r.toUser?._id === meId || r.toUser?._id === String(meId))
+    ).length;
+    if (requestsBadge) {
+      requestsBadge.hidden = pendingIncoming === 0;
+      requestsBadge.textContent = pendingIncoming;
+    }
+  } catch {
+    /* non-critical */
+  }
+};
+
+if (requestsToggleBtn) {
+  requestsToggleBtn.addEventListener("click", () => {
+    requestsPanel.classList.toggle("open");
+  });
+}
 
 // ── Nav / menu setup ─────────────────────────────────────────────────────────
 
@@ -418,4 +562,4 @@ const loadProfiles = async () => {
 // ── Boot ─────────────────────────────────────────────────────────────────────
 
 setupMenu();
-loadMyProfile().then(loadProfiles);
+loadMyProfile().then(() => loadRequests().then(loadProfiles));

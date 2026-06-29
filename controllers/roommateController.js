@@ -35,6 +35,7 @@ const buildProfileData = (body) => {
     "bio",
     "campus",
     "preferredLocation",
+    "whatsappNumber",
     "sleepSchedule",
     "cleanliness",
     "noisePreference",
@@ -263,6 +264,12 @@ const createRoommateRequest = async (req, res) => {
     if (profile.user.toString() === req.user.id) {
       return res.status(400).json({ message: "You cannot request yourself as a roommate" });
     }
+    const myProfile = await RoommateProfile.findOne({ user: req.user.id });
+    if (myProfile && myProfile.visible === false) {
+      return res.status(400).json({
+        message: "You're currently matched. Turn your profile back to visible before sending new requests.",
+      });
+    }
     const request = await RoommateRequest.findOneAndUpdate(
       { fromUser: req.user.id, toUser: profile.user },
       {
@@ -296,7 +303,23 @@ const getRoommateRequests = async (req, res) => {
       .sort({ updatedAt: -1 })
       .populate("fromUser", "name email role")
       .populate("toUser", "name email role");
-    res.json(requests);
+
+    const acceptedUserIds = requests
+      .filter((r) => r.status === "accepted")
+      .map((r) => (r.fromUser._id.toString() === req.user.id ? r.toUser._id : r.fromUser._id));
+
+    const contactProfiles = acceptedUserIds.length
+      ? await RoommateProfile.find({ user: { $in: acceptedUserIds } }, "user whatsappNumber")
+      : [];
+    const contactMap = new Map(contactProfiles.map((p) => [p.user.toString(), p.whatsappNumber]));
+
+    const withContact = requests.map((r) => {
+      if (r.status !== "accepted") return r.toObject();
+      const counterpartId = (r.fromUser._id.toString() === req.user.id ? r.toUser._id : r.fromUser._id).toString();
+      return { ...r.toObject(), matchedWhatsapp: contactMap.get(counterpartId) || null };
+    });
+
+    res.json(withContact);
   } catch (error) {
     if (isDatabaseError(error)) {
       return res.status(503).json({ message: "Database is not connected" });
@@ -328,7 +351,22 @@ const updateRoommateRequest = async (req, res) => {
     if (!request) {
       return res.status(404).json({ message: "Roommate request not found" });
     }
-    res.json(request);
+
+    let matchedWhatsapp = null;
+
+    if (status === "accepted") {
+      // Take both matched students off the browse list automatically.
+      // They can flip "visible" back on later from their own profile if the match falls through.
+      await RoommateProfile.updateMany(
+        { user: { $in: [request.fromUser._id, request.toUser._id] } },
+        { visible: false }
+      );
+
+      const counterpartProfile = await RoommateProfile.findOne({ user: request.fromUser._id });
+      matchedWhatsapp = counterpartProfile?.whatsappNumber || null;
+    }
+
+    res.json({ ...request.toObject(), matchedWhatsapp });
   } catch (error) {
     if (isDatabaseError(error)) {
       return res.status(503).json({ message: "Database is not connected" });
