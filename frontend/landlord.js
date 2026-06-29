@@ -9,10 +9,7 @@ const fields = {
   title: document.getElementById("title"),
   price: document.getElementById("price"),
   location: document.getElementById("location"),
-  distance: document.getElementById("distance"),
   amenities: document.getElementById("amenities"),
-  latitude: document.getElementById("latitude"),
-  longitude: document.getElementById("longitude"),
   images: document.getElementById("images"),
   video: document.getElementById("video"),
 };
@@ -42,6 +39,15 @@ const normalizeAmenities = (amenities) => {
   return String(amenities).split(",");
 };
 
+const formatTravelTime = (distanceKm) => {
+  const km = Number(distanceKm);
+  if (!km || Number.isNaN(km)) return "Travel time pending";
+
+  const walkMinutes = Math.max(3, Math.round(km * 12));
+  const rideMinutes = Math.max(3, Math.round(km * 5));
+  return km <= 1.5 ? `${walkMinutes} min walk` : `${rideMinutes} min by light transport`;
+};
+
 if (!token) {
   alert("Please login as a landlord first.");
   window.location.href = "login.html";
@@ -57,12 +63,9 @@ const setFormMode = (id = null, apartment = null) => {
     fields.title.value = apartment.title || "";
     fields.price.value = apartment.price || "";
     fields.location.value = apartment.location || "";
-    fields.distance.value = apartment.distanceFromCampus || apartment.distance || "";
     fields.amenities.value = Array.isArray(apartment.amenities)
       ? apartment.amenities.join(", ")
       : apartment.amenities || "";
-    fields.latitude.value = apartment.coordinates?.latitude ?? "";
-    fields.longitude.value = apartment.coordinates?.longitude ?? "";
     fields.images.value = "";
     fields.video.value = "";
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -83,10 +86,7 @@ form.addEventListener("submit", async (e) => {
   formData.append("title", fields.title.value);
   formData.append("price", fields.price.value);
   formData.append("location", fields.location.value);
-  formData.append("distanceFromCampus", fields.distance.value);
   formData.append("amenities", fields.amenities.value);
-  formData.append("latitude", fields.latitude.value);
-  formData.append("longitude", fields.longitude.value);
 
   // Multiple images — note the field name "images" (plural) matches the
   // backend's upload.fields([{ name: "images" }, { name: "video" }])
@@ -184,7 +184,7 @@ async function loadApartments() {
             .join("")}</ul>`
         : "";
 
-      const distance = a.distanceFromCampus || a.distance || "N/A";
+      const travelTime = formatTravelTime(a.distanceFromCampus || a.distance);
       const price = Number(a.price);
 
       return `
@@ -194,7 +194,7 @@ async function loadApartments() {
             <h3>${escapeHtml(a.title)}</h3>
             <div class="apartment-meta">
               <span>${escapeHtml(a.location)}</span>
-              <span>${escapeHtml(distance)} km from campus</span>
+              <span>${escapeHtml(travelTime)}</span>
             </div>
           </div>
           ${amenitiesMarkup}

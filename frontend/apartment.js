@@ -109,6 +109,21 @@ const escapeHtml = (value = "") => {
   }[char]));
 };
 
+const formatTravelTime = (distanceKm) => {
+  const km = Number(distanceKm);
+  if (!km || Number.isNaN(km)) {
+    return { short: "Travel time pending", detail: "Map location pending" };
+  }
+
+  const walkMinutes = Math.max(3, Math.round(km * 12));
+  const rideMinutes = Math.max(3, Math.round(km * 5));
+
+  return {
+    short: km <= 1.5 ? `${walkMinutes} min walk` : `${rideMinutes} min ride`,
+    detail: `${walkMinutes} min walk / ${rideMinutes} min by light transport`,
+  };
+};
+
 const showError = (message) => {
   container.innerHTML = `
     <div class="detail-empty">
@@ -243,6 +258,7 @@ const renderApartment = (apartment) => {
   ];
 
   const imageMarkup = buildCarousel(media, apartment.title);
+  const travelTime = formatTravelTime(apartment.distanceFromCampus);
 
   container.innerHTML = `
     <div class="detail-hero-image">
@@ -269,8 +285,8 @@ const renderApartment = (apartment) => {
           <strong>${formatCurrency(apartment.price)}</strong>
         </div>
         <div>
-          <span>Distance</span>
-          <strong>${escapeHtml(String(apartment.distanceFromCampus ?? "N/A"))} km</strong>
+          <span>Campus travel time</span>
+          <strong>${escapeHtml(travelTime.detail)}</strong>
         </div>
         <div>
           <span>Amenities</span>

@@ -261,6 +261,15 @@ function setSavedIds(ids) {
   localStorage.setItem("savedApartmentIds", JSON.stringify(Array.from(ids)));
 }
 
+function formatTravelTime(distanceKm) {
+  const km = Number(distanceKm);
+  if (!km || Number.isNaN(km)) return "Time pending";
+
+  const walkMinutes = Math.max(3, Math.round(km * 12));
+  const rideMinutes = Math.max(3, Math.round(km * 5));
+  return km <= 1.5 ? `${walkMinutes} min walk` : `${rideMinutes} min ride`;
+}
+
 function toggleSavedId(id) {
   const savedIds = getSavedIds();
   if (savedIds.has(id)) {
@@ -308,7 +317,7 @@ function renderApartments(apartments) {
     div.innerHTML = `
       <div class="card-image">
         ${imageMarkup}
-        <span class="distance-badge">${escapeHtml(apartment.distanceFromCampus ?? "N/A")}km</span>
+        <span class="distance-badge">${escapeHtml(formatTravelTime(apartment.distanceFromCampus))}</span>
         <span class="verified-badge">Verified</span>
       </div>
 
