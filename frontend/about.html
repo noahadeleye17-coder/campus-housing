@@ -158,22 +158,15 @@
     </section>
   </main>
 
+  <script src="auth-session.js"></script>
   <script>
-    const safeParseJson = (v) => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
-    const parseJwt = (jwt) => {
-      if (!jwt || typeof jwt !== "string") return null;
-      const parts = jwt.split(".");
-      if (parts.length !== 3) return null;
-      try { return JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))); } catch { return null; }
-    };
-
-    const token = localStorage.getItem("token") || localStorage.getItem("accessToken") || localStorage.getItem("authToken");
     const storedRole = localStorage.getItem("role") || localStorage.getItem("userRole");
-    let user = safeParseJson(localStorage.getItem("user"));
-    if (!user && token) {
-      const p = parseJwt(token);
-      if (p) user = { name: p.name || p.username || p.email || null, email: p.email || null, role: p.role || storedRole || null };
+    const session = window.AuthSession?.getSession() || {};
+    if (session.expired) {
+      window.AuthSession?.redirectToLogin();
     }
+
+    let user = session.user || null;
     if (user && !user.role && storedRole) user.role = storedRole;
 
     const hamburger = document.getElementById("hamburger");
@@ -194,9 +187,7 @@
       if (user) {
         authActions.innerHTML = `<button class="pill-btn primary" id="logoutBtn">Logout</button>`;
         document.getElementById("logoutBtn").addEventListener("click", () => {
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          localStorage.removeItem("role");
+          window.AuthSession?.clear();
           window.location.href = "login.html";
         });
       } else {

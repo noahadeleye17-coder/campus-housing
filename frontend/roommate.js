@@ -1,38 +1,13 @@
 const API_BASE = window.API_BASE || "/api";
-const token = localStorage.getItem("token") || localStorage.getItem("accessToken") || localStorage.getItem("authToken");
+const session = window.AuthSession?.getSession() || {};
+const token = session.token || null;
 const storedRole = localStorage.getItem("role") || localStorage.getItem("userRole");
 
-const safeParseJson = (value) => {
-  try {
-    return value ? JSON.parse(value) : null;
-  } catch {
-    return null;
-  }
-};
-
-const parseJwt = (jwt) => {
-  if (!jwt || typeof jwt !== "string") return null;
-  const parts = jwt.split(".");
-  if (parts.length !== 3) return null;
-  try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return payload;
-  } catch {
-    return null;
-  }
-};
-
-let user = safeParseJson(localStorage.getItem("user"));
-if (!user && token) {
-  const tokenPayload = parseJwt(token);
-  if (tokenPayload) {
-    user = {
-      name: tokenPayload.name || tokenPayload.username || tokenPayload.email || null,
-      email: tokenPayload.email || null,
-      role: tokenPayload.role || tokenPayload.userRole || storedRole || null,
-    };
-  }
+if (session.expired) {
+  window.AuthSession?.redirectToLogin();
 }
+
+let user = session.user || null;
 if (user && !user.role && storedRole) {
   user.role = storedRole;
 }
@@ -216,9 +191,7 @@ const setupMenu = () => {
     if (user) {
       authActions.innerHTML = `<button class="pill-btn primary" id="logoutBtn">Logout</button>`;
       document.getElementById("logoutBtn").addEventListener("click", () => {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
+        window.AuthSession?.clear();
         window.location.href = "login.html";
       });
     } else {
@@ -248,36 +221,8 @@ const setupMenu = () => {
   menuOverlay.addEventListener("click", closeMenu);
 };
 
-// Clears a dead/expired session quietly and resets the UI to "not signed in",
-// instead of showing a raw backend error like "Not authorized, token failed".
 const handleExpiredSession = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("authToken");
-  localStorage.removeItem("user");
-  localStorage.removeItem("role");
-  localStorage.removeItem("userRole");
-
-  setStatus("Not signed in", "Your session expired");
-  setMessage("Your session expired. Please log in again to see your saved profile.", "error");
-  if (loginNotice) loginNotice.hidden = false;
-  if (form) form.hidden = true;
-  if (roommatePreview) roommatePreview.hidden = true;
-
-  if (form) {
-    Array.from(form.elements || []).forEach((element) => {
-      element.disabled = true;
-    });
-  }
-  if (deleteProfileBtn) deleteProfileBtn.hidden = true;
-
-  const authActions = document.getElementById("authActions");
-  if (authActions) {
-    authActions.innerHTML = `
-      <a href="login.html" class="pill-btn outline">Login</a>
-      <a href="register.html" class="pill-btn primary">Sign Up</a>
-    `;
-  }
+  window.AuthSession?.redirectToLogin();
 };
 
 const loadProfile = async () => {

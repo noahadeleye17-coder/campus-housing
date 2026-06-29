@@ -1,5 +1,11 @@
 const form = document.getElementById("loginForm");
 const errorText = document.getElementById("error");
+const params = new URLSearchParams(window.location.search);
+
+if (params.get("expired") === "1") {
+  window.AuthSession?.clear();
+  if (errorText) errorText.textContent = "Your session expired. Please log in again.";
+}
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();

@@ -140,7 +140,12 @@ if (hamburger && mobileMenu && menuOverlay) {
 // ============================
 // AUTH UI
 // ============================
-const user = JSON.parse(localStorage.getItem("user"));
+const session = window.AuthSession?.getSession() || {};
+if (session.expired) {
+  window.AuthSession?.redirectToLogin();
+}
+
+const user = session.user || null;
 const profileNameEl = document.getElementById("profileName");
 const profileStatusEl = document.getElementById("profileStatus");
 const avatarEl = document.getElementById("avatar");
@@ -168,8 +173,12 @@ if (authActions) {
     `;
 
     document.getElementById("logoutBtn").onclick = () => {
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
+      if (window.AuthSession) {
+        window.AuthSession.clear();
+      } else {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+      }
       location.reload();
     };
   } else {

@@ -1,34 +1,22 @@
 const API_BASE = window.API_BASE || "/api";
-const token = localStorage.getItem("token") || localStorage.getItem("accessToken") || localStorage.getItem("authToken");
+const session = window.AuthSession?.getSession() || {};
+const token = session.token || null;
 const storedRole = localStorage.getItem("role") || localStorage.getItem("userRole");
+
+if (session.expired) {
+  window.AuthSession?.redirectToLogin();
+}
 
 // ── Auth helpers ─────────────────────────────────────────────────────────────
 
-const safeParseJson = (value) => {
-  try { return value ? JSON.parse(value) : null; } catch { return null; }
-};
+const parseJwt = window.AuthSession?.parseJwt || (() => null);
 
-const parseJwt = (jwt) => {
-  if (!jwt || typeof jwt !== "string") return null;
-  const parts = jwt.split(".");
-  if (parts.length !== 3) return null;
-  try {
-    return JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-  } catch { return null; }
-};
-
-let user = safeParseJson(localStorage.getItem("user"));
-if (!user && token) {
-  const payload = parseJwt(token);
-  if (payload) {
-    user = {
-      name: payload.name || payload.username || payload.email || null,
-      email: payload.email || null,
-      role: payload.role || payload.userRole || storedRole || null,
-    };
-  }
-}
+let user = session.user || null;
 if (user && !user.role && storedRole) user.role = storedRole;
+
+const handleExpiredSession = () => {
+  window.AuthSession?.redirectToLogin();
+};
 
 // ── Label maps ───────────────────────────────────────────────────────────────
 
@@ -323,6 +311,12 @@ sendRequestBtn.addEventListener("click", async () => {
         Authorization: `Bearer ${token}`,
       },
     });
+
+    if (res.status === 401) {
+      handleExpiredSession();
+      return;
+    }
+
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) throw new Error(data.message || "Could not send request.");
@@ -405,6 +399,12 @@ const renderRequests = (requests) => {
           },
           body: JSON.stringify({ status: btn.dataset.action }),
         });
+
+        if (res.status === 401) {
+          handleExpiredSession();
+          return;
+        }
+
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.message || "Could not update request.");
         await loadRequests();
@@ -423,6 +423,10 @@ const loadRequests = async () => {
     const res = await fetch(`${API_BASE}/roommates/requests`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    if (res.status === 401) {
+      handleExpiredSession();
+      return;
+    }
     if (!res.ok) return;
     const requests = await res.json().catch(() => []);
     renderRequests(requests);
@@ -479,9 +483,7 @@ const setupMenu = () => {
     if (user) {
       authActions.innerHTML = `<button class="pill-btn primary" id="logoutBtn">Logout</button>`;
       document.getElementById("logoutBtn").addEventListener("click", () => {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
+        window.AuthSession?.clear();
         window.location.href = "login.html";
       });
     } else {
@@ -519,6 +521,10 @@ const loadMyProfile = async () => {
     const res = await fetch(`${API_BASE}/roommates/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    if (res.status === 401) {
+      handleExpiredSession();
+      return;
+    }
     if (res.ok) myProfile = await res.json().catch(() => null);
   } catch { /* non-critical */ }
 };
@@ -537,6 +543,11 @@ const loadProfiles = async () => {
     const res = await fetch(`${API_BASE}/roommates`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (res.status === 401) {
+      handleExpiredSession();
+      return;
+    }
 
     if (!res.ok) throw new Error("Could not load profiles.");
 
