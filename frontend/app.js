@@ -46,14 +46,6 @@ const searchInput = document.getElementById("apartmentSearchInput");
 const savedCountEl = document.getElementById("savedCount");
 const savedFilterBtn = document.getElementById("savedFilterBtn");
 
-// --- Filter panel elements ---
-const filterToggleBtn = document.getElementById("filterToggleBtn");
-const filterPanel = document.getElementById("filterPanel");
-const minPriceInput = document.getElementById("minPriceInput");
-const maxPriceInput = document.getElementById("maxPriceInput");
-const maxDistanceInput = document.getElementById("maxDistanceInput");
-const clearFiltersBtn = document.getElementById("clearFiltersBtn");
-
 let allApartments = [];
 let showOnlySaved = false; // ✅ FIX 1: removed duplicate declaration
 
@@ -324,8 +316,11 @@ function renderApartments(apartments) {
           <a href="${detailUrl}" class="btn">
             View Details
           </a>
-          <button type="button" class="btn favorite-btn ${isSaved ? "saved" : ""}" data-id="${escapeHtml(apartment._id)}">
-            ${isSaved ? "★ Saved" : "☆ Save"}
+          <button type="button" class="btn favorite-btn ${isSaved ? "saved" : ""}" data-id="${escapeHtml(apartment._id)}" style="display:inline-flex; align-items:center; justify-content:center; gap:0.35rem;">
+            ${isSaved
+              ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Saved'
+              : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Save'
+            }
           </button>
         </div>
       </div>
@@ -337,40 +332,16 @@ function renderApartments(apartments) {
 
 function getActiveFilters() {
   const query = searchInput.value.trim().toLowerCase();
-
-  const minPrice = minPriceInput && minPriceInput.value !== ""
-    ? Number(minPriceInput.value)
-    : null;
-  const maxPrice = maxPriceInput && maxPriceInput.value !== ""
-    ? Number(maxPriceInput.value)
-    : null;
-  const maxDistance = maxDistanceInput && maxDistanceInput.value !== ""
-    ? Number(maxDistanceInput.value)
-    : null;
-
-  return { query, minPrice, maxPrice, maxDistance };
+  return { query };
 }
 
 function filterApartments(list) {
-  const { query, minPrice, maxPrice, maxDistance } = getActiveFilters();
+  const { query } = getActiveFilters();
 
   return list.filter((apartment) => {
     const title = apartment.title?.toLowerCase() || "";
     const location = apartment.location?.toLowerCase() || "";
     if (query && !title.includes(query) && !location.includes(query)) {
-      return false;
-    }
-
-    const price = Number(apartment.price);
-    if (minPrice !== null && !Number.isNaN(price) && price < minPrice) {
-      return false;
-    }
-    if (maxPrice !== null && !Number.isNaN(price) && price > maxPrice) {
-      return false;
-    }
-
-    const distance = Number(apartment.distanceFromCampus);
-    if (maxDistance !== null && !Number.isNaN(distance) && distance > maxDistance) {
       return false;
     }
 
@@ -388,23 +359,11 @@ function searchApartments() {
 
   renderApartments(filteredApartments);
   updateSavedUi();
-  updateFilterToggleState();
 }
 
 function resetFilters() {
   if (searchInput) searchInput.value = "";
-  if (minPriceInput) minPriceInput.value = "";
-  if (maxPriceInput) maxPriceInput.value = "";
-  if (maxDistanceInput) maxDistanceInput.value = "";
   searchApartments();
-}
-
-// --- Highlights the filter toggle button when any filter is active ---
-function updateFilterToggleState() {
-  if (!filterToggleBtn) return;
-  const { minPrice, maxPrice, maxDistance } = getActiveFilters();
-  const hasActiveFilter = minPrice !== null || maxPrice !== null || maxDistance !== null;
-  filterToggleBtn.classList.toggle("active", hasActiveFilter);
 }
 
 if (searchForm && searchInput) {
@@ -433,36 +392,6 @@ if (searchForm && searchInput) {
       searchInput.focus();
     });
   }
-}
-
-// --- Filter panel toggle + listeners ---
-if (filterToggleBtn && filterPanel) {
-  filterToggleBtn.addEventListener("click", () => {
-    const isHidden = filterPanel.hasAttribute("hidden");
-    if (isHidden) {
-      filterPanel.removeAttribute("hidden");
-      filterToggleBtn.setAttribute("aria-expanded", "true");
-    } else {
-      filterPanel.setAttribute("hidden", "");
-      filterToggleBtn.setAttribute("aria-expanded", "false");
-    }
-  });
-}
-
-[minPriceInput, maxPriceInput, maxDistanceInput].forEach((input) => {
-  if (!input) return;
-  input.addEventListener("input", () => {
-    searchApartments();
-  });
-});
-
-if (clearFiltersBtn) {
-  clearFiltersBtn.addEventListener("click", () => {
-    if (minPriceInput) minPriceInput.value = "";
-    if (maxPriceInput) maxPriceInput.value = "";
-    if (maxDistanceInput) maxDistanceInput.value = "";
-    searchApartments();
-  });
 }
 
 if (apartmentContainer) {

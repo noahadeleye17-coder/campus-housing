@@ -126,7 +126,8 @@ const renderCard = (profile) => {
   const budget = [formatCurrency(profile.budgetMin), formatCurrency(profile.budgetMax)]
     .filter(Boolean).join(" – ");
   const reqState = getRequestState(profile);
-  const viewBtnLabel = reqState?.status === "accepted" ? "Matched 💬" : reqState?.status === "pending" ? "Requested" : "View profile";
+  const chatIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+  const viewBtnLabel = reqState?.status === "accepted" ? `Matched ${chatIconSvg}` : reqState?.status === "pending" ? "Requested" : "View profile";
 
   const card = document.createElement("div");
   card.className = "profile-card";
@@ -180,7 +181,7 @@ const renderCard = (profile) => {
 const renderEmpty = (message) => {
   grid.innerHTML = `
     <div class="browse-state">
-      <div class="state-icon">🔍</div>
+      <div class="state-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
       <p>${message}</p>
     </div>`;
 };
@@ -365,7 +366,7 @@ const renderRequestCard = (req) => {
     actionsHtml = `<span class="req-pending-label">Waiting for response…</span>`;
   } else if (req.status === "accepted") {
     actionsHtml = req.matchedWhatsapp
-      ? `<a class="req-whatsapp-btn" href="${waLink(req.matchedWhatsapp)}" target="_blank" rel="noopener">💬 Chat on WhatsApp</a>`
+      ? `<a class="req-whatsapp-btn" href="${waLink(req.matchedWhatsapp)}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> Chat on WhatsApp</a>`
       : `<span class="req-pending-label">Matched</span>`;
   } else {
     actionsHtml = `<span class="req-declined-label">Declined</span>`;
@@ -526,7 +527,7 @@ const loadProfiles = async () => {
   if (!token) {
     grid.innerHTML = `
       <div class="browse-state">
-        <div class="state-icon">🔒</div>
+        <div class="state-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
         <p>Please <a href="login.html">log in</a> to browse roommate profiles.</p>
       </div>`;
     return;
@@ -553,7 +554,7 @@ const loadProfiles = async () => {
   } catch (err) {
     grid.innerHTML = `
       <div class="browse-state">
-        <div class="state-icon">⚠️</div>
+        <div class="state-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
         <p>${err.message || "Could not load profiles."}</p>
       </div>`;
   }
