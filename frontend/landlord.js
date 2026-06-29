@@ -1,4 +1,5 @@
-const token = localStorage.getItem("token");
+const session = window.AuthSession?.getSession() || {};
+const token = session.token || null;
 const form = document.getElementById("addApartmentForm");
 const container = document.getElementById("myApartments");
 const countEl = document.getElementById("listingCount");
@@ -48,10 +49,16 @@ const formatTravelTime = (distanceKm) => {
   return km <= 1.5 ? `${walkMinutes} min walk` : `${rideMinutes} min by light transport`;
 };
 
-if (!token) {
+if (session.expired) {
+  window.AuthSession?.redirectToLogin();
+} else if (!token) {
   alert("Please login as a landlord first.");
   window.location.href = "login.html";
 }
+
+const handleExpiredSession = () => {
+  window.AuthSession?.redirectToLogin();
+};
 
 const setFormMode = (id = null, apartment = null) => {
   editingId = id;
@@ -110,6 +117,11 @@ form.addEventListener("submit", async (e) => {
       body: formData,
     });
 
+    if (res.status === 401) {
+      handleExpiredSession();
+      return;
+    }
+
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
@@ -135,6 +147,11 @@ async function loadApartments() {
     const res = await fetch(`${API_BASE}/apartments/mine`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (res.status === 401) {
+      handleExpiredSession();
+      return;
+    }
 
     const data = await res.json().catch(() => ({}));
 
@@ -232,6 +249,11 @@ container.addEventListener("click", async (event) => {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (res.status === 401) {
+        handleExpiredSession();
+        return;
+      }
 
       const data = await res.json().catch(() => ({}));
 
