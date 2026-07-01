@@ -68,11 +68,22 @@ const apartmentCreateRules = [
   body("title").trim().notEmpty().withMessage("Title is required").isLength({ max: 120 }).withMessage("Title must be 120 characters or less"),
   body("price").isFloat({ min: 0, max: 1000000 }).withMessage("Price must be a positive number"),
   body("location").trim().notEmpty().withMessage("Location is required").isLength({ max: 160 }).withMessage("Location must be 160 characters or less"),
+  body("landlordWhatsapp")
+    .trim()
+    .notEmpty()
+    .withMessage("WhatsApp number is required so students can reach you about this listing")
+    .matches(/^(\+234|0)[7-9][0-1]\d{8}$/)
+    .withMessage("Enter a valid Nigerian WhatsApp number (e.g. 080XXXXXXXX or +234XXXXXXXXXX)"),
   ...apartmentOptionalDetailRules,
 ];
 
 const apartmentUpdateRules = [
   ...apartmentOptionalIdentityRules,
+  body("landlordWhatsapp")
+    .optional({ values: "falsy" })
+    .trim()
+    .matches(/^(\+234|0)[7-9][0-1]\d{8}$/)
+    .withMessage("Enter a valid Nigerian WhatsApp number (e.g. 080XXXXXXXX or +234XXXXXXXXXX)"),
   ...apartmentOptionalDetailRules,
 ];
 

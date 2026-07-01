@@ -51,6 +51,7 @@ const buildApartmentData = (req) => {
     amenities,
     latitude,
     longitude,
+    landlordWhatsapp,
   } = req.body;
   const data = {};
   const hasCoordinates = latitude !== undefined && latitude !== "" && longitude !== undefined && longitude !== "";
@@ -60,6 +61,7 @@ const buildApartmentData = (req) => {
   if (location !== undefined) data.location = location;
   if (distanceFromCampus !== undefined) data.distanceFromCampus = Number(distanceFromCampus);
   if (amenities !== undefined) data.amenities = parseAmenities(amenities);
+  if (landlordWhatsapp !== undefined) data.landlordWhatsapp = landlordWhatsapp;
 
   // New images were uploaded in this request — values are full Cloudinary URLs
   if (req.processedImages && req.processedImages.length > 0) {
