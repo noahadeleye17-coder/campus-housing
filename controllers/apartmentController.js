@@ -1,7 +1,26 @@
 const mongoose = require("mongoose");
 const Apartment = require("../models/Apartment");
 const demoApartments = require("../data/demoApartments");
-const { cleanupProcessedMedia } = require("../upload/ResizeImage");
+const { cleanupProcessedMedia, deleteFromCloudinary } = require("../upload/ResizeImage");
+
+/**
+ * Extract the Cloudinary public_id from a secure_url.
+ * e.g. "https://res.cloudinary.com/demo/image/upload/v123/campus-housing/apartments/abc.jpg"
+ *   → "campus-housing/apartments/abc"
+ * Returns null for non-Cloudinary URLs (e.g. legacy /uploads/ paths or Unsplash demo images).
+ */
+const cloudinaryPublicIdFromUrl = (url) => {
+  if (!url || !url.includes("res.cloudinary.com")) return null;
+  try {
+    const parts = url.split("/upload/");
+    if (parts.length < 2) return null;
+    // Drop the version segment (v1234567890/) if present, then strip the extension
+    const withoutVersion = parts[1].replace(/^v\d+\//, "");
+    return withoutVersion.replace(/\.[^/.]+$/, "");
+  } catch {
+    return null;
+  }
+};
 
 const isDatabaseError = (error) => {
   return error.name === "MongooseError" || error.name === "MongoServerSelectionError";
@@ -42,16 +61,15 @@ const buildApartmentData = (req) => {
   if (distanceFromCampus !== undefined) data.distanceFromCampus = Number(distanceFromCampus);
   if (amenities !== undefined) data.amenities = parseAmenities(amenities);
 
-  // New images were uploaded in this request
+  // New images were uploaded in this request — values are full Cloudinary URLs
   if (req.processedImages && req.processedImages.length > 0) {
-    const imagePaths = req.processedImages.map((filename) => `/uploads/${filename}`);
-    data.images = imagePaths;
-    data.image = imagePaths[0]; // keep legacy single-image field in sync
+    data.images = req.processedImages;
+    data.image = req.processedImages[0]; // keep legacy single-image field in sync
   }
 
-  // New video was uploaded in this request
+  // New video was uploaded in this request — value is a full Cloudinary URL
   if (req.processedVideo) {
-    data.video = `/uploads/${req.processedVideo}`;
+    data.video = req.processedVideo;
   }
 
   if (hasCoordinates) {
@@ -250,6 +268,22 @@ const deleteApartment = async (req, res) => {
     if (!apartment) {
       return res.status(404).json({ message: "Apartment not found" });
     }
+
+    // Best-effort: delete associated media from Cloudinary.
+    // We don't block the response on this — if Cloudinary cleanup fails,
+    // the listing is still gone from the DB and the landlord gets success.
+    const imageUrls = apartment.images || (apartment.image ? [apartment.image] : []);
+    const cleanupTasks = imageUrls.map((url) => {
+      const publicId = cloudinaryPublicIdFromUrl(url);
+      return publicId ? deleteFromCloudinary(publicId, "image") : Promise.resolve();
+    });
+    if (apartment.video) {
+      const publicId = cloudinaryPublicIdFromUrl(apartment.video);
+      if (publicId) cleanupTasks.push(deleteFromCloudinary(publicId, "video"));
+    }
+    Promise.all(cleanupTasks).catch((err) =>
+      console.warn("Cloudinary cleanup after delete failed:", err.message)
+    );
 
     res.json({ message: "Apartment deleted" });
   } catch (error) {

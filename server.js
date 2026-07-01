@@ -19,7 +19,6 @@ app.use("/api", apiLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static(path.join(__dirname, "frontend")));
 // Serve the same frontend folder under /frontend so URLs like /frontend/landlord.html work
 app.use("/frontend", express.static(path.join(__dirname, "frontend")));

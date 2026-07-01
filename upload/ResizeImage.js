@@ -1,98 +1,133 @@
-const path = require("path");
-const fs = require("fs");
-const crypto = require("crypto");
 const sharp = require("sharp");
+const { v2: cloudinary } = require("cloudinary");
 
-const uploadDir = path.join(__dirname, "..", "uploads");
-const videoExtensionsByMime = {
-  "video/mp4": ".mp4",
-  "video/quicktime": ".mov",
-  "video/webm": ".webm",
+// Cloudinary is configured from env vars at startup.
+// Required: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Upload a Node.js Buffer to Cloudinary and return the secure URL.
+ * We use the upload_stream API because Cloudinary's Node SDK
+ * doesn't accept raw Buffers directly.
+ */
+const uploadBufferToCloudinary = (buffer, options = {}) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) return reject(error);
+      resolve(result);
+    });
+    stream.end(buffer);
+  });
 };
 
-const makeUniqueName = (ext) => `${Date.now()}-${crypto.randomBytes(8).toString("hex")}${ext}`;
-
-const deleteUploadedFile = (filename) => {
-  if (!filename) return;
-
-  const target = path.resolve(uploadDir, filename);
-  if (!target.startsWith(path.resolve(uploadDir) + path.sep)) return;
-
+/**
+ * Delete a file from Cloudinary by its public_id.
+ * resource_type must match how it was uploaded ("image" or "video").
+ */
+const deleteFromCloudinary = async (publicId, resourceType = "image") => {
+  if (!publicId) return;
   try {
-    fs.unlinkSync(target);
+    await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
   } catch (error) {
-    if (error.code !== "ENOENT") {
-      console.warn("Could not delete uploaded file:", error.message);
-    }
+    console.warn("Could not delete Cloudinary asset:", error.message);
   }
 };
 
-const cleanupProcessedMedia = (req) => {
-  (req.processedImages || []).forEach(deleteUploadedFile);
-  deleteUploadedFile(req.processedVideo);
-};
+// ── Image processing ─────────────────────────────────────────────────────────
 
 const processImage = async (file) => {
-  const uniqueName = makeUniqueName(".jpg");
-  const outputPath = path.join(uploadDir, uniqueName);
-
-  await sharp(file.buffer)
-    .rotate() // auto-orient based on EXIF data (fixes sideways phone photos)
+  // Resize/compress with Sharp — same settings as before — but output to a
+  // Buffer instead of a file on disk.
+  const buffer = await sharp(file.buffer)
+    .rotate()                        // auto-orient from EXIF (fixes sideways phone photos)
     .resize({
       width: 1600,
       height: 1600,
-      fit: "inside", // preserves aspect ratio, never crops
-      withoutEnlargement: true, // don't upscale small images
+      fit: "inside",                 // preserves aspect ratio, never crops
+      withoutEnlargement: true,      // don't upscale small images
     })
     .jpeg({ quality: 80 })
-    .toFile(outputPath);
+    .toBuffer();
 
-  return uniqueName;
+  const result = await uploadBufferToCloudinary(buffer, {
+    folder: "campus-housing/apartments",
+    resource_type: "image",
+  });
+
+  return { url: result.secure_url, publicId: result.public_id };
 };
 
-const processVideo = (file) => {
-  const ext = videoExtensionsByMime[file.mimetype];
-  if (!ext) {
-    throw new Error("Unsupported video type");
-  }
+// ── Video processing ─────────────────────────────────────────────────────────
 
-  const uniqueName = makeUniqueName(ext);
-  const outputPath = path.join(uploadDir, uniqueName);
-  fs.writeFileSync(outputPath, file.buffer);
-  return uniqueName;
+const processVideo = async (file) => {
+  // Videos are passed straight to Cloudinary without transcoding —
+  // Sharp can't handle video.
+  const result = await uploadBufferToCloudinary(file.buffer, {
+    folder: "campus-housing/apartments",
+    resource_type: "video",
+  });
+
+  return { url: result.secure_url, publicId: result.public_id };
 };
+
+// ── Cleanup helper ───────────────────────────────────────────────────────────
+
+/**
+ * Called on error to remove any assets that were already uploaded to
+ * Cloudinary during a failed request.
+ */
+const cleanupProcessedMedia = async (req) => {
+  const imageIds = req.processedImageIds || [];
+  const videoId = req.processedVideoId || null;
+
+  await Promise.all([
+    ...imageIds.map((id) => deleteFromCloudinary(id, "image")),
+    videoId ? deleteFromCloudinary(videoId, "video") : Promise.resolve(),
+  ]);
+};
+
+// ── Middleware ───────────────────────────────────────────────────────────────
 
 /**
  * Runs after upload.fields([{ name: "images" }, { name: "video" }]).
  *
- * req.files will look like: { images: [file, file, ...], video: [file] }
- *
- * Images are resized/compressed with Sharp (never cropped — only capped
- * to a max dimension). Video is passed straight to disk since Sharp can't
- * process it.
- *
- * Sets req.processedImages (array of filenames) and req.processedVideo
- * (filename or null) for the controller to use.
+ * Sets on req:
+ *   req.processedImages     — array of Cloudinary secure URLs  (strings)
+ *   req.processedImageIds   — array of Cloudinary public_ids   (for deletion)
+ *   req.processedVideo      — Cloudinary secure URL or null     (string)
+ *   req.processedVideoId    — Cloudinary public_id or null      (for deletion)
  */
 const resizeImage = async (req, res, next) => {
-  try {
-    fs.mkdirSync(uploadDir, { recursive: true });
+  req.processedImages = [];
+  req.processedImageIds = [];
+  req.processedVideo = null;
+  req.processedVideoId = null;
 
+  try {
     const imageFiles = req.files?.images || [];
     const videoFiles = req.files?.video || [];
 
-    req.processedImages = [];
-    req.processedVideo = null;
-
     for (const imageFile of imageFiles) {
-      req.processedImages.push(await processImage(imageFile));
+      const { url, publicId } = await processImage(imageFile);
+      req.processedImages.push(url);
+      req.processedImageIds.push(publicId);
     }
 
-    req.processedVideo = videoFiles.length ? processVideo(videoFiles[0]) : null;
+    if (videoFiles.length) {
+      const { url, publicId } = await processVideo(videoFiles[0]);
+      req.processedVideo = url;
+      req.processedVideoId = publicId;
+    }
 
     next();
   } catch (error) {
-    cleanupProcessedMedia(req);
+    await cleanupProcessedMedia(req);
     console.error("Media processing failed:", error);
     res.status(400).json({ message: "Could not process uploaded files" });
   }
@@ -100,3 +135,4 @@ const resizeImage = async (req, res, next) => {
 
 module.exports = resizeImage;
 module.exports.cleanupProcessedMedia = cleanupProcessedMedia;
+module.exports.deleteFromCloudinary = deleteFromCloudinary;
