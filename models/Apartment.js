@@ -31,6 +31,16 @@ const apartmentSchema = new mongoose.Schema({
     latitude: Number,
     longitude: Number,
   },
+
+  // Landlord's WhatsApp number for this listing (Nigerian format, e.g.
+  // 080XXXXXXXX or +234XXXXXXXXXX). This is how students actually reach
+  // the landlord — the email on the User account is a fallback only.
+  landlordWhatsapp: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+
   landlord: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

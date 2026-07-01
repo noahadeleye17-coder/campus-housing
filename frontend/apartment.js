@@ -124,6 +124,12 @@ const formatTravelTime = (distanceKm) => {
   };
 };
 
+const waLink = (number) => {
+  const digits = String(number || "").replace(/\D/g, "");
+  const intl = digits.startsWith("0") ? `234${digits.slice(1)}` : digits.replace(/^234?/, "234");
+  return `https://wa.me/${intl}`;
+};
+
 const showError = (message) => {
   container.innerHTML = `
     <div class="detail-empty">
@@ -311,7 +317,10 @@ const renderApartment = (apartment) => {
           <p>${landlord ? escapeHtml(landlord.name) : "Contact details will appear here when listed."}</p>
           ${landlord?.email ? `<p class="muted">${escapeHtml(landlord.email)}</p>` : ""}
         </div>
-        ${landlord?.email ? `<a class="btn detail-action" href="mailto:${escapeHtml(landlord.email)}">Contact landlord</a>` : ""}
+        <div class="landlord-panel-actions">
+          ${apartment.landlordWhatsapp ? `<a class="btn detail-action" href="${waLink(apartment.landlordWhatsapp)}?text=${encodeURIComponent(`Hi, I'm interested in ${apartment.title} on Off-Campus Hub.`)}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chat on WhatsApp</a>` : ""}
+          ${landlord?.email ? `<a class="btn detail-action outline" href="mailto:${escapeHtml(landlord.email)}">Email landlord</a>` : ""}
+        </div>
       </section>
     </div>
   `;

@@ -10,6 +10,7 @@ const fields = {
   title: document.getElementById("title"),
   price: document.getElementById("price"),
   location: document.getElementById("location"),
+  landlordWhatsapp: document.getElementById("landlordWhatsapp"),
   amenities: document.getElementById("amenities"),
   images: document.getElementById("images"),
   video: document.getElementById("video"),
@@ -73,6 +74,7 @@ const setFormMode = (id = null, apartment = null) => {
     fields.amenities.value = Array.isArray(apartment.amenities)
       ? apartment.amenities.join(", ")
       : apartment.amenities || "";
+    fields.landlordWhatsapp.value = apartment.landlordWhatsapp || "";
     fields.images.value = "";
     fields.video.value = "";
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -93,6 +95,7 @@ form.addEventListener("submit", async (e) => {
   formData.append("title", fields.title.value);
   formData.append("price", fields.price.value);
   formData.append("location", fields.location.value);
+  formData.append("landlordWhatsapp", fields.landlordWhatsapp.value);
   formData.append("amenities", fields.amenities.value);
 
   // Multiple images — note the field name "images" (plural) matches the
@@ -212,6 +215,7 @@ async function loadApartments() {
             <div class="apartment-meta">
               <span>${escapeHtml(a.location)}</span>
               <span>${escapeHtml(travelTime)}</span>
+              <span>WhatsApp: ${escapeHtml(a.landlordWhatsapp || "not set")}</span>
             </div>
           </div>
           ${amenitiesMarkup}
