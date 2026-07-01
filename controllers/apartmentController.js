@@ -74,18 +74,56 @@ const getOwnedListingFilter = (req, id) => {
 
 const getApartments = async (req, res) => {
   try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 9, 1), 50);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
+    const searchTerm = (req.query.search || "").trim();
+
     if (!isDatabaseConnected()) {
-      return res.json(demoApartments);
+      // Filter demo apartments by search term if provided
+      const filtered = searchTerm
+        ? demoApartments.filter(a =>
+            a.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            a.location?.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        : demoApartments;
+      const slice = filtered.slice(skip, skip + limit);
+      return res.json({
+        apartments: slice,
+        total: filtered.length,
+        page,
+        pages: Math.ceil(filtered.length / limit) || 1,
+      });
     }
 
-    const apartments = await Apartment.find().sort({ createdAt: -1 }).populate("landlord", "name email");
+    // Build filter — when searching, match title or location (case-insensitive).
+    // When no search term, return all listings.
+    const filter = searchTerm
+      ? {
+          $or: [
+            { title: { $regex: searchTerm, $options: "i" } },
+            { location: { $regex: searchTerm, $options: "i" } },
+          ],
+        }
+      : {};
 
-    // Real listings are shown first, demo listings fill out the rest of the
-    // page so it never looks empty while there's only a handful of real
-    // apartments. Once there are enough real listings, demo data can simply
-    // be removed from data/demoApartments.js (or filtered out here) without
-    // touching this logic.
-    res.json([...apartments, ...demoApartments]);
+    const [realApartments, totalReal] = await Promise.all([
+      Apartment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("landlord", "name email"),
+      Apartment.countDocuments(filter),
+    ]);
+
+    // Only pad with demo listings on page 1 when there is no active search
+    // and real listings are still few. When searching, we only show real results.
+    let apartments = realApartments;
+    if (!searchTerm && page === 1 && realApartments.length < limit) {
+      const slotsLeft = limit - realApartments.length;
+      apartments = [...realApartments, ...demoApartments.slice(0, slotsLeft)];
+    }
+
+    const total = searchTerm ? totalReal : Math.max(totalReal, demoApartments.length);
+    const pages = Math.ceil(total / limit) || 1;
+
+    res.json({ apartments, total, page, pages });
   } catch (error) {
     if (isDatabaseError(error)) {
       return res.status(503).json({ message: "Database is not connected" });

@@ -47,7 +47,7 @@ const savedCountEl = document.getElementById("savedCount");
 const savedFilterBtn = document.getElementById("savedFilterBtn");
 
 let allApartments = [];
-let showOnlySaved = false; // ✅ FIX 1: removed duplicate declaration
+let showOnlySaved = false;
 
 let openMenu;
 let closeMenu;
@@ -224,27 +224,102 @@ function updateCta() {
 updateCta();
 
 // ============================
+// PAGINATION UI
+// ============================
+const paginationBar = document.getElementById("paginationBar");
+const loadMoreBtn = document.getElementById("loadMoreBtn");
+const resultsCountEl = document.getElementById("resultsCount");
+
+let currentPage = 1;
+let totalPages = 1;
+let totalListings = 0;
+let isFetchingMore = false;
+let activeSearch = ""; // tracks what term is currently loaded from the server
+
+function updatePaginationUi() {
+  if (!paginationBar) return;
+
+  const hasMore = currentPage < totalPages;
+
+  if (totalListings === 0) {
+    paginationBar.style.display = "none";
+    return;
+  }
+
+  paginationBar.style.display = "block";
+
+  if (resultsCountEl) {
+    const realShown = allApartments.filter(a => !String(a._id).startsWith("demo-")).length;
+    if (activeSearch) {
+      resultsCountEl.textContent = `${totalListings} result${totalListings !== 1 ? "s" : ""} for "${activeSearch}"`;
+    } else if (totalListings > 0) {
+      resultsCountEl.textContent = `Showing ${realShown} of ${totalListings} listing${totalListings !== 1 ? "s" : ""}`;
+    } else {
+      resultsCountEl.textContent = "";
+    }
+  }
+
+  if (loadMoreBtn) {
+    loadMoreBtn.style.display = hasMore ? "inline-flex" : "none";
+    loadMoreBtn.disabled = isFetchingMore;
+    loadMoreBtn.textContent = isFetchingMore ? "Loading…" : "Load more listings";
+  }
+}
+
+// ============================
 // FETCH APARTMENTS
 // ============================
-async function fetchApartments() {
+async function fetchApartments(page = 1, search = "") {
   if (!apartmentContainer) return;
 
-  showSkeletons(apartmentContainer);
+  const isFirstPage = page === 1;
+
+  if (isFirstPage) {
+    showSkeletons(apartmentContainer);
+    allApartments = [];
+  } else {
+    isFetchingMore = true;
+    if (loadMoreBtn) {
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.textContent = "Loading…";
+    }
+  }
 
   try {
-    const res = await fetch(`${API_BASE}/apartments`);
+    const params = new URLSearchParams({ page, limit: 9 });
+    if (search) params.set("search", search);
 
+    const res = await fetch(`${API_BASE}/apartments?${params}`);
     if (!res.ok) throw new Error("Fetch failed");
 
-    allApartments = await res.json();
-    renderApartments(allApartments);
+    const data = await res.json();
+    const incoming = Array.isArray(data) ? data : (data.apartments || []);
+
+    currentPage = data.page || page;
+    totalPages = data.pages || 1;
+    totalListings = data.total || incoming.length;
+    activeSearch = search;
+
+    allApartments = isFirstPage ? incoming : [...allApartments, ...incoming];
+
+    renderApartments(applySavedFilter(allApartments));
     updateSavedUi();
+    updatePaginationUi();
 
   } catch (err) {
     console.error(err);
-    allApartments = demoApartments;
-    renderApartments(allApartments);
-    updateSavedUi();
+    if (isFirstPage) {
+      allApartments = demoApartments;
+      currentPage = 1;
+      totalPages = 1;
+      totalListings = 0;
+      activeSearch = "";
+      renderApartments(allApartments);
+      updateSavedUi();
+    }
+  } finally {
+    isFetchingMore = false;
+    updatePaginationUi();
   }
 }
 
@@ -348,65 +423,53 @@ function renderApartments(apartments) {
   });
 }
 
-function getActiveFilters() {
-  const query = searchInput.value.trim().toLowerCase();
-  return { query };
-}
-
-function filterApartments(list) {
-  const { query } = getActiveFilters();
-
-  return list.filter((apartment) => {
-    const title = apartment.title?.toLowerCase() || "";
-    const location = apartment.location?.toLowerCase() || "";
-    if (query && !title.includes(query) && !location.includes(query)) {
-      return false;
-    }
-
-    return true;
-  });
+function applySavedFilter(list) {
+  if (!showOnlySaved) return list;
+  const savedIds = getSavedIds();
+  return list.filter(a => savedIds.has(String(a._id)));
 }
 
 function searchApartments() {
-  let filteredApartments = filterApartments(allApartments);
-
-  if (showOnlySaved) {
-    const savedIds = getSavedIds();
-    filteredApartments = filteredApartments.filter((apartment) => savedIds.has(String(apartment._id)));
-  }
-
-  renderApartments(filteredApartments);
+  renderApartments(applySavedFilter(allApartments));
   updateSavedUi();
+  updatePaginationUi();
 }
 
 function resetFilters() {
   if (searchInput) searchInput.value = "";
-  searchApartments();
+  fetchApartments(1, "");
 }
 
 if (searchForm && searchInput) {
   const clearBtn = document.getElementById("clearSearchBtn");
+  let searchDebounce = null;
+
+  const doSearch = () => {
+    const term = searchInput.value.trim();
+    fetchApartments(1, term);
+  };
 
   searchForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    searchApartments();
+    clearTimeout(searchDebounce);
+    doSearch();
   });
 
-  const onSearchInputChange = () => {
+  searchInput.addEventListener("input", () => {
     if (clearBtn) {
       clearBtn.style.display = searchInput.value.trim() ? "flex" : "none";
     }
-    searchApartments();
-  };
-
-  searchInput.addEventListener("input", onSearchInputChange);
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(doSearch, 400);
+  });
 
   if (clearBtn) {
     clearBtn.addEventListener("click", (e) => {
       e.preventDefault();
+      clearTimeout(searchDebounce);
       searchInput.value = "";
       clearBtn.style.display = "none";
-      searchApartments();
+      fetchApartments(1, "");
       searchInput.focus();
     });
   }
@@ -466,6 +529,14 @@ if (mobileSavedBtn) {
     searchApartments();
     if (typeof closeMenu === "function") {
       closeMenu();
+    }
+  });
+}
+
+if (loadMoreBtn) {
+  loadMoreBtn.addEventListener("click", () => {
+    if (!isFetchingMore && currentPage < totalPages) {
+      fetchApartments(currentPage + 1, activeSearch);
     }
   });
 }
