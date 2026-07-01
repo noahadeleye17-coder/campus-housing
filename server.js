@@ -14,7 +14,10 @@ const uploadErrorHandler = require("./middleware/uploadErrors");
 const app = express();
 mongoose.set("bufferCommands", false);
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGIN || "http://localhost:5000",
+  credentials: true,
+}));
 app.use("/api", apiLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
