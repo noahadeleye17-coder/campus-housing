@@ -384,9 +384,10 @@ function renderApartments(apartments) {
     div.setAttribute("role", "link");
     div.setAttribute("tabindex", "0");
     div.setAttribute("aria-label", `View details for ${apartment.title}`);
+    const placeholderImage = "https://placehold.co/800x600?text=No+Image+Available";
     const imageMarkup = apartment.image
-      ? `<img src="${escapeHtml(apartment.image)}" alt="${escapeHtml(apartment.title)}">`
-      : `<div class="card-placeholder" aria-label="Apartment image placeholder"></div>`;
+      ? `<img src="${escapeHtml(apartment.image)}" alt="${escapeHtml(apartment.title)}" onerror="this.onerror=null;this.src='${placeholderImage}';">`
+      : `<img src="${placeholderImage}" alt="${escapeHtml(apartment.title)}">`;
     const price = Number(apartment.price);
 
     div.innerHTML = `
