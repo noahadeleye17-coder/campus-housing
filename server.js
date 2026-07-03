@@ -54,6 +54,22 @@ app.get("/api/health", (req, res) => {
     database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
   });
 });
+app.get("/api/debug-cloudinary", (req, res) => {
+  const crypto = require("crypto");
+  const secret = process.env.CLOUDINARY_API_SECRET || "";
+  const timestamp = Math.floor(Date.now() / 1000);
+  const stringToSign = `folder=campus-housing/apartments&timestamp=${timestamp}`;
+
+  const sha1Sig = crypto.createHash("sha1").update(stringToSign + secret).digest("hex");
+  const sha256Sig = crypto.createHash("sha256").update(stringToSign + secret).digest("hex");
+
+  res.json({
+    cloudinarySdkVersion: require("cloudinary/package.json").version,
+    stringToSign,
+    sha1Signature: sha1Sig,
+    sha256Signature: sha256Sig,
+  });
+});
 
 // Error middleware (after all routes)
 app.use((err, req, res, next) => {
