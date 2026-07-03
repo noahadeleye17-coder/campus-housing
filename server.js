@@ -54,6 +54,15 @@ app.get("/api/health", (req, res) => {
     database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
   });
 });
+app.get("/api/debug-cloudinary", (req, res) => {
+  res.json({
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKeyLength: process.env.CLOUDINARY_API_KEY?.length,
+    apiSecretLength: process.env.CLOUDINARY_API_SECRET?.length,
+    apiSecretFirstChar: process.env.CLOUDINARY_API_SECRET?.[0],
+    apiSecretLastChar: process.env.CLOUDINARY_API_SECRET?.slice(-1),
+  });
+});
 
 // Error middleware (after all routes)
 app.use((err, req, res, next) => {
