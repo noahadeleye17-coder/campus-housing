@@ -58,7 +58,7 @@ app.get("/api/debug-cloudinary", async (req, res) => {
   const { v2: cloudinary } = require("cloudinary");
   try {
     const result = await cloudinary.uploader.upload(
-      "https://via.placeholder.com/150",
+      "https://res.cloudinary.com/demo/image/upload/sample.jpg",
       { folder: "campus-housing/debug-test" }
     );
     res.json({ success: true, url: result.secure_url });
