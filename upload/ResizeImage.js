@@ -3,10 +3,16 @@ const { v2: cloudinary } = require("cloudinary");
 
 // Cloudinary is configured from env vars at startup.
 // Required: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+//
+// signature_algorithm is set to "sha256" because some Cloudinary accounts
+// have a security setting that only accepts SHA-256 signatures. The SDK
+// defaults to SHA-1, which causes every upload to fail with
+// "Invalid Signature" even when the credentials themselves are correct.
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
+  signature_algorithm: "sha256",
 });
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
