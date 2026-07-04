@@ -93,6 +93,10 @@ const demoApartments = [
   },
 ];
 
+// FUTA's main campus, used as the map's fixed reference point.
+// Keep this in sync with FUTA_COORDINATES in utils/geocode.js on the backend.
+const FUTA_COORDINATES = { latitude: 7.304, longitude: 5.134 };
+
 const getDemoApartment = () => demoApartments.find((a) => a._id === apartmentId);
 
 const formatCurrency = (value) => {
@@ -228,22 +232,55 @@ const initCarousel = (total) => {
 // ── Render ────────────────────────────────────────────────────────────────────
 
 const renderMap = (apartment) => {
-  const latitude = Number(apartment.coordinates?.latitude);
-  const longitude = Number(apartment.coordinates?.longitude);
-
-  if (!window.L || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+  if (!window.L) {
     mapEl.style.display = "none";
     return;
   }
 
+  const latitude = Number(apartment.coordinates?.latitude);
+  const longitude = Number(apartment.coordinates?.longitude);
+  const hasApartmentCoords = !Number.isNaN(latitude) && !Number.isNaN(longitude);
+
   mapEl.classList.remove("skeleton", "map-loading");
   mapEl.style.display = "block";
 
-  const map = L.map("map", { scrollWheelZoom: false }).setView([latitude, longitude], 15);
+  // Always centre on FUTA — it's shown as a fixed reference point even
+  // when the listing itself has no coordinates yet.
+  const map = L.map("map", { scrollWheelZoom: false }).setView(
+    [FUTA_COORDINATES.latitude, FUTA_COORDINATES.longitude],
+    hasApartmentCoords ? 13 : 15
+  );
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap",
   }).addTo(map);
+
+  L.circleMarker([FUTA_COORDINATES.latitude, FUTA_COORDINATES.longitude], {
+    radius: 9,
+    color: "#0f766e",
+    fillColor: "#14b8a6",
+    fillOpacity: 1,
+    weight: 2,
+  }).addTo(map).bindPopup("FUTA (reference point)");
+
+  if (!hasApartmentCoords) return;
+
   L.marker([latitude, longitude]).addTo(map).bindPopup(escapeHtml(apartment.title || "Apartment location"));
+
+  L.polyline(
+    [
+      [FUTA_COORDINATES.latitude, FUTA_COORDINATES.longitude],
+      [latitude, longitude],
+    ],
+    { color: "#2563eb", weight: 3, dashArray: "6, 8" }
+  ).addTo(map);
+
+  map.fitBounds(
+    [
+      [FUTA_COORDINATES.latitude, FUTA_COORDINATES.longitude],
+      [latitude, longitude],
+    ],
+    { padding: [40, 40] }
+  );
 };
 
 const renderApartment = (apartment) => {

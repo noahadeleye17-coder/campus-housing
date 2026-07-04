@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Apartment = require("../models/Apartment");
 const demoApartments = require("../data/demoApartments");
 const { cleanupProcessedMedia, deleteFromCloudinary } = require("../upload/ResizeImage");
+const { geocodeAddress, distanceFromFuta } = require("../utils/geocode");
 
 /**
  * Extract the Cloudinary public_id from a secure_url.
@@ -42,7 +43,7 @@ const parseAmenities = (amenities) => {
   return String(amenities).split(",").map((item) => item.trim()).filter(Boolean);
 };
 
-const buildApartmentData = (req) => {
+const buildApartmentData = async (req) => {
   const {
     title,
     price,
@@ -54,12 +55,12 @@ const buildApartmentData = (req) => {
     landlordWhatsapp,
   } = req.body;
   const data = {};
-  const hasCoordinates = latitude !== undefined && latitude !== "" && longitude !== undefined && longitude !== "";
+  const hasExplicitCoordinates =
+    latitude !== undefined && latitude !== "" && longitude !== undefined && longitude !== "";
 
   if (title !== undefined) data.title = title;
   if (price !== undefined) data.price = Number(price);
   if (location !== undefined) data.location = location;
-  if (distanceFromCampus !== undefined) data.distanceFromCampus = Number(distanceFromCampus);
   if (amenities !== undefined) data.amenities = parseAmenities(amenities);
   if (landlordWhatsapp !== undefined) data.landlordWhatsapp = landlordWhatsapp;
 
@@ -74,11 +75,27 @@ const buildApartmentData = (req) => {
     data.video = req.processedVideo;
   }
 
-  if (hasCoordinates) {
-    data.coordinates = {
-      latitude: Number(latitude),
-      longitude: Number(longitude),
-    };
+  // Resolve coordinates: an explicit latitude/longitude in the request
+  // (e.g. a future admin override) always wins. Otherwise, if an address
+  // was submitted, geocode it automatically — this is what makes real
+  // landlord-created listings (which only ever send plain-text `location`)
+  // end up with map coordinates.
+  let coordinates = null;
+  if (hasExplicitCoordinates) {
+    coordinates = { latitude: Number(latitude), longitude: Number(longitude) };
+  } else if (location !== undefined && location !== "") {
+    coordinates = await geocodeAddress(location); // null if geocoding fails — non-fatal
+  }
+
+  if (coordinates) {
+    data.coordinates = coordinates;
+    data.distanceFromCampus = Number(
+      distanceFromFuta(coordinates.latitude, coordinates.longitude).toFixed(2)
+    );
+  } else if (distanceFromCampus !== undefined) {
+    // No coordinates could be resolved — fall back to a manually supplied
+    // distance, if the request included one.
+    data.distanceFromCampus = Number(distanceFromCampus);
   }
 
   return data;
@@ -195,7 +212,7 @@ const createApartment = async (req, res) => {
     }
 
     const apartment = await Apartment.create({
-      ...buildApartmentData(req),
+      ...(await buildApartmentData(req)),
       landlord: req.user.id,
     });
 
@@ -238,7 +255,7 @@ const updateApartment = async (req, res) => {
 
     const apartment = await Apartment.findOneAndUpdate(
       getOwnedListingFilter(req, req.params.id),
-      buildApartmentData(req),
+      await buildApartmentData(req),
       { new: true, runValidators: true }
     ).populate("landlord", "name email");
 
