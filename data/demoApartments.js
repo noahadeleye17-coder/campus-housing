@@ -11,8 +11,8 @@ const demoApartments = [
     ],
     image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
     coordinates: {
-      latitude: 6.5244,
-      longitude: 3.3792,
+      latitude: 7.2964,
+      longitude: 5.1416,
     },
     landlord: {
       name: "Demo Landlord",
@@ -31,8 +31,8 @@ const demoApartments = [
     ],
     image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
     coordinates: {
-      latitude: 6.5271,
-      longitude: 3.3847,
+      latitude: 7.3227,
+      longitude: 5.1448,
     },
     landlord: {
       name: "Demo Agent",
@@ -68,8 +68,8 @@ const demoApartments = [
     ],
     image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80",
     coordinates: {
-      latitude: 6.5312,
-      longitude: 3.3726,
+      latitude: 7.3319,
+      longitude: 5.1310,
     },
     landlord: {
       name: "Demo Housing Manager",
@@ -88,8 +88,8 @@ const demoApartments = [
     ],
     image: "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80",
     coordinates: {
-      latitude: 6.5198,
-      longitude: 3.3881,
+      latitude: 7.2919,
+      longitude: 5.1219,
     },
     landlord: {
       name: "Demo Caretaker",
@@ -108,8 +108,8 @@ const demoApartments = [
     ],
     image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
     coordinates: {
-      latitude: 6.5265,
-      longitude: 3.3764,
+      latitude: 7.3040,
+      longitude: 5.1286,
     },
     landlord: {
       name: "Demo Property Group",

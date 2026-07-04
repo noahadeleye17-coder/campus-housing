@@ -17,7 +17,7 @@ const demoApartments = [
       "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
       "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80",
     ],
-    coordinates: { latitude: 6.5244, longitude: 3.3792 },
+    coordinates: { latitude: 7.2964, longitude: 5.1416 },
     landlord: { name: "Demo Landlord", email: "landlord@example.com" },
   },
   {
@@ -31,7 +31,7 @@ const demoApartments = [
       "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
       "https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80",
     ],
-    coordinates: { latitude: 6.5271, longitude: 3.3847 },
+    coordinates: { latitude: 7.3227, longitude: 5.1448 },
     landlord: { name: "Demo Agent", email: "agent@example.com" },
   },
   {
@@ -60,7 +60,7 @@ const demoApartments = [
      "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80",
      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
     ],
-    coordinates: { latitude: 6.5312, longitude: 3.3726 },
+    coordinates: { latitude: 7.3319, longitude: 5.1310 },
     landlord: { name: "Demo Housing Manager", email: "manager@example.com" },
   },
   {
@@ -73,7 +73,7 @@ const demoApartments = [
     images: [
       "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80",
     ],
-    coordinates: { latitude: 6.5198, longitude: 3.3881 },
+    coordinates: { latitude: 7.2919, longitude: 5.1219 },
     landlord: { name: "Demo Caretaker", email: "caretaker@example.com" },
   },
   {
@@ -88,7 +88,7 @@ const demoApartments = [
       "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=800&q=80",
       "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800&q=80",
     ],
-    coordinates: { latitude: 6.5265, longitude: 3.3764 },
+    coordinates: { latitude: 7.3040, longitude: 5.1286 },
     landlord: { name: "Demo Property Group", email: "propertygroup@example.com" },
   },
 ];
