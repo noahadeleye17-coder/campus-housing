@@ -14,6 +14,15 @@ const escapeHtml = (value = "") => {
   });
 };
 
+// Cloudinary auto-generates a JPG frame from any uploaded video when you
+// request the same video URL with a .jpg extension instead of .mp4/.mov/etc.
+// Used so listings with a video but no photos still get a real preview image
+// on the card, instead of falling straight to the "no photos" placeholder.
+const cloudinaryVideoThumbnail = (videoUrl) => {
+  if (!videoUrl || !videoUrl.includes("res.cloudinary.com")) return null;
+  return videoUrl.replace(/\.[^/.]+$/, ".jpg");
+};
+
 function showSkeletons(container, count = 6) {
   container.innerHTML = "";
 
@@ -384,10 +393,22 @@ function renderApartments(apartments) {
     div.setAttribute("role", "link");
     div.setAttribute("tabindex", "0");
     div.setAttribute("aria-label", `View details for ${apartment.title}`);
-    const placeholderImage = "https://placehold.co/800x600?text=No+Image+Available";
-    const imageMarkup = apartment.image
-      ? `<img src="${escapeHtml(apartment.image)}" alt="${escapeHtml(apartment.title)}" onerror="this.onerror=null;this.src='${placeholderImage}';">`
-      : `<img src="${placeholderImage}" alt="${escapeHtml(apartment.title)}">`;
+    const videoThumb = cloudinaryVideoThumbnail(apartment.video);
+    let imageMarkup;
+
+    if (apartment.image) {
+      imageMarkup = `<img src="${escapeHtml(apartment.image)}" alt="${escapeHtml(apartment.title)}" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'card-placeholder', innerHTML: '<span class=&quot;card-placeholder-label&quot;>Photos coming soon</span>' }));">`;
+    } else if (videoThumb) {
+      // No photos uploaded, but there's a video — show its first frame as
+      // the card image, with a small badge so it's clear it's a video.
+      imageMarkup = `
+        <img src="${escapeHtml(videoThumb)}" alt="${escapeHtml(apartment.title)}" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'card-placeholder', innerHTML: '<span class=&quot;card-placeholder-label&quot;>Photos coming soon</span>' }));">
+        <span class="video-badge" aria-label="Video available">&#9654; Video</span>
+      `;
+    } else {
+      imageMarkup = `<div class="card-placeholder"><span class="card-placeholder-label">Photos coming soon</span></div>`;
+    }
+
     const price = Number(apartment.price);
 
     div.innerHTML = `
