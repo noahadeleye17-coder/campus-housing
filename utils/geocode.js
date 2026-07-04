@@ -6,6 +6,45 @@
 // frontend/apartment.js.
 const FUTA_COORDINATES = { latitude: 7.304, longitude: 5.134 };
 
+// The three off-campus student areas are named after FUTA's three gates.
+// These informal names ("Southgate", "Northgate garage", "West gate area")
+// are landmarks students know by heart, but they're too informal/inconsistent
+// for OpenStreetMap/Nominatim to reliably geocode — so we hardcode them and
+// check for a match before ever calling the geocoding service.
+//
+// - Southgate coordinates come from a known real-world location ("Embassy
+//   Lodge, FUTA South Gate") — ~2.5km / ~25-30min walk from campus, which
+//   matches it being the furthest of the three gates on foot.
+// - Northgate and Westgate are estimated as directly adjacent to campus on
+//   their respective sides (~1-1.5km) — adjust these if you have more exact
+//   coordinates for either gate.
+const KNOWN_GATE_LOCATIONS = [
+  {
+    // Matches "south gate", "southgate", "south-gate", etc.
+    pattern: /south[\s-]?gate/i,
+    coordinates: { latitude: 7.2935, longitude: 5.1541 },
+  },
+  {
+    pattern: /north[\s-]?gate/i,
+    coordinates: { latitude: 7.316, longitude: 5.134 },
+  },
+  {
+    pattern: /west[\s-]?gate/i,
+    coordinates: { latitude: 7.304, longitude: 5.119 },
+  },
+];
+
+/**
+ * Check a free-text address against FUTA's known gate landmarks
+ * (Southgate/Northgate/Westgate). Returns hardcoded coordinates on a match,
+ * or null if the address doesn't mention any of them.
+ */
+const matchKnownGateLocation = (address) => {
+  const query = String(address || "");
+  const match = KNOWN_GATE_LOCATIONS.find((gate) => gate.pattern.test(query));
+  return match ? match.coordinates : null;
+};
+
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 
 // Any geocoded result further than this from FUTA is treated as a bad match
@@ -63,6 +102,12 @@ const geocodeAddress = async (address) => {
   const query = String(address || "").trim();
   if (!query) return null;
 
+  // Check FUTA's known gate landmarks first — these are more reliable than
+  // Nominatim for the informal names students actually use, and skip the
+  // network call/rate-limit entirely when they match.
+  const knownMatch = matchKnownGateLocation(query);
+  if (knownMatch) return knownMatch;
+
   try {
     await throttle();
 
@@ -108,4 +153,10 @@ const geocodeAddress = async (address) => {
   }
 };
 
-module.exports = { geocodeAddress, haversineDistanceKm, distanceFromFuta, FUTA_COORDINATES };
+module.exports = {
+  geocodeAddress,
+  haversineDistanceKm,
+  distanceFromFuta,
+  matchKnownGateLocation,
+  FUTA_COORDINATES,
+};
