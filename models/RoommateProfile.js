@@ -25,6 +25,21 @@ const roommateProfileSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    whatsappNumber: {
+      type: String,
+      trim: true,
+      default: "",
+      validate: {
+        validator: function (value) {
+          if (!value) return true; // optional field, blank is allowed
+          // Accepts Nigerian mobile formats: 08012345678, 07012345678, +2348012345678, 2348012345678
+          // Spaces/dashes are ignored during validation
+          const cleaned = value.replace(/[\s-]/g, "");
+          return /^(0[789][01]\d{8}|(\+?234)[789][01]\d{8})$/.test(cleaned);
+        },
+        message: (props) => `${props.value} is not a valid Nigerian WhatsApp number`,
+      },
+    },
     budgetMin: {
       type: Number,
       min: 0,
