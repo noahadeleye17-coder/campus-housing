@@ -8,9 +8,9 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const apartmentRoutes = require("./routes/apartmentroutes");
 const roommateRoutes = require("./routes/roommateRoutes");
-const sitemapRoutes = require("./routes/sitemap");
 const { apiLimiter } = require("./middleware/rateLimit");
 const uploadErrorHandler = require("./middleware/uploadErrors");
+const Apartment = require("./models/Apartment");
 
 const app = express();
 mongoose.set("bufferCommands", false);
@@ -30,9 +30,6 @@ app.use("/frontend", express.static(path.join(__dirname, "frontend")));
 app.use("/api/auth", authRoutes);
 app.use("/api/apartments", apartmentRoutes);
 app.use("/api/roommates", roommateRoutes);
-app.use("/frontend", express.static(path.join(__dirname, "frontend")));
-app.use(sitemapRoutes);
-
 
 app.get("/api/config", (req, res) => {
   res.json({
@@ -50,6 +47,52 @@ app.get("/login", (req, res) => {
 
 app.get("/register", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend", "register.html"));
+});
+
+// ── Dynamic sitemap ──────────────────────────────────────────────────────────
+// Regenerated on every request from the live database, so every apartment
+// listing is automatically included — no manual re-uploading needed.
+
+app.get("/sitemap.xml", async (req, res) => {
+  const SITE_URL = process.env.SITE_URL || "https://offcampushub.onrender.com";
+
+  // Public, indexable static pages only. Auth-gated pages (login, register,
+  // dashboard, landlord, password reset) are deliberately excluded — they
+  // shouldn't show up in search results.
+  const staticPages = [
+    { loc: "/", priority: "1.0", changefreq: "daily" },
+    { loc: "/about.html", priority: "0.5", changefreq: "monthly" },
+    { loc: "/roommate-browse.html", priority: "0.6", changefreq: "daily" },
+    { loc: "/terms.html", priority: "0.3", changefreq: "yearly" },
+  ];
+
+  let apartmentUrls = [];
+  try {
+    const apartments = await Apartment.find({}, "_id updatedAt").lean();
+    apartmentUrls = apartments.map((apt) => ({
+      loc: `/apartment.html?id=${apt._id}`,
+      lastmod: apt.updatedAt ? apt.updatedAt.toISOString() : undefined,
+      priority: "0.8",
+      changefreq: "weekly",
+    }));
+  } catch (err) {
+    console.error("Sitemap: failed to load apartments:", err.message);
+    // Fall back to just the static pages rather than failing the whole sitemap
+  }
+
+  const allUrls = [...staticPages, ...apartmentUrls];
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${allUrls.map((u) => `  <url>
+    <loc>${SITE_URL}${u.loc}</loc>${u.lastmod ? `\n    <lastmod>${u.lastmod}</lastmod>` : ""}
+    <changefreq>${u.changefreq}</changefreq>
+    <priority>${u.priority}</priority>
+  </url>`).join("\n")}
+</urlset>`;
+
+  res.header("Content-Type", "application/xml");
+  res.send(xml);
 });
 
 app.get("/api/health", (req, res) => {
