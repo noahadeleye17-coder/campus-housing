@@ -304,6 +304,47 @@ const setSeoMeta = (apartment) => {
     "content",
     `${apartment.title} in ${apartment.location}, near FUTA Akure. ${priceText}. View photos, amenities, and contact the landlord directly on Off-Campus Hub.`
   );
+
+  // Structured data (JSON-LD) so Google can show price, location, and image
+  // directly in search results instead of just a plain link.
+  const images = apartment.images?.length
+    ? apartment.images
+    : apartment.image
+      ? [apartment.image]
+      : [];
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: apartment.title,
+    description: `${apartment.title} located in ${apartment.location}, near FUTA Akure.`,
+    image: images,
+    offers: {
+      "@type": "Offer",
+      price: apartment.price || undefined,
+      priceCurrency: "NGN",
+      availability: "https://schema.org/InStock",
+      url: window.location.href,
+    },
+    ...(apartment.coordinates?.latitude && apartment.coordinates?.longitude
+      ? {
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: apartment.coordinates.latitude,
+            longitude: apartment.coordinates.longitude,
+          },
+        }
+      : {}),
+  };
+
+  let ldScript = document.getElementById("apartment-structured-data");
+  if (!ldScript) {
+    ldScript = document.createElement("script");
+    ldScript.type = "application/ld+json";
+    ldScript.id = "apartment-structured-data";
+    document.head.appendChild(ldScript);
+  }
+  ldScript.textContent = JSON.stringify(structuredData);
 };
 
 const renderApartment = (apartment) => {
