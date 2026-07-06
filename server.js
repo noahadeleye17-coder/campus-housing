@@ -1,6 +1,7 @@
 require("dotenv").config({ path: "config.env" });
 
 const path = require("path");
+const fs = require("fs");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -22,6 +23,115 @@ app.use(cors({
 app.use("/api", apiLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ── Server-rendered apartment detail page ───────────────────────────────────
+// Google's crawler was seeing "Soft 404" on apartment.html?id=... pages:
+// the page returns 200 OK, but since the real content (title, price,
+// description) is only added by client-side JS after an API call, a slow or
+// failed fetch during the crawl left Google looking at an empty error shell.
+//
+// Fix: inject the real title, meta description, and JSON-LD structured data
+// directly into the HTML on the server, straight from the database, before
+// any JavaScript runs. The existing apartment.js still runs client-side as
+// before for the interactive parts (carousel, map, connect buttons) — this
+// route only rewrites the <head> so search engines (and anyone with slow JS)
+// always see real content immediately.
+//
+// Registered before express.static so it takes priority over the raw static
+// file for this exact path.
+
+const apartmentTemplatePath = path.join(__dirname, "frontend", "apartment.html");
+let apartmentTemplateCache = null;
+const getApartmentTemplate = () => {
+  if (!apartmentTemplateCache) {
+    apartmentTemplateCache = fs.readFileSync(apartmentTemplatePath, "utf8");
+  }
+  return apartmentTemplateCache;
+};
+
+const escapeHtml = (str = "") =>
+  String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+app.get("/apartment.html", async (req, res, next) => {
+  const { id } = req.query;
+
+  // No id in the URL — just serve the plain template as-is.
+  if (!id) return next();
+
+  try {
+    const apartment = await Apartment.findById(id).lean();
+
+    if (!apartment) {
+      // Real 404 status, not a 200-with-error-message. This is the correct
+      // signal to Google for a missing/deleted listing instead of another
+      // soft 404.
+      return res.status(404).send(getApartmentTemplate());
+    }
+
+    const priceText = apartment.price
+      ? `₦${Number(apartment.price).toLocaleString()}`
+      : "Price on request";
+
+    const pageTitle = `${apartment.title} — ${apartment.location} | Off-Campus Hub`;
+    const pageDescription = `${apartment.title} in ${apartment.location}, near FUTA Akure. ${priceText}. View photos, amenities, and contact the landlord directly on Off-Campus Hub.`;
+
+    const images = apartment.images?.length
+      ? apartment.images
+      : apartment.image
+        ? [apartment.image]
+        : [];
+
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: apartment.title,
+      description: `${apartment.title} located in ${apartment.location}, near FUTA Akure.`,
+      image: images,
+      offers: {
+        "@type": "Offer",
+        price: apartment.price || undefined,
+        priceCurrency: "NGN",
+        availability: "https://schema.org/InStock",
+        url: `${process.env.SITE_URL || "https://offcampushub.onrender.com"}/apartment.html?id=${apartment._id}`,
+      },
+      ...(apartment.coordinates?.latitude && apartment.coordinates?.longitude
+        ? {
+            geo: {
+              "@type": "GeoCoordinates",
+              latitude: apartment.coordinates.latitude,
+              longitude: apartment.coordinates.longitude,
+            },
+          }
+        : {}),
+    };
+
+    let html = getApartmentTemplate();
+
+    html = html.replace(
+      /<title>.*?<\/title>/,
+      `<title>${escapeHtml(pageTitle)}</title>`
+    );
+    html = html.replace(
+      /<meta name="description" content=".*?"\s*\/?>/,
+      `<meta name="description" content="${escapeHtml(pageDescription)}" />`
+    );
+    html = html.replace(
+      "</head>",
+      `<script type="application/ld+json">${JSON.stringify(structuredData)}</script>\n</head>`
+    );
+
+    res.send(html);
+  } catch (err) {
+    console.error("SSR apartment.html failed:", err.message);
+    // Fall through to the plain static file rather than erroring the request
+    next();
+  }
+});
 
 app.use(express.static(path.join(__dirname, "frontend")));
 // Serve the same frontend folder under /frontend so URLs like /frontend/landlord.html work
