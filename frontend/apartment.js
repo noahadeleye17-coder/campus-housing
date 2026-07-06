@@ -287,7 +287,28 @@ const renderMap = (apartment) => {
   );
 };
 
+const setSeoMeta = (apartment) => {
+  const priceText = apartment.price
+    ? `₦${Number(apartment.price).toLocaleString()}`
+    : "Price on request";
+
+  document.title = `${apartment.title} — ${apartment.location} | Off-Campus Hub`;
+
+  let metaDesc = document.querySelector('meta[name="description"]');
+  if (!metaDesc) {
+    metaDesc = document.createElement("meta");
+    metaDesc.setAttribute("name", "description");
+    document.head.appendChild(metaDesc);
+  }
+  metaDesc.setAttribute(
+    "content",
+    `${apartment.title} in ${apartment.location}, near FUTA Akure. ${priceText}. View photos, amenities, and contact the landlord directly on Off-Campus Hub.`
+  );
+};
+
 const renderApartment = (apartment) => {
+  setSeoMeta(apartment);
+
   const amenities = apartment.amenities?.length ? apartment.amenities : ["Amenities not listed"];
   const landlord = apartment.landlord;
 
