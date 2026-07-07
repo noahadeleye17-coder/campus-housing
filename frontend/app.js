@@ -436,7 +436,9 @@ function renderApartments(apartments) {
       // the card image, with a small badge so it's clear it's a video.
       imageMarkup = `
         <img src="${escapeHtml(videoThumb)}" alt="${escapeHtml(apartment.title)}" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'card-placeholder', innerHTML: '<span class=&quot;card-placeholder-label&quot;>Photos coming soon</span>' }));">
-        <span class="video-badge" aria-label="Video available">&#9654; Video</span>
+        <span class="video-badge" aria-label="Video available" title="Video available">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+        </span>
       `;
     } else {
       imageMarkup = `<div class="card-placeholder"><span class="card-placeholder-label">Photos coming soon</span></div>`;
@@ -448,7 +450,9 @@ function renderApartments(apartments) {
       <div class="card-image">
         ${imageMarkup}
         <span class="distance-badge">${escapeHtml(formatTravelTime(apartment.distanceFromCampus))}</span>
-        <span class="verified-badge">Verified</span>
+        <span class="verified-badge" aria-label="Verified listing" title="Verified listing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
       </div>
 
       <div class="card-body">
