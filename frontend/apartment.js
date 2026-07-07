@@ -347,8 +347,31 @@ const setSeoMeta = (apartment) => {
   ldScript.textContent = JSON.stringify(structuredData);
 };
 
+const trackRecentlyViewed = (apartment) => {
+  if (!apartment?._id || String(apartment._id).startsWith("demo-")) return;
+
+  try {
+    const list = JSON.parse(localStorage.getItem("recentlyViewed") || "[]");
+    const filtered = Array.isArray(list) ? list.filter((item) => item.id !== apartment._id) : [];
+
+    filtered.unshift({
+      id: apartment._id,
+      title: apartment.title,
+      location: apartment.location,
+      price: apartment.price,
+      image: apartment.images?.[0] || apartment.image || "",
+      viewedAt: new Date().toISOString(),
+    });
+
+    localStorage.setItem("recentlyViewed", JSON.stringify(filtered.slice(0, 12)));
+  } catch {
+    /* Non-critical — just skip tracking if localStorage is unavailable/full. */
+  }
+};
+
 const renderApartment = (apartment) => {
   setSeoMeta(apartment);
+  trackRecentlyViewed(apartment);
 
   const amenities = apartment.amenities?.length ? apartment.amenities : ["Amenities not listed"];
   const landlord = apartment.landlord;

@@ -20,7 +20,7 @@ const handleExpiredSession = () => {
 };
 
 if (!token) {
-  window.location.href = "login.html?next=student-dashboard.html";
+  window.location.href = "login.html?next=studentdashboard.html";
 }
 
 if (user && user.role === "landlord") {
@@ -28,82 +28,95 @@ if (user && user.role === "landlord") {
   window.location.href = "landlord.html";
 }
 
-// ── Nav / menu setup (same pattern used on other pages) ─────────────────────
+// ── Sidebar: user card, logout, mobile toggle ────────────────────────────────
 
-const setupMenu = () => {
-  const hamburger = document.getElementById("hamburger");
-  const mobileMenu = document.getElementById("mobileMenu");
-  const menuOverlay = document.getElementById("menuOverlay");
-  const authActions = document.getElementById("authActions");
-  const profileNameEl = document.getElementById("profileName");
-  const profileStatusEl = document.getElementById("profileStatus");
-  const avatarEl = document.getElementById("avatar");
+const sideAvatar = document.getElementById("sideAvatar");
+const sideName = document.getElementById("sideName");
+const sideRole = document.getElementById("sideRole");
+const sideLogoutBtn = document.getElementById("sideLogoutBtn");
+const dashSidebar = document.getElementById("dashSidebar");
+const dashOverlay = document.getElementById("dashOverlay");
+const dashMobileToggle = document.getElementById("dashMobileToggle");
 
-  if (user) {
-    if (profileNameEl) profileNameEl.textContent = user.name || user.email || "Member";
-    if (profileStatusEl) profileStatusEl.textContent = `Logged in as ${user.role || "member"}`;
-    if (avatarEl) avatarEl.textContent = (user.name || user.email || "U").charAt(0).toUpperCase();
-  }
-
-  if (authActions) {
-    if (user) {
-      authActions.innerHTML = `<button class="pill-btn primary" id="logoutBtn">Logout</button>`;
-      document.getElementById("logoutBtn").addEventListener("click", () => {
-        window.AuthSession?.clear();
-        window.location.href = "login.html";
-      });
+const renderSideUser = (profile) => {
+  const name = profile?.name || user?.name || user?.email || "Student";
+  if (sideName) sideName.textContent = name;
+  if (sideRole) sideRole.textContent = profile?.role || user?.role || "student";
+  if (sideAvatar) {
+    if (profile?.profileImage) {
+      sideAvatar.innerHTML = `<img src="${escapeHtml(profile.profileImage)}" alt="Profile photo">`;
     } else {
-      authActions.innerHTML = `
-        <a href="login.html" class="pill-btn outline">Login</a>
-        <a href="register.html" class="pill-btn primary">Sign Up</a>
-      `;
+      sideAvatar.textContent = name.charAt(0).toUpperCase();
     }
   }
+};
+renderSideUser(null);
 
-  if (!hamburger || !mobileMenu || !menuOverlay) return;
-
-  const closeMenu = () => {
-    mobileMenu.classList.remove("open");
-    menuOverlay.classList.remove("show");
-    hamburger.setAttribute("aria-expanded", "false");
-    mobileMenu.setAttribute("aria-hidden", "true");
-  };
-
-  hamburger.addEventListener("click", () => {
-    const isOpen = mobileMenu.classList.toggle("open");
-    menuOverlay.classList.toggle("show", isOpen);
-    hamburger.setAttribute("aria-expanded", String(isOpen));
-    mobileMenu.setAttribute("aria-hidden", String(!isOpen));
+if (sideLogoutBtn) {
+  sideLogoutBtn.addEventListener("click", () => {
+    window.AuthSession?.clear();
+    window.location.href = "login.html";
   });
+}
 
-  menuOverlay.addEventListener("click", closeMenu);
+const closeMobileSidebar = () => {
+  dashSidebar?.classList.remove("open");
+  dashOverlay?.classList.remove("show");
 };
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
+if (dashMobileToggle) {
+  dashMobileToggle.addEventListener("click", () => {
+    dashSidebar?.classList.add("open");
+    dashOverlay?.classList.add("show");
+  });
+}
+if (dashOverlay) {
+  dashOverlay.addEventListener("click", closeMobileSidebar);
+}
 
-const tabs = document.querySelectorAll(".dash-tab");
+// ── Sidebar navigation (Home / Saved / Requests / Recent / Settings) ────────
+
+const navItems = document.querySelectorAll(".dash-nav-item");
 const panels = {
-  profile: document.getElementById("panel-profile"),
+  home: document.getElementById("panel-home"),
   saved: document.getElementById("panel-saved"),
   requests: document.getElementById("panel-requests"),
+  recent: document.getElementById("panel-recent"),
+  settings: document.getElementById("panel-settings"),
 };
 
-tabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    tabs.forEach((t) => {
-      t.classList.remove("active");
-      t.setAttribute("aria-selected", "false");
-    });
-    tab.classList.add("active");
-    tab.setAttribute("aria-selected", "true");
+const goToPanel = (name) => {
+  navItems.forEach((item) => item.classList.toggle("active", item.dataset.panel === name));
+  Object.entries(panels).forEach(([key, panel]) => {
+    if (panel) panel.classList.toggle("active", key === name);
+  });
+  closeMobileSidebar();
+  window.scrollTo({ top: 0, behavior: "instant" });
+};
 
-    Object.values(panels).forEach((panel) => panel && panel.classList.remove("active"));
-    const target = panels[tab.dataset.panel];
-    if (target) target.classList.add("active");
+navItems.forEach((item) => {
+  item.addEventListener("click", () => goToPanel(item.dataset.panel));
+});
+
+document.querySelectorAll("[data-goto]").forEach((el) => {
+  el.addEventListener("click", (event) => {
+    event.preventDefault();
+    goToPanel(el.dataset.goto);
   });
 });
 
-// ── Profile panel ─────────────────────────────────────────────────────────────
+// ── Home greeting ─────────────────────────────────────────────────────────────
+
+const homeGreeting = document.getElementById("homeGreeting");
+const renderGreeting = (name) => {
+  if (!homeGreeting) return;
+  const hour = new Date().getHours();
+  const timeOfDay = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+  const firstName = (name || "there").split(" ")[0];
+  homeGreeting.textContent = `Good ${timeOfDay}, ${firstName}!`;
+};
+
+// ── Profile / Settings panel ─────────────────────────────────────────────────
 
 const profileAvatarLg = document.getElementById("profileAvatarLg");
 const profileNameInput = document.getElementById("profileNameInput");
@@ -148,6 +161,8 @@ const loadProfile = async () => {
     if (profileNameInput) profileNameInput.value = profile.name || "";
     if (profileEmailInput) profileEmailInput.value = profile.email || "";
     renderAvatar(profile);
+    renderSideUser(profile);
+    renderGreeting(profile.name);
 
     return profile;
   } catch (err) {
@@ -203,6 +218,8 @@ if (saveProfileBtn) {
       currentProfile = { ...currentProfile, ...data };
       pendingImageFile = null;
       renderAvatar(currentProfile);
+      renderSideUser(currentProfile);
+      renderGreeting(currentProfile.name);
 
       // Keep the locally stored session in sync so the nav avatar/name update too.
       const storedUser = window.AuthSession?.getUser();
@@ -238,37 +255,29 @@ if (requestPasswordResetBtn) {
   });
 }
 
-// ── Saved apartments panel ────────────────────────────────────────────────────
+// ── Saved apartments (grid renderer shared by Home preview + Saved page) ────
 
 const savedGrid = document.getElementById("savedGrid");
+const homeSavedPreview = document.getElementById("homeSavedPreview");
+const statSaved = document.getElementById("statSaved");
+const statBrowsed = document.getElementById("statBrowsed");
+const statRequests = document.getElementById("statRequests");
 
-const renderSavedEmpty = (message) => {
-  if (!savedGrid) return;
-  savedGrid.innerHTML = `
-    <div class="dash-state">
-      <div class="state-icon">🏠</div>
-      <p>${escapeHtml(message)}</p>
-    </div>`;
-};
+const savedEmptyMarkup = (message, showBrowseLink) => `
+  <div class="dash-state">
+    <span class="state-icon">🏠</span>
+    ${escapeHtml(message)}
+    ${showBrowseLink ? `<br><a href="index.html">Browse properties &rarr;</a>` : ""}
+  </div>`;
 
-const renderSavedApartments = (apartments) => {
-  if (!savedGrid) return;
-  if (!apartments.length) {
-    renderSavedEmpty("You haven't saved any apartments yet. Browse listings and tap the heart icon to save one.");
-    return;
-  }
+const savedCardMarkup = (apartment) => {
+  const price = Number(apartment.price);
+  const imageMarkup = apartment.image
+    ? `<img src="${escapeHtml(apartment.image)}" alt="${escapeHtml(apartment.title)}">`
+    : `<span class="saved-card-placeholder">Photos coming soon</span>`;
 
-  savedGrid.innerHTML = "";
-  apartments.forEach((apartment) => {
-    const card = document.createElement("div");
-    card.className = "saved-card";
-
-    const price = Number(apartment.price);
-    const imageMarkup = apartment.image
-      ? `<img src="${escapeHtml(apartment.image)}" alt="${escapeHtml(apartment.title)}">`
-      : `<span class="saved-card-placeholder">Photos coming soon</span>`;
-
-    card.innerHTML = `
+  return `
+    <div class="saved-card">
       <div class="saved-card-img">${imageMarkup}</div>
       <div class="saved-card-body">
         <p class="saved-card-title">${escapeHtml(apartment.title)}</p>
@@ -279,11 +288,11 @@ const renderSavedApartments = (apartments) => {
           <button type="button" class="saved-remove-btn" data-id="${escapeHtml(apartment._id)}">Remove</button>
         </div>
       </div>
-    `;
-    savedGrid.appendChild(card);
-  });
+    </div>`;
+};
 
-  savedGrid.querySelectorAll(".saved-remove-btn").forEach((btn) => {
+const attachRemoveHandlers = (container) => {
+  container?.querySelectorAll(".saved-remove-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       btn.disabled = true;
       try {
@@ -303,6 +312,25 @@ const renderSavedApartments = (apartments) => {
       }
     });
   });
+};
+
+const renderSavedApartments = (apartments) => {
+  if (statSaved) statSaved.textContent = apartments.length;
+
+  if (savedGrid) {
+    savedGrid.innerHTML = apartments.length
+      ? apartments.map(savedCardMarkup).join("")
+      : savedEmptyMarkup("You haven't saved any apartments yet. Browse listings and tap the heart icon to save one.", true);
+    attachRemoveHandlers(savedGrid);
+  }
+
+  if (homeSavedPreview) {
+    const preview = apartments.slice(0, 3);
+    homeSavedPreview.innerHTML = preview.length
+      ? preview.map(savedCardMarkup).join("")
+      : savedEmptyMarkup("No saved properties yet.", true);
+    attachRemoveHandlers(homeSavedPreview);
+  }
 };
 
 // One-time migration: move any locally-saved apartment IDs onto the account,
@@ -349,14 +377,67 @@ const loadSavedApartments = async () => {
     const profile = await res.json();
     renderSavedApartments(profile.savedApartments || []);
   } catch (err) {
-    renderSavedEmpty(err.message || "Could not load saved apartments.");
+    const message = err.message || "Could not load saved apartments.";
+    if (savedGrid) savedGrid.innerHTML = savedEmptyMarkup(message, false);
+    if (homeSavedPreview) homeSavedPreview.innerHTML = savedEmptyMarkup(message, false);
   }
+};
+
+// ── Recently viewed (tracked client-side in localStorage from apartment.js) ─
+
+const recentGrid = document.getElementById("recentGrid");
+
+const getRecentlyViewed = () => {
+  try {
+    const list = JSON.parse(localStorage.getItem("recentlyViewed") || "[]");
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+};
+
+const renderRecentlyViewed = () => {
+  const items = getRecentlyViewed();
+  if (statBrowsed) statBrowsed.textContent = items.length;
+  if (!recentGrid) return;
+
+  if (!items.length) {
+    recentGrid.innerHTML = `
+      <div class="dash-state">
+        <span class="state-icon">🕓</span>
+        You haven't viewed any properties yet.
+        <br><a href="index.html">Browse properties &rarr;</a>
+      </div>`;
+    return;
+  }
+
+  recentGrid.innerHTML = items.map((item) => {
+    const price = Number(item.price);
+    const imageMarkup = item.image
+      ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}">`
+      : `<span class="saved-card-placeholder">Photos coming soon</span>`;
+    const viewedAgo = item.viewedAt ? new Date(item.viewedAt).toLocaleDateString() : "";
+
+    return `
+      <div class="saved-card">
+        <div class="saved-card-img">${imageMarkup}</div>
+        <div class="saved-card-body">
+          <p class="saved-card-title">${escapeHtml(item.title || "Apartment")}</p>
+          <p class="saved-card-location">${escapeHtml(item.location || "")}</p>
+          <p class="saved-card-price">&#8358;${Number.isNaN(price) ? "N/A" : price.toLocaleString()}</p>
+          ${viewedAgo ? `<p class="recent-card-viewed">Viewed ${escapeHtml(viewedAgo)}</p>` : ""}
+          <div class="saved-card-actions">
+            <a href="apartment.html?id=${encodeURIComponent(item.id)}" class="btn">View again</a>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
 };
 
 // ── Roommate requests panel ──────────────────────────────────────────────────
 
 const requestsList = document.getElementById("requestsList");
-const dashRequestsBadge = document.getElementById("dashRequestsBadge");
+const sideRequestsBadge = document.getElementById("sideRequestsBadge");
 
 const parseJwt = window.AuthSession?.parseJwt || (() => null);
 const myId = () => user?.id || parseJwt(token)?.id || parseJwt(token)?._id;
@@ -459,10 +540,12 @@ const loadRequests = async () => {
     const pendingIncoming = requests.filter(
       (r) => r.status === "pending" && (r.toUser?._id === meId || r.toUser?._id === String(meId))
     ).length;
-    if (dashRequestsBadge) {
-      dashRequestsBadge.hidden = pendingIncoming === 0;
-      dashRequestsBadge.textContent = pendingIncoming;
+
+    if (sideRequestsBadge) {
+      sideRequestsBadge.hidden = pendingIncoming === 0;
+      sideRequestsBadge.textContent = pendingIncoming;
     }
+    if (statRequests) statRequests.textContent = pendingIncoming;
   } catch (err) {
     requestsList.innerHTML = `<p class="requests-empty">${escapeHtml(err.message || "Could not load roommate requests.")}</p>`;
   }
@@ -470,7 +553,8 @@ const loadRequests = async () => {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 
-setupMenu();
+renderGreeting(user?.name);
+renderRecentlyViewed();
 
 if (token) {
   loadProfile();
