@@ -10,7 +10,7 @@ const {
   saveApartment,
   unsaveApartment,
   migrateSavedApartments,
-} = require("../controllers/userController");
+} = require("../controllers/usercontroller");
 
 const profileImageUpload = upload.single("profileImage");
 

@@ -94,12 +94,24 @@
   };
 
   // Shared across every page that includes this script: shows the
-  // "Dashboard" nav link only for logged-in users (student or landlord).
+  // "Dashboard" nav link only for logged-in users (student or landlord),
+  // and makes tapping the profile row (avatar + name) in the hamburger
+  // menu jump straight to the dashboard too.
   document.addEventListener("DOMContentLoaded", () => {
-    const dashboardLink = document.getElementById("dashboardNavLink");
-    if (!dashboardLink) return;
-
     const { user: sessionUser } = getSession({ clearExpired: false });
-    dashboardLink.style.display = sessionUser ? "" : "none";
+
+    // Handles every matching element on the page (index.html currently has
+    // two nav blocks with the same id, so this covers both instead of only
+    // the first match getElementById would return).
+    document.querySelectorAll("#dashboardNavLink, .dashboard-nav-link").forEach((link) => {
+      link.style.display = sessionUser ? "" : "none";
+    });
+
+    document.querySelectorAll(".menu-profile").forEach((row) => {
+      row.style.cursor = "pointer";
+      row.addEventListener("click", () => {
+        window.location.href = sessionUser ? "dashboard.html" : "login.html";
+      });
+    });
   });
 }());

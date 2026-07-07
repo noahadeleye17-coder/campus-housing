@@ -10,7 +10,7 @@
     (function () {
       var session = window.AuthSession ? window.AuthSession.getSession() : null;
       var role = session && session.user ? session.user.role : null;
-      window.location.replace(role === "landlord" ? "landlord.html" : "student-dashboard.html");
+      window.location.replace(role === "landlord" ? "landlord.html" : "studentdashboard.html");
     })();
   </script>
 </body>
