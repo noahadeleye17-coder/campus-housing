@@ -92,4 +92,14 @@
     parseJwt,
     redirectToLogin,
   };
+
+  // Shared across every page that includes this script: shows the
+  // "Dashboard" nav link only for logged-in users (student or landlord).
+  document.addEventListener("DOMContentLoaded", () => {
+    const dashboardLink = document.getElementById("dashboardNavLink");
+    if (!dashboardLink) return;
+
+    const { user: sessionUser } = getSession({ clearExpired: false });
+    dashboardLink.style.display = sessionUser ? "" : "none";
+  });
 }());

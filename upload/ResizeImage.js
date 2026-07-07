@@ -69,6 +69,33 @@ const processImage = async (file) => {
   return { url: result.secure_url, publicId: result.public_id };
 };
 
+// ── Profile image processing ─────────────────────────────────────────────────
+
+/**
+ * Square, cropped avatar upload — used for user profile pictures.
+ * Kept separate from processImage() because listing photos preserve aspect
+ * ratio ("inside") while an avatar should always be a tidy square ("cover").
+ */
+const processProfileImage = async (file) => {
+  const buffer = await sharp(file.buffer)
+    .rotate()
+    .resize({
+      width: 400,
+      height: 400,
+      fit: "cover",
+      position: "centre",
+    })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+
+  const result = await uploadBufferToCloudinary(buffer, {
+    folder: "campus-housing/profiles",
+    resource_type: "image",
+  });
+
+  return { url: result.secure_url, publicId: result.public_id };
+};
+
 // ── Video processing ─────────────────────────────────────────────────────────
 
 const processVideo = async (file) => {
@@ -142,3 +169,4 @@ const resizeImage = async (req, res, next) => {
 module.exports = resizeImage;
 module.exports.cleanupProcessedMedia = cleanupProcessedMedia;
 module.exports.deleteFromCloudinary = deleteFromCloudinary;
+module.exports.processProfileImage = processProfileImage;

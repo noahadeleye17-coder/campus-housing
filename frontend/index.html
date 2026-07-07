@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="google-site-verification" content="SxZD-EVIgV5vrrIYlIJewhabmv-RkidJmhYyDmDaF4Q" />
- <title>Off-Campus Hub | Student Housing & Roommates Near FUTA, Akure</title>
-<meta name="description" content="Find affordable off-campus apartments, hostels, and roommates near FUTA (Federal University of Technology, Akure). Browse verified listings with photos, prices, and locations — no agent fees.">
+  <title>Campus Housing</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -80,6 +78,210 @@
     <!-- NAV LINKS -->
     <a href="roommate.html">Roommate Finder</a>
     <a href="about.html">About</a>
+    <a href="dashboard.html" id="dashboardNavLink" style="display:none;">Dashboard</a>
+    <a href="#" id="mobileSavedBtn">Saved</a>
+
+    <div class="menu-divider"></div>
+
+    <!-- AUTH (JS CONTROLS THIS ONLY) -->
+    <div id="authActions" class="auth-actions"></div>
+
+  </nav>
+  <!-- HERO -->
+  <section class="hero">
+    <h1>Find student housing near your campus</h1>
+    <p>Verified apartments &bull; Safe locations &bull; Easy access</p>
+    <div class="trust-strip" aria-label="Housing trust signals">
+      <span>Verified listings</span>
+      <span>Photos checked</span>
+      <span>Student-friendly areas</span>
+    </div>
+    <form id="apartmentSearchForm" class="hero-search" role="search">
+      <input
+        id="apartmentSearchInput"
+        type="search"
+        placeholder="Search apartment title or location"
+        aria-label="Search apartment title or location"
+      />
+      <button type="button" id="clearSearchBtn" class="clear-btn" aria-label="Clear search" style="display: none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+      <button type="submit" aria-label="Search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+    </form>
+  </section>
+
+  <!-- APARTMENTS -->
+  <main class="container">
+    <div id="apartments" class="apartment-grid"></div>
+    <div id="paginationBar" style="display:none; text-align:center; margin: 1.5rem 0 2rem;">
+      <p id="resultsCount" style="font-size:0.875rem; color: var(--color-muted, #6b7280); margin-bottom: 0.75rem;"></p>
+      <button id="loadMoreBtn" class="pill-btn outline" type="button">Load more listings</button>
+    </div>
+  </main>
+
+  <!-- ROOMMATE SECTION -->
+<section id="roommateFinder" class="section roommates">
+  <div class="container">
+    <div class="section-header centered">
+      <p class="section-kicker">Roommate finder</p>
+      <h2>How Roommate Finder Works</h2>
+    </div>
+    <div class="grid steps-grid">
+      <a class="step-card" href="roommate.html" aria-label="Open Roommate Finder to sign up">
+        <img src="icons/signup.png" alt="Sign Up">
+        <h3>Sign Up</h3>
+        <p>Create an account to start your roommate search.</p>
+      </a>
+      <a class="step-card" href="roommate.html" aria-label="Open Roommate Finder to set preferences">
+        <img src="icons/preferences.png" alt="Set Preferences">
+        <h3>Set Preferences</h3>
+        <p>Tell us your habits, budget, and lifestyle.</p>
+      </a>
+      <a class="step-card" href="roommate.html" aria-label="Open Roommate Finder to get matches">
+        <img src="icons/match.png" alt="Get Matches">
+        <h3>Get Matches</h3>
+        <p>See potential roommates that fit your style.</p>
+      </a>
+      <a class="step-card" href="roommate.html" aria-label="Open Roommate Finder to connect">
+        <img src="icons/connect.png" alt="Connect">
+        <h3>Connect</h3>
+        <p>Message and meet safely through our platform.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS SECTION -->
+<section class="section reviews">
+  <div class="container">
+    <div class="section-header centered">
+      <p class="section-kicker">Student stories</p>
+      <h2>What Students Say</h2>
+    </div>
+    <div class="grid reviews-grid">
+      <div class="review-card">
+        <img src="images/avatars/student1.png" alt="Ada" class="review-avatar">
+        <p>"Found an amazing apartment near campus! Highly recommend." </p>
+        <strong>- Ada, 200 Level</strong>
+      </div>
+      <div class="review-card">
+        <img src="images/avatars/student2.png" alt="Tunde" class="review-avatar">
+        <p>"It made my apartment search very stress-free."</p>
+        <strong>- Tunde, 300 Level</strong>
+      </div>
+      <div class="review-card">
+        <img src="images/avatars/student3.png" alt="Chiamaka" class="review-avatar">
+        <p>"I got an apartment close to school just by using my phone."</p>
+        <strong>- Chiamaka, 200 Level</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA SECTION -->
+<section class="section cta">
+  <div class="container cta-container">
+    <h2 id="ctaTitle">Ready to Find Your Perfect Apartment?</h2>
+    <a href="register.html" class="btn btn-primary" id="ctaAction">Sign Up Now</a>
+  </div>
+</section>
+
+<footer style="text-align:center; padding:1.5rem 1rem 2rem; font-size:0.8rem; color:var(--color-muted,#6b7280); border-top:1px solid var(--color-border,#e5e7eb); margin-top:1rem;">
+  <p style="margin:0;">
+    &copy; 2026 Off-Campus Hub &nbsp;&bull;&nbsp;
+    <a href="terms.html" style="color:inherit; text-decoration:underline;">Terms &amp; Privacy</a>
+    &nbsp;&bull;&nbsp;
+    <a href="about.html" style="color:inherit; text-decoration:underline;">About</a>
+    &nbsp;&bull;&nbsp;
+    <a href="mailto:offcampushubng@gmail.com" style="color:inherit; text-decoration:underline;">Contact</a>
+  </p>
+</footer>
+
+<script>
+  window.API_BASE = "/api";
+</script>
+<script src="auth-session.js"></script>
+<script src="app.js"></script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Housing</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <!-- OVERLAY -->
+  <div id="menuOverlay" class="menu-overlay"></div>
+
+  <!-- NAVBAR -->
+<header class="navbar">
+  <div class="nav-left">
+  <a href="index.html" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
+    
+    <svg width="44" height="58" viewBox="0 0 88 114" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="pinG" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#2357d8"/>
+          <stop offset="100%" style="stop-color:#0f9f8f"/>
+        </linearGradient>
+        <clipPath id="pinClip">
+          <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z"/>
+        </clipPath>
+      </defs>
+      <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z" fill="url(#pinG)"/>
+      <g clip-path="url(#pinClip)">
+        <rect x="0" y="0" width="88" height="104" fill="url(#pinG)"/>
+        <rect x="14" y="42" width="60" height="62" fill="#fff" opacity="0.95"/>
+        <polygon points="44,20 78,42 10,42" fill="#fff" opacity="0.85"/>
+        <polygon points="44,20 54,42 34,42" fill="#fff" opacity="0.5"/>
+        <rect x="20" y="48" width="10" height="9" rx="1" fill="url(#pinG)"/>
+        <rect x="35" y="48" width="10" height="9" rx="1" fill="url(#pinG)"/>
+        <rect x="50" y="48" width="10" height="9" rx="1" fill="url(#pinG)"/>
+        <rect x="20" y="63" width="10" height="9" rx="1" fill="url(#pinG)"/>
+        <rect x="35" y="63" width="10" height="9" rx="1" fill="url(#pinG)"/>
+        <rect x="50" y="63" width="10" height="9" rx="1" fill="url(#pinG)"/>
+        <rect x="36" y="78" width="16" height="26" rx="2" fill="url(#pinG)" opacity="0.5"/>
+      </g>
+      <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.3"/>
+    </svg>
+
+    <div style="line-height:1.2;">
+      <div style="font-size:0.75rem; font-weight:800; color:#596274; letter-spacing:0.07em; text-transform:uppercase;">Off-Campus</div>
+      <div style="font-size:1.15rem; font-weight:850; background:linear-gradient(135deg,#2357d8,#0f9f8f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Hub</div>
+    </div>
+
+  </a>
+</div>
+
+  <button
+    id="hamburger"
+    class="menu-btn"
+    aria-label="Open menu"
+    aria-expanded="false"
+  >
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+</header>
+
+  <!-- MOBILE MENU -->
+  <nav id="mobileMenu" class="mobile-menu" aria-hidden="true">
+
+    <!-- PROFILE -->
+    <div class="menu-profile">
+      <div class="avatar" id="avatar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg></div>
+      <div class="profile-info">
+        <strong id="profileName">Guest</strong>
+        <span id="profileStatus">Not logged in</span>
+      </div>
+    </div>
+
+    <div class="menu-divider"></div>
+
+    <!-- NAV LINKS -->
+    <a href="roommate.html">Roommate Finder</a>
+    <a href="about.html">About</a>
+    <a href="dashboard.html" id="dashboardNavLink" style="display:none;">Dashboard</a>
     <a href="#" id="mobileSavedBtn">Saved</a>
 
     <div class="menu-divider"></div>

@@ -2,8 +2,16 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0;url=landlord.html">
   <title>Redirecting...</title>
 </head>
-<body></body>
+<body>
+  <script src="auth-session.js"></script>
+  <script>
+    (function () {
+      var session = window.AuthSession ? window.AuthSession.getSession() : null;
+      var role = session && session.user ? session.user.role : null;
+      window.location.replace(role === "landlord" ? "landlord.html" : "student-dashboard.html");
+    })();
+  </script>
+</body>
 </html>

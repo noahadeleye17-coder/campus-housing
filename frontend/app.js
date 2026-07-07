@@ -332,17 +332,61 @@ async function fetchApartments(page = 1, search = "") {
   }
 }
 
-function getSavedIds() {
+let savedIds = new Set(); // populated from the account (server) when logged in
+
+async function loadSavedIdsFromServer() {
+  if (!user || !window.AuthSession?.getToken()) return;
   try {
-    const saved = JSON.parse(localStorage.getItem("savedApartmentIds") || "[]");
-    return new Set(saved.map((id) => String(id)));
-  } catch (error) {
-    return new Set();
+    const res = await fetch(`${API_BASE}/users/me`, {
+      headers: { Authorization: `Bearer ${window.AuthSession.getToken()}` },
+    });
+    if (!res.ok) return;
+    const profile = await res.json();
+    savedIds = new Set((profile.savedApartments || []).map((a) => String(a._id || a)));
+    updateSavedUi();
+    renderApartments(applySavedFilter(allApartments));
+  } catch {
+    /* non-critical */
   }
 }
 
-function setSavedIds(ids) {
-  localStorage.setItem("savedApartmentIds", JSON.stringify(Array.from(ids)));
+function getSavedIds() {
+  return savedIds;
+}
+
+async function toggleSavedId(id) {
+  const token = window.AuthSession?.getToken();
+
+  if (!token) {
+    // Saving now requires an account so it can sync across devices.
+    if (window.confirm("Log in to save apartments to your account. Go to the login page now?")) {
+      window.location.href = `login.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    }
+    return savedIds;
+  }
+
+  const isSaved = savedIds.has(String(id));
+  try {
+    const res = await fetch(`${API_BASE}/users/me/saved/${id}`, {
+      method: isSaved ? "DELETE" : "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401) {
+      window.AuthSession?.redirectToLogin();
+      return savedIds;
+    }
+    if (!res.ok) throw new Error("Could not update saved apartments.");
+
+    if (isSaved) {
+      savedIds.delete(String(id));
+    } else {
+      savedIds.add(String(id));
+    }
+  } catch (err) {
+    console.error(err);
+  }
+
+  return savedIds;
 }
 
 function formatTravelTime(distanceKm) {
@@ -352,17 +396,6 @@ function formatTravelTime(distanceKm) {
   const walkMinutes = Math.max(3, Math.round(km * 12));
   const rideMinutes = Math.max(3, Math.round(km * 5));
   return km <= 1.5 ? `${walkMinutes} min walk` : `${rideMinutes} min ride`;
-}
-
-function toggleSavedId(id) {
-  const savedIds = getSavedIds();
-  if (savedIds.has(id)) {
-    savedIds.delete(id);
-  } else {
-    savedIds.add(id);
-  }
-  setSavedIds(savedIds);
-  return savedIds;
 }
 
 function updateSavedUi() {
@@ -498,7 +531,7 @@ if (searchForm && searchInput) {
 }
 
 if (apartmentContainer) {
-  apartmentContainer.addEventListener("click", (event) => {
+  apartmentContainer.addEventListener("click", async (event) => {
     const button = event.target.closest(".favorite-btn");
     if (button) {
       const apartmentId = button.dataset.id;
@@ -506,7 +539,7 @@ if (apartmentContainer) {
 
       event.preventDefault();
       event.stopPropagation();
-      toggleSavedId(String(apartmentId));
+      await toggleSavedId(String(apartmentId));
       searchApartments();
       return;
     }
@@ -564,3 +597,4 @@ if (loadMoreBtn) {
 }
 
 fetchApartments();
+loadSavedIdsFromServer();

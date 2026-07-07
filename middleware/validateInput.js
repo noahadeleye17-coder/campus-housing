@@ -137,6 +137,10 @@ const roommateRequestStatusRules = [
   body("status").isIn(["accepted", "declined"]).withMessage("Status must be accepted or declined"),
 ];
 
+const updateProfileRules = [
+  optionalText("name", 80, "Name"),
+];
+
 module.exports = {
   validate,
   forgotPasswordRules,
@@ -146,4 +150,5 @@ module.exports = {
   roommateProfileRules,
   roommateRequestRules,
   roommateRequestStatusRules,
+  updateProfileRules,
 };

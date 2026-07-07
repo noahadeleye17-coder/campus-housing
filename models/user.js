@@ -25,6 +25,23 @@ const userSchema = new mongoose.Schema(
       default: "student",
     },
 
+    profileImage: {
+      type: String,
+      default: "",
+    },
+
+    profileImagePublicId: {
+      type: String,
+      default: "",
+    },
+
+    savedApartments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Apartment",
+      },
+    ],
+
     resetPasswordToken: {
       type: String,
       default: null,

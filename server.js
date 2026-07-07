@@ -9,6 +9,7 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const apartmentRoutes = require("./routes/apartmentroutes");
 const roommateRoutes = require("./routes/roommateRoutes");
+const userRoutes = require("./routes/userRoutes");
 const { apiLimiter } = require("./middleware/rateLimit");
 const uploadErrorHandler = require("./middleware/uploadErrors");
 const Apartment = require("./models/Apartment");
@@ -140,6 +141,7 @@ app.use("/frontend", express.static(path.join(__dirname, "frontend")));
 app.use("/api/auth", authRoutes);
 app.use("/api/apartments", apartmentRoutes);
 app.use("/api/roommates", roommateRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/api/config", (req, res) => {
   res.json({

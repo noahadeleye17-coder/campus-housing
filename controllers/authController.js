@@ -29,6 +29,7 @@ const publicUser = (user) => ({
   name: user.name,
   email: user.email,
   role: user.role,
+  profileImage: user.profileImage || "",
 });
 
 const sendResetEmail = async (toEmail, resetUrl) => {
