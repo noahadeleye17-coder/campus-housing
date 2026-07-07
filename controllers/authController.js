@@ -30,6 +30,7 @@ const publicUser = (user) => ({
   email: user.email,
   role: user.role,
   profileImage: user.profileImage || "",
+  authProvider: user.authProvider || "local",
 });
 
 const sendResetEmail = async (toEmail, resetUrl) => {
@@ -144,6 +145,7 @@ exports.googleLogin = async (req, res) => {
         email,
         password: hashedPassword,
         role: "student",
+        authProvider: "google",
       });
     }
 

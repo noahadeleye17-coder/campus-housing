@@ -25,6 +25,17 @@ const userSchema = new mongoose.Schema(
       default: "student",
     },
 
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
+
+    notificationsEnabled: {
+      type: Boolean,
+      default: true,
+    },
+
     profileImage: {
       type: String,
       default: "",

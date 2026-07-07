@@ -125,10 +125,50 @@ const changePhotoBtn = document.getElementById("changePhotoBtn");
 const profileImageInput = document.getElementById("profileImageInput");
 const saveProfileBtn = document.getElementById("saveProfileBtn");
 const profileSaveStatus = document.getElementById("profileSaveStatus");
-const requestPasswordResetBtn = document.getElementById("requestPasswordResetBtn");
+const contactEmailText = document.getElementById("contactEmailText");
+const contactBadge = document.getElementById("contactBadge");
+const notifToggle = document.getElementById("notifToggle");
+const currentPasswordGroup = document.getElementById("currentPasswordGroup");
+const currentPasswordInput = document.getElementById("currentPasswordInput");
+const newPasswordInput = document.getElementById("newPasswordInput");
+const confirmPasswordInput = document.getElementById("confirmPasswordInput");
+const changePasswordBtn = document.getElementById("changePasswordBtn");
+const passwordStatus = document.getElementById("passwordStatus");
+const passwordHint = document.getElementById("passwordHint");
+const showDeleteBtn = document.getElementById("showDeleteBtn");
+const deleteConfirmPanel = document.getElementById("deleteConfirmPanel");
+const deletePasswordGroup = document.getElementById("deletePasswordGroup");
+const deletePasswordInput = document.getElementById("deletePasswordInput");
+const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+const deleteStatus = document.getElementById("deleteStatus");
 
 let pendingImageFile = null;
 let currentProfile = null;
+
+const renderAccountMeta = (profile) => {
+  if (!profile) return;
+
+  if (contactEmailText) contactEmailText.textContent = profile.email || "";
+
+  const isGoogle = profile.authProvider === "google";
+  if (contactBadge) {
+    contactBadge.textContent = isGoogle ? "Verified via Google" : "Password account";
+    contactBadge.className = `verify-badge ${isGoogle ? "verified" : "standard"}`;
+  }
+
+  // Google accounts never set their own password, so they don't need to
+  // supply a "current" one to change or delete it.
+  if (currentPasswordGroup) currentPasswordGroup.style.display = isGoogle ? "none" : "";
+  if (deletePasswordGroup) deletePasswordGroup.style.display = isGoogle ? "none" : "";
+  if (passwordHint) {
+    passwordHint.textContent = isGoogle
+      ? "You signed in with Google — you can set a new password below without entering a current one."
+      : "Enter your current password, then choose a new one.";
+  }
+
+  if (notifToggle) notifToggle.checked = profile.notificationsEnabled !== false;
+};
 
 const renderAvatar = (profile) => {
   if (!profileAvatarLg) return;
@@ -163,6 +203,7 @@ const loadProfile = async () => {
     renderAvatar(profile);
     renderSideUser(profile);
     renderGreeting(profile.name);
+    renderAccountMeta(profile);
 
     return profile;
   } catch (err) {
@@ -236,21 +277,156 @@ if (saveProfileBtn) {
   });
 }
 
-if (requestPasswordResetBtn) {
-  requestPasswordResetBtn.addEventListener("click", async () => {
-    requestPasswordResetBtn.disabled = true;
+// ── Notifications toggle ─────────────────────────────────────────────────────
+
+if (notifToggle) {
+  notifToggle.addEventListener("change", async () => {
+    const nextValue = notifToggle.checked;
+    notifToggle.disabled = true;
     try {
-      const res = await fetch(`${API_BASE}/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: currentProfile?.email || user?.email }),
+      const res = await fetch(`${API_BASE}/users/me/notifications`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ enabled: nextValue }),
       });
-      const data = await res.json().catch(() => ({}));
-      setProfileStatus(data.message || "If an account exists, a reset link has been sent.", res.ok ? "success" : "error");
+      if (res.status === 401) {
+        handleExpiredSession();
+        return;
+      }
+      if (!res.ok) throw new Error("Could not update notification setting.");
+      const data = await res.json();
+      if (currentProfile) currentProfile.notificationsEnabled = data.notificationsEnabled;
     } catch {
-      setProfileStatus("Could not send reset email. Try again later.", "error");
+      notifToggle.checked = !nextValue; // revert on failure
     } finally {
-      requestPasswordResetBtn.disabled = false;
+      notifToggle.disabled = false;
+    }
+  });
+}
+
+// ── Change password ──────────────────────────────────────────────────────────
+
+const setPasswordStatus = (message, type = "") => {
+  if (!passwordStatus) return;
+  passwordStatus.textContent = message;
+  passwordStatus.className = `profile-status ${type}`;
+};
+
+if (changePasswordBtn) {
+  changePasswordBtn.addEventListener("click", async () => {
+    const isGoogle = currentProfile?.authProvider === "google";
+    const newPassword = newPasswordInput?.value || "";
+    const confirmPassword = confirmPasswordInput?.value || "";
+    const currentPassword = currentPasswordInput?.value || "";
+
+    if (!isGoogle && !currentPassword) {
+      setPasswordStatus("Enter your current password.", "error");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordStatus("New password must be at least 6 characters.", "error");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordStatus("New passwords don't match.", "error");
+      return;
+    }
+
+    changePasswordBtn.disabled = true;
+    setPasswordStatus("Updating…");
+
+    try {
+      const res = await fetch(`${API_BASE}/users/me/password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 401 && /not authorized|token|no longer exists/i.test(data.message || "")) {
+        handleExpiredSession();
+        return;
+      }
+      if (!res.ok) throw new Error(data.message || "Could not update password.");
+
+      if (currentPasswordInput) currentPasswordInput.value = "";
+      if (newPasswordInput) newPasswordInput.value = "";
+      if (confirmPasswordInput) confirmPasswordInput.value = "";
+      setPasswordStatus("Password updated.", "success");
+    } catch (err) {
+      setPasswordStatus(err.message || "Could not update password.", "error");
+    } finally {
+      changePasswordBtn.disabled = false;
+    }
+  });
+}
+
+// ── Danger zone: delete account ──────────────────────────────────────────────
+
+if (showDeleteBtn) {
+  showDeleteBtn.addEventListener("click", () => {
+    deleteConfirmPanel.hidden = !deleteConfirmPanel.hidden;
+  });
+}
+
+if (cancelDeleteBtn) {
+  cancelDeleteBtn.addEventListener("click", () => {
+    deleteConfirmPanel.hidden = true;
+    if (deletePasswordInput) deletePasswordInput.value = "";
+    if (deleteStatus) deleteStatus.textContent = "";
+  });
+}
+
+if (confirmDeleteBtn) {
+  confirmDeleteBtn.addEventListener("click", async () => {
+    const isGoogle = currentProfile?.authProvider === "google";
+    const password = deletePasswordInput?.value || "";
+
+    if (!isGoogle && !password) {
+      deleteStatus.textContent = "Enter your password to confirm.";
+      deleteStatus.className = "profile-status error";
+      return;
+    }
+
+    if (!window.confirm("This will permanently delete your account. This can't be undone. Continue?")) {
+      return;
+    }
+
+    confirmDeleteBtn.disabled = true;
+    deleteStatus.textContent = "Deleting…";
+    deleteStatus.className = "profile-status";
+
+    try {
+      const res = await fetch(`${API_BASE}/users/me`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 401 && /not authorized|token|no longer exists/i.test(data.message || "")) {
+        handleExpiredSession();
+        return;
+      }
+      if (!res.ok) throw new Error(data.message || "Could not delete account.");
+
+      window.AuthSession?.clear();
+      window.location.href = "index.html";
+    } catch (err) {
+      deleteStatus.textContent = err.message || "Could not delete account.";
+      deleteStatus.className = "profile-status error";
+      confirmDeleteBtn.disabled = false;
     }
   });
 }

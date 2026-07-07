@@ -141,6 +141,11 @@ const updateProfileRules = [
   optionalText("name", 80, "Name"),
 ];
 
+const changePasswordRules = [
+  body("currentPassword").optional({ values: "falsy" }).isLength({ min: 1 }).withMessage("Current password is required"),
+  body("newPassword").isLength({ min: 6, max: 128 }).withMessage("New password must be 6 to 128 characters"),
+];
+
 module.exports = {
   validate,
   forgotPasswordRules,
@@ -151,4 +156,5 @@ module.exports = {
   roommateRequestRules,
   roommateRequestStatusRules,
   updateProfileRules,
+  changePasswordRules,
 };

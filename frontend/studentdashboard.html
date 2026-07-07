@@ -10,9 +10,24 @@
 
     body.dash-body {
       margin: 0;
-      background: var(--bg);
+      background:
+        linear-gradient(135deg, rgba(35, 87, 216, 0.1), transparent 28%),
+        linear-gradient(225deg, rgba(244, 183, 64, 0.2), transparent 32%),
+        linear-gradient(180deg, #fff8e9 0%, var(--bg) 40%, #eaf4ef 100%);
       color: var(--text);
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+
+    body.dash-body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      opacity: 0.42;
+      background-image:
+        linear-gradient(rgba(16, 24, 40, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 24, 40, 0.055) 1px, transparent 1px);
+      background-size: 34px 34px;
     }
 
     .dash-app {
@@ -174,6 +189,7 @@
       cursor: pointer;
       border-radius: 10px;
     }
+    .dash-logout-btn svg { flex-shrink: 0; width: 18px; height: 18px; }
     .dash-logout-btn:hover { background: var(--surface-tint); }
 
     /* Mobile top bar */
@@ -303,6 +319,77 @@
       font-weight: 700; cursor: pointer; font-size: 0.9rem;
     }
 
+    /* Settings: section cards below the profile card */
+    .settings-card {
+      border: 1px solid var(--border); border-radius: var(--radius-md);
+      background: var(--surface); padding: 1.5rem 1.75rem; margin-top: 1.25rem;
+    }
+    .settings-card-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+    .settings-card-head svg { width: 19px; height: 19px; flex-shrink: 0; color: var(--primary); }
+    .settings-card-head h3 { font-size: 1rem; font-weight: 750; color: var(--ink); margin: 0; }
+
+    .contact-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+      background: var(--surface-tint); border-radius: 12px; padding: 0.85rem 1.1rem;
+    }
+    .contact-row-email { font-size: 0.92rem; font-weight: 600; color: var(--ink); word-break: break-all; }
+    .verify-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 700;
+      padding: 0.3rem 0.7rem; border-radius: 999px; white-space: nowrap;
+    }
+    .verify-badge.verified { background: rgba(21, 128, 61, 0.12); color: #15803d; }
+    .verify-badge.standard { background: rgba(35, 87, 216, 0.1); color: var(--primary-dark); }
+
+    .settings-toggle-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .settings-toggle-row p { font-size: 0.82rem; color: var(--muted); margin: 0.2rem 0 0; }
+    .toggle-switch {
+      position: relative; width: 44px; height: 26px; flex-shrink: 0; cursor: pointer;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0; background: var(--border); border-radius: 999px; transition: background 0.15s ease;
+    }
+    .toggle-track::before {
+      content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px;
+      background: #fff; border-radius: 50%; transition: transform 0.15s ease; box-shadow: 0 1px 3px rgba(16,24,40,0.3);
+    }
+    .toggle-switch input:checked + .toggle-track { background: linear-gradient(135deg, var(--primary), var(--accent)); }
+    .toggle-switch input:checked + .toggle-track::before { transform: translateX(18px); }
+
+    .password-field-group { max-width: 360px; }
+    .password-field-group label {
+      display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.04em; color: var(--muted); margin-bottom: 0.35rem;
+    }
+    .password-field-group input {
+      width: 100%; padding: 0.6rem 0.85rem; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 0.95rem; background: var(--surface); color: inherit; margin-bottom: 0.9rem;
+    }
+    .settings-hint { font-size: 0.82rem; color: var(--muted); margin: 0 0 1rem; }
+
+    .danger-card {
+      border: 1px solid rgba(232, 93, 79, 0.35); border-radius: var(--radius-md);
+      background: rgba(232, 93, 79, 0.05); padding: 1.5rem 1.75rem; margin-top: 1.25rem;
+    }
+    .danger-card .settings-card-head svg { color: var(--coral); }
+    .danger-card p { font-size: 0.86rem; color: var(--muted); margin: 0 0 1rem; max-width: 460px; }
+    .btn.danger-outline {
+      background: none; border: 1px solid var(--coral); color: var(--coral);
+      padding: 0.6rem 1.2rem; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.88rem;
+    }
+    .btn.danger-outline:hover { background: rgba(232, 93, 79, 0.08); }
+    .btn.danger-solid {
+      background: var(--coral); color: #fff; border: none;
+      padding: 0.6rem 1.2rem; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.88rem;
+    }
+    .danger-confirm-panel {
+      margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px dashed rgba(232, 93, 79, 0.35);
+    }
+    .danger-confirm-panel[hidden] { display: none; }
+    .danger-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+
     /* Saved / Recently viewed grid */
     .saved-grid, .recent-grid {
       display: grid;
@@ -400,8 +487,25 @@
               <stop offset="0%" style="stop-color:#2357d8"/>
               <stop offset="100%" style="stop-color:#0f9f8f"/>
             </linearGradient>
+            <clipPath id="pinClip2">
+              <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z"/>
+            </clipPath>
           </defs>
           <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z" fill="url(#pinG2)"/>
+          <g clip-path="url(#pinClip2)">
+            <rect x="0" y="0" width="88" height="104" fill="url(#pinG2)"/>
+            <rect x="14" y="42" width="60" height="62" fill="#fff" opacity="0.95"/>
+            <polygon points="44,20 78,42 10,42" fill="#fff" opacity="0.85"/>
+            <polygon points="44,20 54,42 34,42" fill="#fff" opacity="0.5"/>
+            <rect x="20" y="48" width="10" height="9" rx="1" fill="url(#pinG2)"/>
+            <rect x="35" y="48" width="10" height="9" rx="1" fill="url(#pinG2)"/>
+            <rect x="50" y="48" width="10" height="9" rx="1" fill="url(#pinG2)"/>
+            <rect x="20" y="63" width="10" height="9" rx="1" fill="url(#pinG2)"/>
+            <rect x="35" y="63" width="10" height="9" rx="1" fill="url(#pinG2)"/>
+            <rect x="50" y="63" width="10" height="9" rx="1" fill="url(#pinG2)"/>
+            <rect x="36" y="78" width="16" height="26" rx="2" fill="url(#pinG2)" opacity="0.5"/>
+          </g>
+          <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.3"/>
         </svg>
         <span class="dash-brand-text">
           <span class="dash-brand-kicker" style="display:block;">Off-Campus</span>
@@ -540,10 +644,83 @@
                 <button type="button" class="btn primary-grad" id="saveProfileBtn">Save changes</button>
                 <span class="profile-status" id="profileSaveStatus"></span>
               </div>
-              <p class="password-note">
-                Need to change your password? We'll email you a secure reset link.
-                <button type="button" class="profile-photo-btn" id="requestPasswordResetBtn" style="margin-left:0.4rem;">Send reset link</button>
-              </p>
+            </div>
+          </div>
+
+          <!-- CONTACT / ACCOUNT -->
+          <div class="settings-card">
+            <div class="settings-card-head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" opacity="0"/><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2Z"/><path d="m22 6-10 7L2 6"/></svg>
+              <h3>Contact</h3>
+            </div>
+            <div class="contact-row">
+              <span class="contact-row-email" id="contactEmailText">Loading…</span>
+              <span class="verify-badge standard" id="contactBadge">Account</span>
+            </div>
+          </div>
+
+          <!-- NOTIFICATIONS -->
+          <div class="settings-card">
+            <div class="settings-card-head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <h3>Notifications</h3>
+            </div>
+            <div class="settings-toggle-row">
+              <div>
+                <strong style="font-size:0.92rem; color:var(--ink);">Push notifications</strong>
+                <p>Get notified about listing updates and account activity.</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notifToggle" checked>
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- CHANGE PASSWORD -->
+          <div class="settings-card">
+            <div class="settings-card-head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <h3>Change Password</h3>
+            </div>
+            <p class="settings-hint" id="passwordHint">Choose a new password below.</p>
+            <div class="password-field-group" id="currentPasswordGroup">
+              <label for="currentPasswordInput">Current password</label>
+              <input type="password" id="currentPasswordInput" autocomplete="current-password">
+            </div>
+            <div class="password-field-group">
+              <label for="newPasswordInput">New password</label>
+              <input type="password" id="newPasswordInput" autocomplete="new-password" minlength="6">
+            </div>
+            <div class="password-field-group">
+              <label for="confirmPasswordInput">Confirm new password</label>
+              <input type="password" id="confirmPasswordInput" autocomplete="new-password" minlength="6">
+            </div>
+            <div class="profile-actions">
+              <button type="button" class="btn primary-grad" id="changePasswordBtn">Update Password</button>
+              <span class="profile-status" id="passwordStatus"></span>
+            </div>
+          </div>
+
+          <!-- DANGER ZONE -->
+          <div class="danger-card">
+            <div class="settings-card-head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <h3>Danger Zone</h3>
+            </div>
+            <p>Permanently delete your account and all associated data. This action cannot be undone.</p>
+            <button type="button" class="btn danger-outline" id="showDeleteBtn">Delete my account</button>
+
+            <div class="danger-confirm-panel" id="deleteConfirmPanel" hidden>
+              <div class="password-field-group" id="deletePasswordGroup">
+                <label for="deletePasswordInput">Confirm your password</label>
+                <input type="password" id="deletePasswordInput" autocomplete="current-password">
+              </div>
+              <div class="danger-actions">
+                <button type="button" class="btn danger-solid" id="confirmDeleteBtn">Permanently delete account</button>
+                <button type="button" class="profile-photo-btn" id="cancelDeleteBtn">Cancel</button>
+                <span class="profile-status" id="deleteStatus"></span>
+              </div>
             </div>
           </div>
         </section>
