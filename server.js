@@ -17,8 +17,21 @@ const Apartment = require("./models/Apartment");
 const app = express();
 mongoose.set("bufferCommands", false);
 
+// ALLOWED_ORIGIN can be a single origin or a comma-separated list, e.g.
+// "https://offcampushub.ng,https://www.offcampushub.ng,https://offcampushub.onrender.com"
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || "http://localhost:5000")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || "http://localhost:5000",
+  origin: (origin, callback) => {
+    // Allow non-browser requests (no Origin header, e.g. curl/Postman/server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
 }));
 app.use("/api", apiLimiter);
