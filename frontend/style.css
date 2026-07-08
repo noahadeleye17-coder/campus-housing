@@ -527,9 +527,10 @@ img {
 .hero-search {
   position: relative;
   z-index: 1;
-  width: min(660px, calc(100% - 24px));
+  width: min(760px, calc(100% - 24px));
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
   gap: 12px;
   margin: 22px auto 0;
   padding: 12px;
@@ -586,6 +587,33 @@ img {
 
 .hero-search input::placeholder {
   color: var(--subtle);
+}
+
+.hero-search select {
+  min-width: 0;
+  width: 150px;
+  height: 46px;
+  border: 0;
+  border-left: 1px solid rgba(16, 24, 40, 0.12);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  padding: 0 28px 0 16px;
+  font-size: 0.9rem;
+  font-weight: 650;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+}
+
+.hero-search select:focus {
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px rgba(15, 159, 143, 0.28);
 }
 
 .hero-search button {
@@ -2241,16 +2269,27 @@ img {
   }
 
   .hero-search {
-    grid-template-columns: 1fr auto auto;
+    display: flex;
+    flex-wrap: wrap;
+    grid-template-columns: unset;
     border-radius: var(--radius-lg);
   }
 
   .hero-search input {
+    flex: 1 1 100%;
     width: 100%;
+  }
+
+  .hero-search select {
+    flex: 1 1 auto;
+    width: auto;
+    border-left: 0;
+    border-top: 1px solid rgba(16, 24, 40, 0.12);
   }
 
   .hero-search button,
   .clear-btn {
+    flex: 0 0 auto;
     width: 40px;
     height: 40px;
     font-size: 1rem;

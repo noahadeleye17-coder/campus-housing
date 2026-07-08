@@ -52,6 +52,7 @@ const mobileSavedBtn = document.getElementById("mobileSavedBtn");
 const authActions = document.getElementById("authActions");
 const searchForm = document.getElementById("apartmentSearchForm");
 const searchInput = document.getElementById("apartmentSearchInput");
+const typeSelect = document.getElementById("apartmentTypeSelect");
 const savedCountEl = document.getElementById("savedCount");
 const savedFilterBtn = document.getElementById("savedFilterBtn");
 
@@ -244,6 +245,7 @@ let totalPages = 1;
 let totalListings = 0;
 let isFetchingMore = false;
 let activeSearch = ""; // tracks what term is currently loaded from the server
+let activeType = ""; // tracks the currently loaded property-type filter
 
 function updatePaginationUi() {
   if (!paginationBar) return;
@@ -259,8 +261,11 @@ function updatePaginationUi() {
 
   if (resultsCountEl) {
     const realShown = allApartments.filter(a => !String(a._id).startsWith("demo-")).length;
+    const typeLabel = activeType ? ` in "${activeType}"` : "";
     if (activeSearch) {
-      resultsCountEl.textContent = `${totalListings} result${totalListings !== 1 ? "s" : ""} for "${activeSearch}"`;
+      resultsCountEl.textContent = `${totalListings} result${totalListings !== 1 ? "s" : ""} for "${activeSearch}"${typeLabel}`;
+    } else if (activeType) {
+      resultsCountEl.textContent = `${totalListings} result${totalListings !== 1 ? "s" : ""}${typeLabel}`;
     } else if (totalListings > 0) {
       resultsCountEl.textContent = `Showing ${realShown} of ${totalListings} listing${totalListings !== 1 ? "s" : ""}`;
     } else {
@@ -278,7 +283,7 @@ function updatePaginationUi() {
 // ============================
 // FETCH APARTMENTS
 // ============================
-async function fetchApartments(page = 1, search = "") {
+async function fetchApartments(page = 1, search = "", type = "") {
   if (!apartmentContainer) return;
 
   const isFirstPage = page === 1;
@@ -297,6 +302,7 @@ async function fetchApartments(page = 1, search = "") {
   try {
     const params = new URLSearchParams({ page, limit: 9 });
     if (search) params.set("search", search);
+    if (type) params.set("type", type);
 
     const res = await fetch(`${API_BASE}/apartments?${params}`);
     if (!res.ok) throw new Error("Fetch failed");
@@ -308,6 +314,7 @@ async function fetchApartments(page = 1, search = "") {
     totalPages = data.pages || 1;
     totalListings = data.total || incoming.length;
     activeSearch = search;
+    activeType = type;
 
     allApartments = isFirstPage ? incoming : [...allApartments, ...incoming];
 
@@ -323,6 +330,7 @@ async function fetchApartments(page = 1, search = "") {
       totalPages = 1;
       totalListings = 0;
       activeSearch = "";
+      activeType = "";
       renderApartments(allApartments);
       updateSavedUi();
     }
@@ -496,7 +504,8 @@ function searchApartments() {
 
 function resetFilters() {
   if (searchInput) searchInput.value = "";
-  fetchApartments(1, "");
+  if (typeSelect) typeSelect.value = "";
+  fetchApartments(1, "", "");
 }
 
 if (searchForm && searchInput) {
@@ -505,7 +514,8 @@ if (searchForm && searchInput) {
 
   const doSearch = () => {
     const term = searchInput.value.trim();
-    fetchApartments(1, term);
+    const type = typeSelect ? typeSelect.value : "";
+    fetchApartments(1, term, type);
   };
 
   searchForm.addEventListener("submit", (e) => {
@@ -522,13 +532,20 @@ if (searchForm && searchInput) {
     searchDebounce = setTimeout(doSearch, 400);
   });
 
+  if (typeSelect) {
+    typeSelect.addEventListener("change", () => {
+      clearTimeout(searchDebounce);
+      doSearch();
+    });
+  }
+
   if (clearBtn) {
     clearBtn.addEventListener("click", (e) => {
       e.preventDefault();
       clearTimeout(searchDebounce);
       searchInput.value = "";
       clearBtn.style.display = "none";
-      fetchApartments(1, "");
+      doSearch();
       searchInput.focus();
     });
   }
@@ -595,7 +612,7 @@ if (mobileSavedBtn) {
 if (loadMoreBtn) {
   loadMoreBtn.addEventListener("click", () => {
     if (!isFetchingMore && currentPage < totalPages) {
-      fetchApartments(currentPage + 1, activeSearch);
+      fetchApartments(currentPage + 1, activeSearch, activeType);
     }
   });
 }

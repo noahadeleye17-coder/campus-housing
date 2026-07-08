@@ -2,6 +2,7 @@ const demoApartments = [
   {
     _id: "demo-1",
     title: "Modern Studio Near Main Campus",
+    propertyType: "Studio",
     price: 450000,
     location: "University Road, 8 minutes from campus gate",
     distanceFromCampus: 1.2,
@@ -22,6 +23,7 @@ const demoApartments = [
   {
     _id: "demo-2",
     title: "Shared 2-Bed Apartment",
+    propertyType: "Shared Apartment",
     price: 320000,
     location: "Student Village Extension",
     distanceFromCampus: 2.4,
@@ -42,6 +44,7 @@ const demoApartments = [
   {
     _id: "demo-3",
     title: "Self-Contain Room",
+    propertyType: "Self Contain",
     price: 280000,
     location: "South Gate Area",
     distanceFromCampus: 0.8,
@@ -59,6 +62,7 @@ const demoApartments = [
   {
     _id: "demo-4",
     title: "Quiet Mini Flat With Study Space",
+    propertyType: "1 Bedroom",
     price: 520000,
     location: "North Gate Area",
     distanceFromCampus: 3.1,
@@ -79,6 +83,7 @@ const demoApartments = [
   {
     _id: "demo-5",
     title: "Budget Friendly Single Room",
+    propertyType: "Single Room",
     price: 180000,
     location: "Apatapiti Student Area",
     distanceFromCampus: 1.9,
@@ -99,6 +104,7 @@ const demoApartments = [
   {
     _id: "demo-6",
     title: "Premium 1-Bed Apartment",
+    propertyType: "1 Bedroom",
     price: 750000,
     location: "West Gate Area",
     distanceFromCampus: 0.6,

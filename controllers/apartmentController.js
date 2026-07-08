@@ -53,6 +53,7 @@ const buildApartmentData = async (req) => {
     latitude,
     longitude,
     landlordWhatsapp,
+    propertyType,
   } = req.body;
   const data = {};
   const hasExplicitCoordinates =
@@ -63,6 +64,7 @@ const buildApartmentData = async (req) => {
   if (location !== undefined) data.location = location;
   if (amenities !== undefined) data.amenities = parseAmenities(amenities);
   if (landlordWhatsapp !== undefined) data.landlordWhatsapp = landlordWhatsapp;
+  if (propertyType !== undefined) data.propertyType = propertyType;
 
   // New images were uploaded in this request — values are full Cloudinary URLs
   if (req.processedImages && req.processedImages.length > 0) {
@@ -115,15 +117,17 @@ const getApartments = async (req, res) => {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const skip = (page - 1) * limit;
     const searchTerm = (req.query.search || "").trim();
+    const propertyType = (req.query.type || "").trim();
 
     if (!isDatabaseConnected()) {
-      // Filter demo apartments by search term if provided
-      const filtered = searchTerm
-        ? demoApartments.filter(a =>
-            a.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            a.location?.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-        : demoApartments;
+      // Filter demo apartments by search term and/or property type if provided
+      const filtered = demoApartments.filter((a) => {
+        const matchesSearch = !searchTerm ||
+          a.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          a.location?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesType = !propertyType || a.propertyType === propertyType;
+        return matchesSearch && matchesType;
+      });
       const slice = filtered.slice(skip, skip + limit);
       return res.json({
         apartments: slice,
@@ -134,7 +138,8 @@ const getApartments = async (req, res) => {
     }
 
     // Build filter — when searching, match title or location (case-insensitive).
-    // When no search term, return all listings.
+    // When a property type is selected, narrow further to that exact type.
+    // When neither is set, return all listings.
     const filter = searchTerm
       ? {
           $or: [
@@ -143,6 +148,7 @@ const getApartments = async (req, res) => {
           ],
         }
       : {};
+    if (propertyType) filter.propertyType = propertyType;
 
     const [realApartments, totalReal] = await Promise.all([
       Apartment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("landlord", "name email"),
@@ -150,14 +156,15 @@ const getApartments = async (req, res) => {
     ]);
 
     // Only pad with demo listings on page 1 when there is no active search
-    // and real listings are still few. When searching, we only show real results.
+    // or type filter, and real listings are still few. When filtering, we
+    // only show real results that actually match.
     let apartments = realApartments;
-    if (!searchTerm && page === 1 && realApartments.length < limit) {
+    if (!searchTerm && !propertyType && page === 1 && realApartments.length < limit) {
       const slotsLeft = limit - realApartments.length;
       apartments = [...realApartments, ...demoApartments.slice(0, slotsLeft)];
     }
 
-    const total = searchTerm ? totalReal : Math.max(totalReal, demoApartments.length);
+    const total = (searchTerm || propertyType) ? totalReal : Math.max(totalReal, demoApartments.length);
     const pages = Math.ceil(total / limit) || 1;
 
     res.json({ apartments, total, page, pages });

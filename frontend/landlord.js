@@ -10,6 +10,7 @@ const fields = {
   title: document.getElementById("title"),
   price: document.getElementById("price"),
   location: document.getElementById("location"),
+  propertyType: document.getElementById("propertyType"),
   landlordWhatsapp: document.getElementById("landlordWhatsapp"),
   amenities: document.getElementById("amenities"),
   images: document.getElementById("images"),
@@ -74,6 +75,7 @@ const setFormMode = (id = null, apartment = null) => {
     fields.title.value = apartment.title || "";
     fields.price.value = apartment.price || "";
     fields.location.value = apartment.location || "";
+    fields.propertyType.value = apartment.propertyType || "";
     fields.amenities.value = Array.isArray(apartment.amenities)
       ? apartment.amenities.join(", ")
       : apartment.amenities || "";
@@ -98,6 +100,7 @@ form.addEventListener("submit", async (e) => {
   formData.append("title", fields.title.value);
   formData.append("price", fields.price.value);
   formData.append("location", fields.location.value);
+  formData.append("propertyType", fields.propertyType.value);
   formData.append("landlordWhatsapp", fields.landlordWhatsapp.value);
   formData.append("amenities", fields.amenities.value);
 
@@ -217,6 +220,7 @@ async function loadApartments() {
             <h3>${escapeHtml(a.title)}</h3>
             <div class="apartment-meta">
               <span>${escapeHtml(a.location)}</span>
+              ${a.propertyType ? `<span>${escapeHtml(a.propertyType)}</span>` : ""}
               <span>${escapeHtml(travelTime)}</span>
               <span>WhatsApp: ${escapeHtml(a.landlordWhatsapp || "not set")}</span>
             </div>
