@@ -11,8 +11,65 @@
       margin: 40px auto 80px;
     }
 
-    /* Top bar: escape hatch + identity + logout */
-    .top-bar {
+    /* Navbar: logo left, home icon right */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 20px;
+      margin-bottom: 16px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      position: sticky;
+      top: 12px;
+      z-index: 20;
+    }
+
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 1.05rem;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    .navbar-brand svg {
+      flex-shrink: 0;
+    }
+
+    .navbar-home-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+    }
+
+    .navbar-home-btn:hover {
+      background: var(--surface-tint);
+    }
+
+    .navbar-home-btn svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    /* Account bar: identity + logout, sits below the navbar */
+    .account-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -26,67 +83,14 @@
       flex-wrap: wrap;
     }
 
-    .top-bar-left {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      min-width: 0;
-    }
-
-    .top-bar-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-      color: var(--ink);
-      font-weight: 800;
-      font-size: 1.05rem;
-      flex-shrink: 0;
-    }
-
-    .top-bar-brand svg {
-      flex-shrink: 0;
-    }
-
-    .top-bar-back {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.92rem;
-      padding: 8px 12px;
-      border-radius: var(--radius-sm);
-      transition: background 0.15s ease;
-      flex-shrink: 0;
-    }
-
-    .top-bar-back:hover {
-      background: var(--surface-tint);
-    }
-
-    .top-bar-back svg {
-      width: 15px;
-      height: 15px;
-      flex-shrink: 0;
-    }
-
-    .top-bar-right {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-shrink: 0;
-    }
-
-    .top-bar-user {
+    .account-user {
       display: flex;
       align-items: center;
       gap: 10px;
       min-width: 0;
     }
 
-    .top-bar-avatar {
+    .account-avatar {
       width: 36px;
       height: 36px;
       border-radius: 50%;
@@ -100,12 +104,12 @@
       flex-shrink: 0;
     }
 
-    .top-bar-identity {
+    .account-identity {
       line-height: 1.25;
       min-width: 0;
     }
 
-    .top-bar-name {
+    .account-name {
       display: block;
       font-weight: 700;
       font-size: 0.92rem;
@@ -113,10 +117,10 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 160px;
+      max-width: 200px;
     }
 
-    .top-bar-role {
+    .account-role {
       display: block;
       font-size: 0.78rem;
       color: var(--muted);
@@ -128,6 +132,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      flex-shrink: 0;
     }
 
     .logout-btn svg {
@@ -137,12 +142,7 @@
     }
 
     @media (max-width: 560px) {
-      .top-bar {
-        justify-content: center;
-      }
-      .top-bar-left,
-      .top-bar-right {
-        flex: 1 1 100%;
+      .account-bar {
         justify-content: space-between;
       }
     }
@@ -579,56 +579,54 @@
 </head>
 <body>
   <div class="page-shell">
-    <header class="top-bar">
-      <div class="top-bar-left">
-        <a href="index.html" class="top-bar-brand">
-          <svg width="26" height="34" viewBox="0 0 88 114" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="pinGLandlord" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#2357d8"/>
-                <stop offset="100%" style="stop-color:#0f9f8f"/>
-              </linearGradient>
-              <clipPath id="pinClipLandlord">
-                <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z"/>
-              </clipPath>
-            </defs>
-            <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z" fill="url(#pinGLandlord)"/>
-            <g clip-path="url(#pinClipLandlord)">
-              <rect x="0" y="0" width="88" height="104" fill="url(#pinGLandlord)"/>
-              <rect x="14" y="42" width="60" height="62" fill="#fff" opacity="0.95"/>
-              <polygon points="44,20 78,42 10,42" fill="#fff" opacity="0.85"/>
-              <polygon points="44,20 54,42 34,42" fill="#fff" opacity="0.5"/>
-              <rect x="20" y="48" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
-              <rect x="35" y="48" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
-              <rect x="50" y="48" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
-              <rect x="20" y="63" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
-              <rect x="35" y="63" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
-              <rect x="50" y="63" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
-              <rect x="36" y="78" width="16" height="26" rx="2" fill="url(#pinGLandlord)" opacity="0.5"/>
-            </g>
-          </svg>
-          Off-Campus Hub
-        </a>
-        <a href="index.html" class="top-bar-back">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
-          Back to site
-        </a>
-      </div>
+    <header class="navbar">
+      <a href="index.html" class="navbar-brand">
+        <svg width="26" height="34" viewBox="0 0 88 114" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="pinGLandlord" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#2357d8"/>
+              <stop offset="100%" style="stop-color:#0f9f8f"/>
+            </linearGradient>
+            <clipPath id="pinClipLandlord">
+              <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z"/>
+            </clipPath>
+          </defs>
+          <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z" fill="url(#pinGLandlord)"/>
+          <g clip-path="url(#pinClipLandlord)">
+            <rect x="0" y="0" width="88" height="104" fill="url(#pinGLandlord)"/>
+            <rect x="14" y="42" width="60" height="62" fill="#fff" opacity="0.95"/>
+            <polygon points="44,20 78,42 10,42" fill="#fff" opacity="0.85"/>
+            <polygon points="44,20 54,42 34,42" fill="#fff" opacity="0.5"/>
+            <rect x="20" y="48" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
+            <rect x="35" y="48" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
+            <rect x="50" y="48" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
+            <rect x="20" y="63" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
+            <rect x="35" y="63" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
+            <rect x="50" y="63" width="10" height="9" rx="1" fill="url(#pinGLandlord)"/>
+            <rect x="36" y="78" width="16" height="26" rx="2" fill="url(#pinGLandlord)" opacity="0.5"/>
+          </g>
+        </svg>
+        Off-Campus Hub
+      </a>
 
-      <div class="top-bar-right">
-        <div class="top-bar-user">
-          <div class="top-bar-avatar" id="topAvatar">L</div>
-          <div class="top-bar-identity">
-            <span class="top-bar-name" id="topName">Loading…</span>
-            <span class="top-bar-role" id="topRole">Landlord</span>
-          </div>
-        </div>
-        <button type="button" class="btn logout-btn" id="logoutBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Logout
-        </button>
-      </div>
+      <a href="index.html" class="navbar-home-btn" aria-label="Back to home page" title="Back to home page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      </a>
     </header>
+
+    <div class="account-bar">
+      <div class="account-user">
+        <div class="account-avatar" id="topAvatar">L</div>
+        <div class="account-identity">
+          <span class="account-name" id="topName">Loading…</span>
+          <span class="account-role" id="topRole">Landlord</span>
+        </div>
+      </div>
+      <button type="button" class="btn logout-btn" id="logoutBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </button>
+    </div>
 
     <section class="page-header">
       <h1>Landlord Dashboard</h1>
