@@ -12,6 +12,11 @@ const loginRules = [
   body('password').notEmpty().withMessage('Password is required')
 ];
 
+const googleAuthRules = [
+  body('idToken').notEmpty().withMessage('Missing Google ID token'),
+  body('role').optional().isIn(['student', 'landlord']).withMessage('Invalid role')
+];
+
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -20,4 +25,4 @@ const validate = (req, res, next) => {
   next();
 };
 
-module.exports = { registerRules, loginRules, validate };
+module.exports = { registerRules, loginRules, googleAuthRules, validate };

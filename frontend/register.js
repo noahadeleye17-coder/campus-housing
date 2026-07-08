@@ -8,7 +8,8 @@ const name = document.getElementById("name").value;
 const email = document.getElementById("email").value;
 const password = document.getElementById("password").value;
 const confirmPassword = document.getElementById("confirmPassword").value;
-const role = document.getElementById("role").value;
+const roleInput = document.querySelector('input[name="roleChoice"]:checked');
+const role = roleInput ? roleInput.value : "student";
 
 if (password !== confirmPassword) {
 if (errorText) errorText.textContent = "Passwords do not match";
@@ -60,12 +61,15 @@ window.handleGoogleCredentialResponse = async (response) => {
 if (!response?.credential) return;
 
 try {
+const roleInput = document.querySelector('input[name="roleChoice"]:checked');
+const role = roleInput ? roleInput.value : "student";
+
 const res = await fetch("/api/auth/google", {
 method: "POST",
 headers: {
 "Content-Type": "application/json",
 },
-body: JSON.stringify({ idToken: response.credential }),
+body: JSON.stringify({ idToken: response.credential, role }),
 });
 
 const contentType = res.headers.get("content-type") || "";

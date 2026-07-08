@@ -8,13 +8,13 @@ const {
   forgotPassword,
   resetPassword,
 } = require("../controllers/authController");
-const { registerRules, loginRules, validate } = require("../middleware/validateAuth");
+const { registerRules, loginRules, googleAuthRules, validate } = require("../middleware/validateAuth");
 const { authLimiter, passwordResetLimiter } = require("../middleware/rateLimit");
 const { forgotPasswordRules, resetPasswordRules } = require("../middleware/validateInput");
 
 router.post("/register", authLimiter, registerRules, validate, register);
 router.post("/login", authLimiter, loginRules, validate, login);
-router.post("/google", authLimiter, googleLogin);
+router.post("/google", authLimiter, googleAuthRules, validate, googleLogin);
 router.post("/forgot-password", passwordResetLimiter, forgotPasswordRules, validate, forgotPassword);
 router.post("/reset-password", passwordResetLimiter, resetPasswordRules, validate, resetPassword);
 

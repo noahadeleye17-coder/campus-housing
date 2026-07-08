@@ -117,7 +117,7 @@ exports.login = async (req, res) => {
 
 exports.googleLogin = async (req, res) => {
   try {
-    const { idToken } = req.body;
+    const { idToken, role } = req.body;
     if (!idToken) {
       return res.status(400).json({ message: "Missing Google ID token" });
     }
@@ -144,7 +144,7 @@ exports.googleLogin = async (req, res) => {
         name: payload.name || email.split("@")[0],
         email,
         password: hashedPassword,
-        role: "student",
+        role: role === "landlord" ? "landlord" : "student",
         authProvider: "google",
       });
     }

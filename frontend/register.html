@@ -54,6 +54,105 @@
     .toggle-password.active .icon-hide {
       display: block;
     }
+
+    /* Role selector */
+    .role-select {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .role-option {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+      padding: 18px 12px 16px;
+      border: 2px solid rgba(47, 95, 232, 0.16);
+      border-radius: 16px;
+      background: rgba(248, 250, 255, 0.95);
+      cursor: pointer;
+      transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .role-option:hover {
+      transform: translateY(-2px);
+      border-color: rgba(47, 95, 232, 0.4);
+    }
+
+    .role-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .role-icon {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1.3rem;
+      background: rgba(47, 95, 232, 0.1);
+      color: var(--primary);
+      transition: background 0.18s ease, color 0.18s ease;
+    }
+
+    .role-title {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--text);
+    }
+
+    .role-desc {
+      font-size: 0.78rem;
+      color: var(--subtle);
+      line-height: 1.25;
+    }
+
+    .role-check {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+    }
+
+    .role-option.selected {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, rgba(47, 95, 232, 0.1), rgba(15, 159, 143, 0.08));
+      box-shadow: 0 10px 24px rgba(47, 95, 232, 0.16);
+    }
+
+    .role-option.selected .role-icon {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #fff;
+    }
+
+    .role-option.selected .role-check {
+      display: flex;
+    }
+
+    .role-select-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+      display: block;
+    }
   </style>
 </head>
 <body class="auth-page">
@@ -61,6 +160,24 @@
     <div>
       <h1>Create your account</h1>
       <p>Sign up to discover apartments, connect with landlords, and manage your housing search.</p>
+    </div>
+
+    <span class="role-select-label">I am signing up as a</span>
+    <div class="role-select" role="radiogroup" aria-label="Account type">
+      <label class="role-option selected" data-role="student">
+        <input type="radio" name="roleChoice" value="student" checked />
+        <span class="role-check">&#10003;</span>
+        <span class="role-icon">&#127891;</span>
+        <span class="role-title">Student</span>
+        <span class="role-desc">Browse listings &amp; find roommates</span>
+      </label>
+      <label class="role-option" data-role="landlord">
+        <input type="radio" name="roleChoice" value="landlord" />
+        <span class="role-check">&#10003;</span>
+        <span class="role-icon">&#127970;</span>
+        <span class="role-title">Landlord / Agent</span>
+        <span class="role-desc">List properties &amp; manage tenants</span>
+      </label>
     </div>
 
     <div id="googleSignInButton"></div>
@@ -99,11 +216,6 @@
         </span>
       </div>
 
-      <select id="role">
-        <option value="student">Student</option>
-        <option value="landlord">Landlord</option>
-      </select>
-
       <button type="submit" class="btn btn-primary">Create account</button>
 
       <p id="error" class="form-error"></p>
@@ -116,6 +228,14 @@
   </div>
 
   <script>
+    document.querySelectorAll(".role-option").forEach((option) => {
+      option.addEventListener("click", () => {
+        document.querySelectorAll(".role-option").forEach((o) => o.classList.remove("selected"));
+        option.classList.add("selected");
+        option.querySelector('input[type="radio"]').checked = true;
+      });
+    });
+
     function togglePassword(id, icon) {
       const input = document.getElementById(id);
       if (input.type === "password") {
