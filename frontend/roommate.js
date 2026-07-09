@@ -345,7 +345,7 @@ if (!form) {
 
 if (deleteProfileBtn) {
   deleteProfileBtn.addEventListener("click", async () => {
-    const confirmed = window.confirm("Delete your roommate profile?");
+    const confirmed = await window.showConfirm("Delete your roommate profile?", { confirmText: "Delete" });
     if (!confirmed) return;
     if (!token) {
       window.location.href = "login.html";

@@ -39,7 +39,7 @@ const sendResetEmail = async (toEmail, resetUrl) => {
   }
 
   await resend.emails.send({
-    from: "Off-Campus Hub <onboarding@resend.dev>",
+    from: "Off-Campus Hub <offcampushub.ng>",
     to: toEmail,
     subject: "Reset your Off-Campus Hub password",
     html: `

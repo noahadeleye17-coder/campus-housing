@@ -411,7 +411,7 @@ const renderRequests = (requests) => {
         await loadProfiles(); // matched profiles drop out of browse immediately
       } catch (err) {
         btn.disabled = false;
-        alert(err.message || "Something went wrong.");
+        window.showToast(err.message || "Something went wrong.", "error");
       }
     });
   });

@@ -367,7 +367,11 @@ async function toggleSavedId(id) {
 
   if (!token) {
     // Saving now requires an account so it can sync across devices.
-    if (window.confirm("Log in to save apartments to your account. Go to the login page now?")) {
+    const goToLogin = await window.showConfirm(
+      "Log in to save apartments to your account. Go to the login page now?",
+      { confirmText: "Log in", cancelText: "Not now" }
+    );
+    if (goToLogin) {
       window.location.href = `login.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
     }
     return savedIds;

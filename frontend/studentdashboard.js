@@ -395,9 +395,11 @@ if (confirmDeleteBtn) {
       return;
     }
 
-    if (!window.confirm("This will permanently delete your account. This can't be undone. Continue?")) {
-      return;
-    }
+    const confirmed = await window.showConfirm(
+      "This will permanently delete your account. This can't be undone. Continue?",
+      { confirmText: "Delete account" }
+    );
+    if (!confirmed) return;
 
     confirmDeleteBtn.disabled = true;
     deleteStatus.textContent = "Deleting…";
@@ -484,7 +486,7 @@ const attachRemoveHandlers = (container) => {
         await loadSavedApartments();
       } catch (err) {
         btn.disabled = false;
-        alert(err.message || "Something went wrong.");
+        window.showToast(err.message || "Something went wrong.", "error");
       }
     });
   });
@@ -692,7 +694,7 @@ const renderRequests = (requests) => {
         await loadRequests();
       } catch (err) {
         btn.disabled = false;
-        alert(err.message || "Something went wrong.");
+        window.showToast(err.message || "Something went wrong.", "error");
       }
     });
   });
