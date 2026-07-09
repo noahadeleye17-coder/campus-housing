@@ -2592,3 +2592,43 @@ img {
   user-select: none;
   font-size: 18px;
 }
+/* Toasts (replaces alert()) — shared across pages */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: min(90vw, 360px);
+}
+
+.toast {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-md);
+  border-left: 4px solid var(--primary);
+  font-size: 0.92rem;
+  color: var(--text);
+  line-height: 1.4;
+  animation: toast-in 0.22s ease;
+}
+
+.toast.success { border-left-color: var(--accent-strong); }
+.toast.error { border-left-color: #b42318; }
+
+.toast.hide {
+  animation: toast-out 0.2s ease forwards;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(20px); }
+}

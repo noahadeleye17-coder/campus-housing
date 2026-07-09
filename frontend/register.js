@@ -1,6 +1,31 @@
 const form = document.getElementById("registerForm");
 const errorText = document.getElementById("error");
 
+// ── Toasts (replaces alert()) ────────────────────────────────────────────────
+let toastContainer = null;
+
+const showToast = (message, type = "info") => {
+  if (!toastContainer) {
+    toastContainer = document.createElement("div");
+    toastContainer.className = "toast-container";
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("hide");
+    setTimeout(() => toast.remove(), 200);
+  }, 3200);
+};
+
+const goToRoleHome = (userRole) => {
+  window.location.href = userRole.toLowerCase() === "landlord" ? "landlord.html" : "index.html";
+};
+
 form.addEventListener("submit", async (e) => {
 e.preventDefault();
 
@@ -45,8 +70,12 @@ if (!res.ok) {
   return;
 }
 
-alert("Registration successful. Please login.");
-window.location.href = "login.html";
+localStorage.setItem("token", data.token);
+localStorage.setItem("role", data.user.role);
+localStorage.setItem("user", JSON.stringify(data.user));
+
+showToast("Welcome! Your account is ready.", "success");
+setTimeout(() => goToRoleHome(data.user.role), 600);
 
 } catch (error) {
 if (errorText) {
@@ -93,10 +122,14 @@ localStorage.setItem("token", data.token);
 localStorage.setItem("role", data.user.role);
 localStorage.setItem("user", JSON.stringify(data.user));
 
-if (data.user.role.toLowerCase() === "landlord") {
-  window.location.href = "landlord.html";
+if (data.roleMismatch) {
+  showToast(
+    `This Google account is already registered as a ${data.user.role}. Signing you in there instead.`,
+    "info"
+  );
+  setTimeout(() => goToRoleHome(data.user.role), 1400);
 } else {
-  window.location.href = "index.html";
+  goToRoleHome(data.user.role);
 }
 
 } catch (error) {

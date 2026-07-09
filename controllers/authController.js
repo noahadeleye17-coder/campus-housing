@@ -136,6 +136,8 @@ exports.googleLogin = async (req, res) => {
 
     const email = payload.email.toLowerCase();
     let user = await User.findOne({ email });
+    const requestedRole = role === "landlord" ? "landlord" : "student";
+    let roleMismatch = false;
 
     if (!user) {
       const password = crypto.randomBytes(24).toString("hex");
@@ -144,15 +146,22 @@ exports.googleLogin = async (req, res) => {
         name: payload.name || email.split("@")[0],
         email,
         password: hashedPassword,
-        role: role === "landlord" ? "landlord" : "student",
+        role: requestedRole,
         authProvider: "google",
       });
+    } else if (user.role !== requestedRole) {
+      // Existing account, but they hit "Continue as X" for the other role.
+      // Still log them in as who they actually are, just flag it so the
+      // frontend can explain why they didn't land where expected.
+      roleMismatch = true;
     }
 
     res.json({
       message: "Login successful",
       token: createToken(user._id),
       user: publicUser(user),
+      roleMismatch,
+      requestedRole,
     });
   } catch (error) {
     if (isDatabaseError(error)) {
