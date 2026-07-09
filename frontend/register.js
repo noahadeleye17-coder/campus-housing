@@ -26,6 +26,25 @@ const goToRoleHome = (userRole) => {
   window.location.href = userRole.toLowerCase() === "landlord" ? "landlord.html" : "index.html";
 };
 
+// ── Live password length hint ────────────────────────────────────────────────
+const passwordInput = document.getElementById("password");
+const passwordHint = document.getElementById("passwordHint");
+
+if (passwordInput && passwordHint) {
+  passwordInput.addEventListener("input", () => {
+    if (passwordInput.value.length === 0) {
+      passwordHint.textContent = "At least 6 characters";
+      passwordHint.classList.remove("error");
+    } else if (passwordInput.value.length < 6) {
+      passwordHint.textContent = `${6 - passwordInput.value.length} more character${6 - passwordInput.value.length === 1 ? "" : "s"} needed`;
+      passwordHint.classList.add("error");
+    } else {
+      passwordHint.textContent = "Looks good";
+      passwordHint.classList.remove("error");
+    }
+  });
+}
+
 form.addEventListener("submit", async (e) => {
 e.preventDefault();
 

@@ -2632,3 +2632,15 @@ img {
   from { opacity: 1; transform: translateX(0); }
   to { opacity: 0; transform: translateX(20px); }
 }
+
+/* Field hint text (e.g. password length requirement) */
+.field-hint {
+  display: block;
+  margin: -8px 0 4px 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.field-hint.error {
+  color: #b42318;
+}

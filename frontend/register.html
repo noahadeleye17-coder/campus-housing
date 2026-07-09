@@ -189,7 +189,7 @@
       <input type="email" id="email" placeholder="Email address" required />
 
       <div class="password-container">
-        <input type="password" id="password" placeholder="Password" required />
+        <input type="password" id="password" placeholder="Password" minlength="6" required />
         <span class="toggle-password" onclick="togglePassword('password', this)">
           <svg class="icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
@@ -201,6 +201,7 @@
           </svg>
         </span>
       </div>
+      <small class="field-hint" id="passwordHint">At least 6 characters</small>
 
       <div class="password-container">
         <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
