@@ -43,7 +43,7 @@ const parseAmenities = (amenities) => {
   return String(amenities).split(",").map((item) => item.trim()).filter(Boolean);
 };
 
-const buildApartmentData = async (req) => {
+const buildApartmentData = async (req, existingApartment = null) => {
   const {
     title,
     price,
@@ -54,6 +54,8 @@ const buildApartmentData = async (req) => {
     longitude,
     landlordWhatsapp,
     propertyType,
+    existingImages,
+    removeVideo,
   } = req.body;
   const data = {};
   const hasExplicitCoordinates =
@@ -66,15 +68,61 @@ const buildApartmentData = async (req) => {
   if (landlordWhatsapp !== undefined) data.landlordWhatsapp = landlordWhatsapp;
   if (propertyType !== undefined) data.propertyType = propertyType;
 
-  // New images were uploaded in this request — values are full Cloudinary URLs
-  if (req.processedImages && req.processedImages.length > 0) {
-    data.images = req.processedImages;
-    data.image = req.processedImages[0]; // keep legacy single-image field in sync
-  }
+  const newImages = req.processedImages || [];
 
-  // New video was uploaded in this request — value is a full Cloudinary URL
-  if (req.processedVideo) {
-    data.video = req.processedVideo;
+  if (existingApartment) {
+    // ── Update flow: merge photos the landlord chose to keep with any new
+    // uploads, instead of wholesale-replacing the images array. This is
+    // what lets someone remove one photo or add one more without having
+    // to re-upload every existing photo every time.
+    //
+    // `existingImages` is a JSON array of URLs sent by the edit form,
+    // representing exactly what should remain from the original set (it's
+    // omitted entirely if the landlord never touched the photo section —
+    // in that case we leave the original images untouched unless new ones
+    // were uploaded, preserving the old wholesale-replace behavior for any
+    // other caller that doesn't send this field).
+    const originalImages =
+      existingApartment.images ||
+      (existingApartment.image ? [existingApartment.image] : []);
+
+    let keptImages = originalImages;
+    if (existingImages !== undefined) {
+      try {
+        const parsed = JSON.parse(existingImages);
+        if (Array.isArray(parsed)) {
+          // Only trust URLs that were actually part of the original set —
+          // ignore anything the client didn't legitimately have.
+          keptImages = parsed.filter((url) => originalImages.includes(url));
+        }
+      } catch {
+        // Malformed — fall back to keeping everything rather than losing photos.
+        keptImages = originalImages;
+      }
+    }
+
+    if (existingImages !== undefined || newImages.length > 0) {
+      const mergedImages = [...keptImages, ...newImages].slice(0, 6);
+      data.images = mergedImages;
+      data.image = mergedImages[0] || "";
+    }
+
+    // Video: an explicit "remove" wins, then a fresh upload, otherwise the
+    // existing video (if any) is left alone.
+    if (removeVideo === "true" || removeVideo === true) {
+      data.video = "";
+    } else if (req.processedVideo) {
+      data.video = req.processedVideo;
+    }
+  } else {
+    // ── Create flow: unchanged, nothing to merge with yet.
+    if (newImages.length > 0) {
+      data.images = newImages;
+      data.image = newImages[0];
+    }
+    if (req.processedVideo) {
+      data.video = req.processedVideo;
+    }
   }
 
   // Resolve coordinates: an explicit latitude/longitude in the request
@@ -260,14 +308,47 @@ const updateApartment = async (req, res) => {
       return res.status(503).json({ message: "Database is not connected. Demo apartments are read-only." });
     }
 
+    const existingApartment = await Apartment.findOne(getOwnedListingFilter(req, req.params.id));
+    if (!existingApartment) {
+      return res.status(404).json({ message: "Apartment not found" });
+    }
+
+    const data = await buildApartmentData(req, existingApartment);
+
     const apartment = await Apartment.findOneAndUpdate(
-      getOwnedListingFilter(req, req.params.id),
-      await buildApartmentData(req),
+      { _id: existingApartment._id },
+      data,
       { new: true, runValidators: true }
     ).populate("landlord", "name email");
 
-    if (!apartment) {
-      return res.status(404).json({ message: "Apartment not found" });
+    // Best-effort: delete from Cloudinary any photos/video that were on the
+    // listing before this update but didn't make it into the new version
+    // (removed by the landlord, or replaced by a fresh video upload). Not
+    // awaited — a failure here shouldn't block the response, the listing
+    // itself is already saved correctly either way.
+    const originalImages =
+      existingApartment.images || (existingApartment.image ? [existingApartment.image] : []);
+    const keptImages = data.images || originalImages;
+    const removedImages = originalImages.filter((url) => !keptImages.includes(url));
+
+    const cleanupTasks = removedImages.map((url) => {
+      const publicId = cloudinaryPublicIdFromUrl(url);
+      return publicId ? deleteFromCloudinary(publicId, "image") : Promise.resolve();
+    });
+
+    if (
+      existingApartment.video &&
+      data.video !== undefined &&
+      data.video !== existingApartment.video
+    ) {
+      const publicId = cloudinaryPublicIdFromUrl(existingApartment.video);
+      if (publicId) cleanupTasks.push(deleteFromCloudinary(publicId, "video"));
+    }
+
+    if (cleanupTasks.length) {
+      Promise.all(cleanupTasks).catch((err) =>
+        console.warn("Cloudinary cleanup after update failed:", err.message)
+      );
     }
 
     res.json(apartment);
@@ -327,4 +408,5 @@ module.exports = {
   getMyApartments,
   updateApartment,
   deleteApartment,
+  buildApartmentData,
 };

@@ -2,6 +2,7 @@ const request = require("supertest");
 const express = require("express");
 const app = require("../server");
 const { scoreProfile } = require("../controllers/roommateController");
+const { buildApartmentData } = require("../controllers/apartmentController");
 const { createRateLimiter } = require("../middleware/rateLimit");
 const upload = require("../upload/upload");
 const uploadErrorHandler = require("../middleware/uploadErrors");
@@ -47,8 +48,8 @@ describe("Server", () => {
     const res = await request(app).get("/api/apartments");
 
     expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(Array.isArray(res.body.apartments)).toBe(true);
+    expect(res.body.apartments.length).toBeGreaterThan(0);
   });
 
   test("protects landlord-only apartment routes", async () => {
@@ -223,5 +224,73 @@ describe("Server", () => {
         "Gender is invalid",
       ])
     );
+  });
+});
+
+describe("buildApartmentData image/video merge on edit", () => {
+  const existingApartment = {
+    images: ["https://res.cloudinary.com/x/image/upload/v1/a.jpg", "https://res.cloudinary.com/x/image/upload/v1/b.jpg", "https://res.cloudinary.com/x/image/upload/v1/c.jpg"],
+    image: "https://res.cloudinary.com/x/image/upload/v1/a.jpg",
+    video: "https://res.cloudinary.com/x/video/upload/v1/clip.mp4",
+  };
+
+  test("keeps only the photos listed in existingImages, dropping the rest", async () => {
+    const req = {
+      body: {
+        existingImages: JSON.stringify([existingApartment.images[0], existingApartment.images[2]]),
+      },
+      processedImages: [],
+    };
+
+    const data = await buildApartmentData(req, existingApartment);
+
+    expect(data.images).toEqual([existingApartment.images[0], existingApartment.images[2]]);
+    expect(data.image).toBe(existingApartment.images[0]);
+  });
+
+  test("merges kept existing photos with newly uploaded ones, capped at 6", async () => {
+    const req = {
+      body: { existingImages: JSON.stringify(existingApartment.images) },
+      processedImages: ["https://res.cloudinary.com/x/image/upload/v1/new1.jpg"],
+    };
+
+    const data = await buildApartmentData(req, existingApartment);
+
+    expect(data.images).toEqual([...existingApartment.images, "https://res.cloudinary.com/x/image/upload/v1/new1.jpg"]);
+  });
+
+  test("ignores URLs in existingImages that weren't actually on the listing", async () => {
+    const req = {
+      body: { existingImages: JSON.stringify(["https://evil.example.com/not-mine.jpg", existingApartment.images[1]]) },
+      processedImages: [],
+    };
+
+    const data = await buildApartmentData(req, existingApartment);
+
+    expect(data.images).toEqual([existingApartment.images[1]]);
+  });
+
+  test("leaves images untouched when existingImages is omitted and nothing new was uploaded", async () => {
+    const req = { body: {}, processedImages: [] };
+
+    const data = await buildApartmentData(req, existingApartment);
+
+    expect(data.images).toBeUndefined();
+  });
+
+  test("removes the video when removeVideo is sent", async () => {
+    const req = { body: { removeVideo: "true" }, processedImages: [] };
+
+    const data = await buildApartmentData(req, existingApartment);
+
+    expect(data.video).toBe("");
+  });
+
+  test("leaves the video untouched when neither removeVideo nor a new video is sent", async () => {
+    const req = { body: {}, processedImages: [] };
+
+    const data = await buildApartmentData(req, existingApartment);
+
+    expect(data.video).toBeUndefined();
   });
 });

@@ -143,6 +143,15 @@ const videoPreviewEl = document.getElementById("videoPreview");
 let selectedImageFiles = [];
 let selectedVideoFile = null;
 
+// When editing a listing, these hold the photos/video that are already on
+// it — separate from `selectedImageFiles`/`selectedVideoFile` above, which
+// are only ever new uploads. Keeping them apart is what lets the edit form
+// show current photos and let the landlord remove individual ones or add
+// more, without silently wiping everything that wasn't re-selected.
+let existingImageUrls = [];
+let existingVideoUrl = null;
+let videoRemoved = false;
+
 const syncImagesInput = () => {
   // Keeps the real <input type="file"> in sync with our own array so a
   // photo removed via the ✕ button is actually excluded from the upload,
@@ -155,6 +164,38 @@ const syncImagesInput = () => {
 const renderImagePreviews = () => {
   imagePreviewsEl.innerHTML = "";
 
+  // Existing photos already on the listing (edit mode only). Removing one
+  // here just takes it out of `existingImageUrls` — nothing is uploaded or
+  // deleted until the form is actually submitted.
+  existingImageUrls.forEach((url, index) => {
+    const item = document.createElement("div");
+    item.className = "image-preview-item existing";
+
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = `Current photo ${index + 1}`;
+    item.appendChild(img);
+
+    const badge = document.createElement("span");
+    badge.className = "preview-badge";
+    badge.textContent = "Current";
+    item.appendChild(badge);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "remove-preview";
+    removeBtn.setAttribute("aria-label", `Remove current photo ${index + 1}`);
+    removeBtn.textContent = "×";
+    removeBtn.addEventListener("click", () => {
+      existingImageUrls.splice(index, 1);
+      renderImagePreviews();
+    });
+    item.appendChild(removeBtn);
+
+    imagePreviewsEl.appendChild(item);
+  });
+
+  // Newly selected files, not yet uploaded.
   selectedImageFiles.forEach((file, index) => {
     const item = document.createElement("div");
     item.className = "image-preview-item";
@@ -184,33 +225,59 @@ const renderImagePreviews = () => {
 
 const renderVideoPreview = () => {
   videoPreviewEl.innerHTML = "";
-  if (!selectedVideoFile) return;
 
-  const item = document.createElement("div");
-  item.className = "video-preview-item";
+  if (selectedVideoFile) {
+    const item = document.createElement("div");
+    item.className = "video-preview-item";
 
-  const sizeMB = (selectedVideoFile.size / (1024 * 1024)).toFixed(1);
-  const label = document.createElement("span");
-  label.textContent = `🎬 ${selectedVideoFile.name} (${sizeMB} MB)`;
-  item.appendChild(label);
+    const sizeMB = (selectedVideoFile.size / (1024 * 1024)).toFixed(1);
+    const label = document.createElement("span");
+    label.textContent = `🎬 ${selectedVideoFile.name} (${sizeMB} MB)`;
+    item.appendChild(label);
 
-  const removeBtn = document.createElement("button");
-  removeBtn.type = "button";
-  removeBtn.className = "remove-preview-inline";
-  removeBtn.textContent = "Remove";
-  removeBtn.addEventListener("click", () => {
-    selectedVideoFile = null;
-    fields.video.value = "";
-    renderVideoPreview();
-  });
-  item.appendChild(removeBtn);
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "remove-preview-inline";
+    removeBtn.textContent = "Remove";
+    removeBtn.addEventListener("click", () => {
+      selectedVideoFile = null;
+      fields.video.value = "";
+      renderVideoPreview();
+    });
+    item.appendChild(removeBtn);
 
-  videoPreviewEl.appendChild(item);
+    videoPreviewEl.appendChild(item);
+    return;
+  }
+
+  if (existingVideoUrl && !videoRemoved) {
+    const item = document.createElement("div");
+    item.className = "video-preview-item";
+
+    const label = document.createElement("span");
+    label.textContent = "🎬 Current video";
+    item.appendChild(label);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "remove-preview-inline";
+    removeBtn.textContent = "Remove";
+    removeBtn.addEventListener("click", () => {
+      videoRemoved = true;
+      renderVideoPreview();
+    });
+    item.appendChild(removeBtn);
+
+    videoPreviewEl.appendChild(item);
+  }
 };
 
 const clearPreviews = () => {
   selectedImageFiles = [];
   selectedVideoFile = null;
+  existingImageUrls = [];
+  existingVideoUrl = null;
+  videoRemoved = false;
   imageCountWarningEl.style.display = "none";
   renderImagePreviews();
   renderVideoPreview();
@@ -218,11 +285,14 @@ const clearPreviews = () => {
 
 fields.images.addEventListener("change", () => {
   const chosen = Array.from(fields.images.files);
+  const roomLeft = Math.max(6 - existingImageUrls.length, 0);
 
-  if (chosen.length > 6) {
-    selectedImageFiles = chosen.slice(0, 6);
+  if (chosen.length > roomLeft) {
+    selectedImageFiles = chosen.slice(0, roomLeft);
     syncImagesInput(); // trim the real input too, so the count sent to the backend actually matches
-    imageCountWarningEl.textContent = `You selected ${chosen.length} photos — only the first 6 were kept. The server rejects more than 6.`;
+    imageCountWarningEl.textContent = existingImageUrls.length
+      ? `You have ${existingImageUrls.length} current photo${existingImageUrls.length === 1 ? "" : "s"} kept — only ${roomLeft} more could be added to stay within the 6-photo limit.`
+      : `You selected ${chosen.length} photos — only the first 6 were kept. The server rejects more than 6.`;
     imageCountWarningEl.style.display = "block";
   } else {
     selectedImageFiles = chosen;
@@ -254,7 +324,18 @@ const setFormMode = (id = null, apartment = null) => {
     fields.landlordWhatsapp.value = apartment.landlordWhatsapp || "";
     fields.images.value = "";
     fields.video.value = "";
-    clearPreviews();
+    selectedImageFiles = [];
+    selectedVideoFile = null;
+    existingImageUrls = apartment.images?.length
+      ? [...apartment.images]
+      : apartment.image
+        ? [apartment.image]
+        : [];
+    existingVideoUrl = apartment.video || null;
+    videoRemoved = false;
+    imageCountWarningEl.style.display = "none";
+    renderImagePreviews();
+    renderVideoPreview();
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
@@ -293,6 +374,16 @@ form.addEventListener("submit", async (e) => {
 
   if (fields.video.files[0]) {
     formData.append("video", fields.video.files[0]);
+  }
+
+  if (isEditing) {
+    // Tells the backend exactly which of the original photos to keep —
+    // anything not in this list was removed via the × button and should
+    // be dropped (and cleaned up from Cloudinary), not silently replaced.
+    formData.append("existingImages", JSON.stringify(existingImageUrls));
+    if (videoRemoved && !selectedVideoFile) {
+      formData.append("removeVideo", "true");
+    }
   }
 
   const method = editingId ? "PATCH" : "POST";

@@ -547,6 +547,25 @@
       background: rgba(180, 35, 24, 0.85);
     }
 
+    .image-preview-item.existing {
+      border-color: var(--primary);
+    }
+
+    .preview-badge {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(16, 24, 40, 0.72);
+      color: #ffffff;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 2px 0;
+    }
+
     .preview-warning {
       margin-top: 8px;
       font-size: 0.85rem;
@@ -717,7 +736,7 @@
             <label class="form-field form-field-wide">
               <span>Apartment photos</span>
               <input id="images" name="images" type="file" accept="image/*" multiple />
-              <small>Select up to 6 photos. Any size or shape works — they won't be cropped.</small>
+              <small>Up to 6 photos total. When editing, current photos are shown below — remove any with ×, or add more.</small>
               <div id="imagePreviews" class="image-previews"></div>
               <div id="imageCountWarning" class="preview-warning" style="display: none;"></div>
             </label>
