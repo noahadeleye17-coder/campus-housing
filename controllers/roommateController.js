@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const RoommateProfile = require("../models/RoommateProfile");
 const RoommateRequest = require("../models/RoommateRequest");
+const { sendNotificationEmail, wrapEmail, escapeHtml } = require("../utils/email");
 
 const isDatabaseError = (error) => {
   return error.name === "MongooseError" || error.name === "MongoServerSelectionError";
@@ -280,8 +281,18 @@ const createRoommateRequest = async (req, res) => {
       },
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     )
-      .populate("fromUser", "name email role")
-      .populate("toUser", "name email role");
+      .populate("fromUser", "name email role notificationsEnabled")
+      .populate("toUser", "name email role notificationsEnabled");
+
+    sendNotificationEmail(request.toUser, {
+      subject: `${request.fromUser.name} wants to be your roommate`,
+      html: wrapEmail(
+        "New roommate request",
+        `<p><strong>${escapeHtml(request.fromUser.name)}</strong> sent you a roommate request on Off-Campus Hub.</p>
+         ${request.message ? `<p style="background:#f5f6fa;padding:12px 14px;border-radius:8px;">"${escapeHtml(request.message)}"</p>` : ""}
+         <p>Log in to your dashboard to accept or decline.</p>`
+      ),
+    }).catch(() => {}); // best-effort — never block the response on email delivery
 
     res.status(201).json(request);
   } catch (error) {
@@ -345,8 +356,8 @@ const updateRoommateRequest = async (req, res) => {
       { status },
       { new: true, runValidators: true }
     )
-      .populate("fromUser", "name email role")
-      .populate("toUser", "name email role");
+      .populate("fromUser", "name email role notificationsEnabled")
+      .populate("toUser", "name email role notificationsEnabled");
 
     if (!request) {
       return res.status(404).json({ message: "Roommate request not found" });
@@ -364,6 +375,17 @@ const updateRoommateRequest = async (req, res) => {
 
       const counterpartProfile = await RoommateProfile.findOne({ user: request.fromUser._id });
       matchedWhatsapp = counterpartProfile?.whatsappNumber || null;
+
+      // Only the original requester needs telling — the person who just
+      // clicked "Accept" already knows.
+      sendNotificationEmail(request.fromUser, {
+        subject: `${request.toUser.name} accepted your roommate request`,
+        html: wrapEmail(
+          "You've been matched!",
+          `<p><strong>${escapeHtml(request.toUser.name)}</strong> accepted your roommate request on Off-Campus Hub.</p>
+           <p>Log in to your dashboard to get their contact details and start planning.</p>`
+        ),
+      }).catch(() => {});
     }
 
     res.json({ ...request.toObject(), matchedWhatsapp });
