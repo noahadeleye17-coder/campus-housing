@@ -2703,3 +2703,25 @@ img {
 }
 
 .confirm-modal-btn-confirm:hover { background: #8f1c13; }
+
+/* WhatsApp logo badge — used on every "Chat on WhatsApp" link so it shows
+   the actual WhatsApp glyph (green circle + white phone icon) instead of a
+   generic speech-bubble outline. */
+.wa-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #25d366;
+  flex: none;
+  margin-right: 6px;
+  vertical-align: -5px;
+}
+
+.wa-badge svg {
+  width: 11px;
+  height: 12px;
+  display: block;
+}
