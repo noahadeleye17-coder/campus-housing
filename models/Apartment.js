@@ -68,4 +68,13 @@ const apartmentSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// Speeds up the "All Types" + price range filters on the search bar
+// (avoids a full collection scan on every homepage search/filter).
+apartmentSchema.index({ propertyType: 1, price: 1 });
+
+// Text index for the search box (apartment title / location). Lets queries
+// use $text: { $search: "..." } instead of a $regex scan — faster and
+// ranks results by relevance instead of just matching substrings.
+apartmentSchema.index({ title: "text", location: "text" });
+
 module.exports = mongoose.model("Apartment", apartmentSchema);
