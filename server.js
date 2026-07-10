@@ -5,6 +5,7 @@ const fs = require("fs");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const helmet = require("helmet");
 
 const authRoutes = require("./routes/authRoutes");
 const apartmentRoutes = require("./routes/apartmentroutes");
@@ -16,6 +17,12 @@ const Apartment = require("./models/Apartment");
 
 const app = express();
 mongoose.set("bufferCommands", false);
+
+// Security headers (clickjacking, MIME-sniffing, etc.)
+// CSP is left off for now since the frontend uses inline <script>/<style>
+// tags (e.g. window.API_BASE, inline navbar styling) that a default CSP
+// would block. Can be tightened later with a proper allowlist.
+app.use(helmet({ contentSecurityPolicy: false }));
 
 // ALLOWED_ORIGIN can be a single origin or a comma-separated list, e.g.
 // "https://offcampushub.ng,https://www.offcampushub.ng,https://offcampushub.onrender.com"
