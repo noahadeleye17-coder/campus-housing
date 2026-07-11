@@ -107,7 +107,7 @@ const initGoogleSignIn = async (buttonId) => {
         type: "standard",
         theme: "outline",
         size: "large",
-        width: "100%",
+        width: "100",
         text: "continue_with",
       });
     }
