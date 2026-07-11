@@ -103,11 +103,19 @@ const initGoogleSignIn = async (buttonId) => {
 
     const buttonContainer = document.getElementById(buttonId);
     if (buttonContainer) {
+      // GIS's renderButton only accepts a fixed pixel width as a string
+      // (e.g. "250") - percentages like "100%" are invalid and can cause
+      // the button's own render request to be rejected outright. We size
+      // it off the actual container width instead, capped to GIS's usable
+      // range, and CSS on the container keeps it visually responsive.
+      const measuredWidth = Math.round(buttonContainer.getBoundingClientRect().width) || 300;
+      const buttonWidth = Math.max(200, Math.min(400, measuredWidth));
+
       google.accounts.id.renderButton(buttonContainer, {
         type: "standard",
         theme: "outline",
         size: "large",
-        width: "100",
+        width: String(buttonWidth),
         text: "continue_with",
       });
     }
