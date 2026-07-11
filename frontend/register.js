@@ -23,7 +23,7 @@ const showToast = (message, type = "info") => {
 };
 
 const goToRoleHome = (userRole) => {
-  window.location.href = userRole.toLowerCase() === "landlord" ? "landlord.html" : "index.html";
+  window.location.replace(userRole.toLowerCase() === "landlord" ? "landlord.html" : "index.html");
 };
 
 // ── Live password length hint ────────────────────────────────────────────────
@@ -108,6 +108,11 @@ error.message ||
 window.handleGoogleCredentialResponse = async (response) => {
 if (!response?.credential) return;
 
+// Paint a "Signing you in..." screen right away so a slow mobile
+// connection or a cold backend start (Render free tier) shows feedback
+// instead of a blank white screen while the next request/page loads.
+window.showGoogleLoadingOverlay?.();
+
 try {
 const roleInput = document.querySelector('input[name="roleChoice"]:checked');
 const role = roleInput ? roleInput.value : "student";
@@ -132,7 +137,7 @@ if (contentType.includes("application/json")) {
 
 if (!res.ok) {
   const message = data.message || "Google login failed";
-
+  window.hideGoogleLoadingOverlay?.();
   if (errorText) errorText.textContent = message;
   return;
 }
@@ -140,6 +145,16 @@ if (!res.ok) {
 localStorage.setItem("token", data.token);
 localStorage.setItem("role", data.user.role);
 localStorage.setItem("user", JSON.stringify(data.user));
+
+// Confirm the write actually landed before navigating away - on some
+// mobile browsers under memory pressure a localStorage write can be
+// delayed, and navigating before it lands is what causes the next
+// page to think there's no session.
+if (localStorage.getItem("token") !== data.token) {
+  window.hideGoogleLoadingOverlay?.("Almost done - please try again.");
+  if (errorText) errorText.textContent = "Could not save your session. Please try again.";
+  return;
+}
 
 if (data.roleMismatch) {
   showToast(
@@ -152,6 +167,7 @@ if (data.roleMismatch) {
 }
 
 } catch (error) {
+window.hideGoogleLoadingOverlay?.();
 if (errorText) {
 errorText.textContent =
 error.message || "Google login failed";

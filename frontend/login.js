@@ -57,6 +57,11 @@ form.addEventListener("submit", async (e) => {
 window.handleGoogleCredentialResponse = async (response) => {
   if (!response?.credential) return;
 
+  // Paint a "Signing you in..." screen right away so a slow mobile
+  // connection or a cold backend start (Render free tier) shows feedback
+  // instead of a blank white screen while the next request/page loads.
+  window.showGoogleLoadingOverlay?.();
+
   try {
     const res = await fetch("/api/auth/google", {
       method: "POST",
@@ -77,6 +82,7 @@ window.handleGoogleCredentialResponse = async (response) => {
 
     if (!res.ok) {
       const message = data.message || "Google login failed";
+      window.hideGoogleLoadingOverlay?.();
       if (errorText) errorText.textContent = message;
       return;
     }
@@ -85,12 +91,22 @@ window.handleGoogleCredentialResponse = async (response) => {
     localStorage.setItem("role", data.user.role);
     localStorage.setItem("user", JSON.stringify(data.user));
 
-    if (data.user.role.toLowerCase() === "landlord") {
-      window.location.href = "landlord.html";
-    } else {
-      window.location.href = "index.html";
+    // Confirm the write actually landed before navigating away - on some
+    // mobile browsers under memory pressure a localStorage write can be
+    // delayed, and navigating before it lands is what causes the next
+    // page to think there's no session.
+    if (localStorage.getItem("token") !== data.token) {
+      window.hideGoogleLoadingOverlay?.(
+        "Almost done - tap below to continue."
+      );
+      if (errorText) errorText.textContent = "Could not save your session. Please try again.";
+      return;
     }
+
+    const destination = data.user.role.toLowerCase() === "landlord" ? "landlord.html" : "index.html";
+    window.location.replace(destination);
   } catch (error) {
+    window.hideGoogleLoadingOverlay?.();
     if (errorText) errorText.textContent = error.message || "Google login failed";
   }
 };
