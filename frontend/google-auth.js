@@ -96,12 +96,6 @@ const initGoogleSignIn = async (buttonId) => {
       client_id: clientId,
       callback: handleGoogleCredentialResponse,
       ux_mode: "popup",
-      // Safari's Intelligent Tracking Prevention and Chrome's phased
-      // third-party-cookie deprecation both break the classic GIS flow in
-      // ways that fail silently and intermittently (works, then doesn't,
-      // then does again). itp_support routes around the cookie dependency
-      // where the browser supports it.
-      itp_support: true,
       error_callback: (err) => {
         console.error("Google sign-in prompt error:", err);
       },
