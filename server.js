@@ -22,7 +22,21 @@ mongoose.set("bufferCommands", false);
 // CSP is left off for now since the frontend uses inline <script>/<style>
 // tags (e.g. window.API_BASE, inline navbar styling) that a default CSP
 // would block. Can be tightened later with a proper allowlist.
-app.use(helmet({ contentSecurityPolicy: false }));
+//
+// crossOriginOpenerPolicy is relaxed from Helmet's default ("same-origin")
+// to "same-origin-allow-popups". The default silently blocks the
+// window.postMessage handshake that Google Identity Services' popup-based
+// sign-in relies on to report the result back to the opener window - with
+// the default in place, the Google popup (accounts.google.com/gsi/transform)
+// completes login but can never tell the main page, so it's left open and
+// blank. "same-origin-allow-popups" keeps the same-origin protection while
+// permitting that specific popup communication.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  })
+);
 
 // ALLOWED_ORIGIN can be a single origin or a comma-separated list, e.g.
 // "https://offcampushub.ng,https://www.offcampushub.ng,https://offcampushub.onrender.com"
