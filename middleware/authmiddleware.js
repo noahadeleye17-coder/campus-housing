@@ -35,6 +35,12 @@ exports.protect = async (req, res, next) => {
       });
     }
 
+    if (req.user.disabled) {
+      return res.status(403).json({
+        message: "This account has been disabled. Contact support if you believe this is a mistake.",
+      });
+    }
+
     next();
   } catch (error) {
     return res.status(401).json({

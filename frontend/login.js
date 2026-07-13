@@ -43,7 +43,10 @@ form.addEventListener("submit", async (e) => {
     localStorage.setItem("user", JSON.stringify(data.user));
 
     // REDIRECT BASED ON ROLE
-    if (data.user.role.toLowerCase() === "landlord") {
+    const loggedInRole = data.user.role.toLowerCase();
+    if (loggedInRole === "admin") {
+      window.location.href = "admin.html";
+    } else if (loggedInRole === "landlord") {
       window.location.href = "landlord.html";
     } else {
       window.location.href = "index.html";
@@ -103,7 +106,9 @@ window.handleGoogleCredentialResponse = async (response) => {
       return;
     }
 
-    const destination = data.user.role.toLowerCase() === "landlord" ? "landlord.html" : "index.html";
+    const loggedInRole = data.user.role.toLowerCase();
+    const destination =
+      loggedInRole === "admin" ? "admin.html" : loggedInRole === "landlord" ? "landlord.html" : "index.html";
     window.location.replace(destination);
   } catch (error) {
     window.hideGoogleLoadingOverlay?.();

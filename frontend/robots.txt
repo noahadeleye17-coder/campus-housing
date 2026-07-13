@@ -3,6 +3,7 @@ Allow: /
 Disallow: /login
 Disallow: /register
 Disallow: /dashboard.html
+Disallow: /admin.html
 Disallow: /forgot-password.html
 Disallow: /reset-password.html
 Disallow: /api/

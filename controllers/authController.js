@@ -102,6 +102,12 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    if (user.disabled) {
+      return res.status(403).json({
+        message: "This account has been disabled. Contact support if you believe this is a mistake.",
+      });
+    }
+
     res.json({
       message: "Login successful",
       token: createToken(user._id),
@@ -154,6 +160,12 @@ exports.googleLogin = async (req, res) => {
       // Still log them in as who they actually are, just flag it so the
       // frontend can explain why they didn't land where expected.
       roleMismatch = true;
+    }
+
+    if (user.disabled) {
+      return res.status(403).json({
+        message: "This account has been disabled. Contact support if you believe this is a mistake.",
+      });
     }
 
     res.json({

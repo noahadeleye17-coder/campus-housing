@@ -25,6 +25,15 @@ const userSchema = new mongoose.Schema(
       default: "student",
     },
 
+    // Set by an admin to suspend an account without deleting it. Blocked at
+    // both login (authController) and on every subsequent request that
+    // carries an existing token (authmiddleware.protect), so a disabled
+    // user is locked out immediately even if their JWT hasn't expired yet.
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+
     authProvider: {
       type: String,
       enum: ["local", "google"],

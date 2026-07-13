@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — Off-Campus Hub</title>
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/favicon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="alternate icon" href="icons/favicon.ico" />
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    .page-shell {
+      width: min(100% - 40px, var(--container));
+      margin: 40px auto 80px;
+    }
+
+    /* Navbar + account bar — same pattern as landlord.html */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 1.05rem;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    .navbar-brand svg { flex-shrink: 0; }
+
+    .navbar-home-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+    }
+
+    .navbar-home-btn:hover { background: var(--surface-tint); }
+
+    .navbar-home-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    .account-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .account-user { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+    .account-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .account-identity { line-height: 1.25; min-width: 0; }
+
+    .account-name {
+      display: block;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+
+    .account-role { display: block; font-size: 0.78rem; color: var(--muted); }
+
+    .logout-btn { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .logout-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    #logoutBtn {
+      background: none;
+      color: var(--coral);
+      box-shadow: none;
+      min-height: auto;
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 8px 12px;
+      border-radius: 10px;
+    }
+
+    #logoutBtn:hover { background: var(--surface-tint); color: var(--coral); transform: none; box-shadow: none; }
+
+    .page-header {
+      margin-bottom: 24px;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+
+    .page-header h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 2.5vw, 2.5rem);
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+
+    .page-header p { margin: 0; max-width: 720px; color: var(--muted); line-height: 1.7; }
+
+    /* Tabs */
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .admin-tab-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 10px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .admin-tab-btn:hover { background: var(--surface-tint); }
+
+    .admin-tab-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    .admin-panel { display: none; }
+    .admin-panel.active { display: block; }
+
+    .stats-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-tint) 100%);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stat-label { display: block; font-size: 0.88rem; color: var(--muted); margin-bottom: 10px; }
+    .stat-value { margin: 0; font-size: 2rem; font-weight: 800; color: var(--primary); line-height: 1.05; }
+    .stat-substat { display: block; margin-top: 6px; font-size: 0.8rem; color: var(--accent-strong); font-weight: 700; }
+
+    .panel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 26px;
+    }
+
+    .panel-card h2 { margin: 0 0 6px; font-size: 1.35rem; color: var(--ink); }
+    .panel-card > p { color: var(--muted); line-height: 1.7; margin: 0 0 18px; }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar input[type="search"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.92rem;
+    }
+
+    /* Users table */
+    .data-table-wrap { overflow-x: auto; }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .data-table th {
+      text-align: left;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .data-table tr:last-child td { border-bottom: none; }
+
+    .user-name-cell { font-weight: 700; color: var(--ink); }
+    .user-email-cell { color: var(--muted); font-size: 0.85rem; }
+
+    .role-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      background: var(--surface-tint);
+      color: var(--accent-strong);
+      text-transform: capitalize;
+    }
+
+    .role-badge.admin { background: rgba(35, 87, 216, 0.12); color: var(--primary-dark); }
+    .role-badge.disabled-badge { background: rgba(180, 35, 24, 0.1); color: #b42318; }
+
+    .role-select {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .row-actions .btn {
+      min-height: 34px;
+      padding: 0 12px;
+      font-size: 0.82rem;
+      min-width: auto;
+    }
+
+    /* Listings moderation */
+    .apartment-list { display: grid; gap: 18px; }
+
+    .apartment-card {
+      display: grid;
+      gap: 12px;
+      padding: 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, #ffffff 0%, var(--surface-soft) 100%);
+    }
+
+    .apartment-card h3 { margin: 0; font-size: 1.1rem; color: var(--ink); }
+
+    .apartment-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .apartment-meta span {
+      background: var(--surface-tint);
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .landlord-tag {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .landlord-tag strong { color: var(--ink); }
+
+    .apartment-price { margin: 0; font-size: 1rem; font-weight: 700; color: var(--accent-strong); }
+
+    .listing-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .listing-btn { min-width: 100px; min-height: 38px; padding: 0 14px; }
+
+    .empty-state {
+      padding: 28px 22px;
+      border-radius: var(--radius-md);
+      background: var(--surface-tint);
+      color: var(--muted);
+      border: 1px dashed rgba(15, 159, 143, 0.35);
+      text-align: center;
+    }
+
+    /* Quick-edit inline form for a listing */
+    .quick-edit-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-tint);
+      border: 1px solid var(--border);
+    }
+
+    .quick-edit-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+    .quick-edit-form input, .quick-edit-form select {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+    .quick-edit-form .quick-edit-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    /* Content tab: announcement banner editor */
+    .announcement-form { display: grid; gap: 14px; max-width: 560px; }
+    .announcement-form textarea {
+      resize: vertical;
+      min-height: 90px;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 0.92rem;
+    }
+    .announcement-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+    .char-count { font-size: 0.78rem; color: var(--muted); text-align: right; }
+
+    @media (max-width: 640px) {
+      .page-shell { margin: 20px auto 60px; }
+      .page-header, .panel-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <svg width="26" height="34" viewBox="0 0 88 114" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="pinGAdmin" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#2357d8"/>
+            <stop offset="100%" style="stop-color:#0f9f8f"/>
+          </linearGradient>
+          <clipPath id="pinClipAdmin">
+            <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z"/>
+          </clipPath>
+        </defs>
+        <path d="M44 0 C20 0 0 20 0 44 C0 62 20 82 36 96 C40 100 44 104 44 104 C44 104 48 100 52 96 C68 82 88 62 88 44 C88 20 68 0 44 0 Z" fill="url(#pinGAdmin)"/>
+        <g clip-path="url(#pinClipAdmin)">
+          <rect x="0" y="0" width="88" height="104" fill="url(#pinGAdmin)"/>
+          <rect x="14" y="42" width="60" height="62" fill="#fff" opacity="0.95"/>
+          <polygon points="44,20 78,42 10,42" fill="#fff" opacity="0.85"/>
+          <polygon points="44,20 54,42 34,42" fill="#fff" opacity="0.5"/>
+          <rect x="20" y="48" width="10" height="9" rx="1" fill="url(#pinGAdmin)"/>
+          <rect x="35" y="48" width="10" height="9" rx="1" fill="url(#pinGAdmin)"/>
+          <rect x="50" y="48" width="10" height="9" rx="1" fill="url(#pinGAdmin)"/>
+          <rect x="20" y="63" width="10" height="9" rx="1" fill="url(#pinGAdmin)"/>
+          <rect x="35" y="63" width="10" height="9" rx="1" fill="url(#pinGAdmin)"/>
+          <rect x="50" y="63" width="10" height="9" rx="1" fill="url(#pinGAdmin)"/>
+          <rect x="36" y="78" width="16" height="26" rx="2" fill="url(#pinGAdmin)" opacity="0.5"/>
+        </g>
+      </svg>
+      Off-Campus Hub
+    </a>
+    <a href="index.html" class="navbar-home-btn" aria-label="Back to home page" title="Back to home page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+    </a>
+  </header>
+
+  <div class="page-shell">
+    <div class="account-bar">
+      <div class="account-user">
+        <div class="account-avatar" id="topAvatar">A</div>
+        <div class="account-identity">
+          <span class="account-name" id="topName">Loading…</span>
+          <span class="account-role" id="topRole">Admin</span>
+        </div>
+      </div>
+      <button type="button" class="btn logout-btn" id="logoutBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </button>
+    </div>
+
+    <section class="page-header">
+      <h1>Admin Dashboard</h1>
+      <p>Full platform control — moderate every listing, manage every account, and post a site-wide announcement, regardless of who created it.</p>
+    </section>
+
+    <div class="admin-tabs">
+      <button type="button" class="admin-tab-btn active" data-tab="overview">Overview</button>
+      <button type="button" class="admin-tab-btn" data-tab="listings">Listings</button>
+      <button type="button" class="admin-tab-btn" data-tab="users">Users</button>
+      <button type="button" class="admin-tab-btn" data-tab="content">Content</button>
+    </div>
+
+    <!-- Overview -->
+    <section class="admin-panel active" id="panel-overview">
+      <div class="stats-grid" id="statsGrid">
+        <article class="stat-card">
+          <span class="stat-label">Total users</span>
+          <p class="stat-value" id="statTotalUsers">—</p>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Students</span>
+          <p class="stat-value" id="statStudents">—</p>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Landlords</span>
+          <p class="stat-value" id="statLandlords">—</p>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Total listings</span>
+          <p class="stat-value" id="statListings">—</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Listings -->
+    <section class="admin-panel" id="panel-listings">
+      <div class="panel-card">
+        <h2>All listings</h2>
+        <p>Every apartment on the platform, from every landlord. Edit the key details or remove a listing outright.</p>
+        <div class="toolbar">
+          <input type="search" id="listingSearchInput" placeholder="Search by title or location…" />
+        </div>
+        <div id="adminApartments" class="apartment-list">Loading listings…</div>
+      </div>
+    </section>
+
+    <!-- Users -->
+    <section class="admin-panel" id="panel-users">
+      <div class="panel-card">
+        <h2>All users</h2>
+        <p>Change a role, disable an account, or delete one permanently. Deleting a landlord also removes their listings and media.</p>
+        <div class="toolbar">
+          <input type="search" id="userSearchInput" placeholder="Search by name or email…" />
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="5">Loading users…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Content -->
+    <section class="admin-panel" id="panel-content">
+      <div class="panel-card">
+        <h2>Site announcement</h2>
+        <p>Shown as a banner across the site to every visitor while active — e.g. "New listings added for this semester."</p>
+        <form id="announcementForm" class="announcement-form">
+          <label>
+            <textarea id="announcementText" maxlength="280" placeholder="Type your announcement…"></textarea>
+            <span class="char-count"><span id="announcementCharCount">0</span>/280</span>
+          </label>
+          <label class="announcement-toggle">
+            <input type="checkbox" id="announcementActive" />
+            Show this banner on the site
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="btn" id="saveAnnouncementBtn">Save</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <script src="auth-session.js"></script>
+  <script src="ui-feedback.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

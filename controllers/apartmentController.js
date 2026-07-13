@@ -409,4 +409,5 @@ module.exports = {
   updateApartment,
   deleteApartment,
   buildApartmentData,
+  cloudinaryPublicIdFromUrl,
 };
