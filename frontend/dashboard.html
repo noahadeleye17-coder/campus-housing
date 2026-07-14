@@ -15,7 +15,8 @@
     (function () {
       var session = window.AuthSession ? window.AuthSession.getSession() : null;
       var role = session && session.user ? session.user.role : null;
-      window.location.replace(role === "landlord" ? "landlord.html" : "studentdashboard.html");
+      var destination = role === "admin" ? "admin.html" : role === "landlord" ? "landlord.html" : "studentdashboard.html";
+      window.location.replace(destination);
     })();
   </script>
 </body>

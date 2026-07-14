@@ -28,6 +28,10 @@ if (user && user.role === "landlord") {
   window.location.href = "landlord.html";
 }
 
+if (user && user.role === "admin") {
+  window.location.href = "admin.html";
+}
+
 // ── Sidebar: user card, logout, mobile toggle ────────────────────────────────
 
 const sideAvatar = document.getElementById("sideAvatar");
