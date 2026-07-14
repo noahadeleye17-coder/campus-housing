@@ -11,9 +11,11 @@ const authRoutes = require("./routes/authRoutes");
 const apartmentRoutes = require("./routes/apartmentroutes");
 const roommateRoutes = require("./routes/roommateRoutes");
 const userRoutes = require("./routes/userroutes");
+const adminRoutes = require("./routes/adminRoutes");
 const { apiLimiter } = require("./middleware/rateLimit");
 const uploadErrorHandler = require("./middleware/uploadErrors");
 const Apartment = require("./models/Apartment");
+const SiteConfig = require("./models/SiteConfig");
 
 const app = express();
 mongoose.set("bufferCommands", false);
@@ -176,6 +178,24 @@ app.use("/api/auth", authRoutes);
 app.use("/api/apartments", apartmentRoutes);
 app.use("/api/roommates", roommateRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/admin", adminRoutes);
+
+// Public read of the admin-set announcement banner — no auth required since
+// every visitor (logged in or not) should see it when active.
+app.get("/api/site-config", async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({ announcement: "", announcementActive: false });
+    }
+    const config = await SiteConfig.getOrCreate();
+    res.json({
+      announcement: config.announcement,
+      announcementActive: config.announcementActive,
+    });
+  } catch (error) {
+    res.json({ announcement: "", announcementActive: false });
+  }
+});
 
 app.get("/api/config", (req, res) => {
   res.json({
