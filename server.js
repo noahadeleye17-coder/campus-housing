@@ -310,7 +310,7 @@ const connectDB = async () => {
     await mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 15000,
   socketTimeoutMS: 45000,
-  maxPoolSize: 3,
+  maxPoolSize: 10,
   heartbeatFrequencyMS: 30000,
   minPoolSize: 1,
   tls: true,                    // replaces the ssl=true in the URI
