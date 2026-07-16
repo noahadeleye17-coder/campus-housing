@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Off-Campus Hub</title>
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/favicon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="alternate icon" href="icons/favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2357d8" />
+</head>
+<body>
+  <script src="auth-session.js"></script>
+  <script>
+    (function () {
+      // Same session/role check dashboard.html already uses — the only
+      // new branch is "no session at all" -> public homepage, since
+      // dashboard.html assumes you're already logged in to get there.
+      var session = window.AuthSession ? window.AuthSession.getSession() : null;
+      var user = session && session.user ? session.user : null;
+
+      var destination;
+      if (!user) {
+        destination = "/";
+      } else if (user.role === "admin") {
+        destination = "admin.html";
+      } else if (user.role === "landlord") {
+        destination = "landlord.html";
+      } else {
+        destination = "studentdashboard.html";
+      }
+
+      window.location.replace(destination);
+    })();
+  </script>
+</body>
+</html>

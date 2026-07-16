@@ -215,6 +215,15 @@ app.get("/register", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend", "register.html"));
 });
 
+// ── PWA entry point ──────────────────────────────────────────────────────────
+// manifest.json's start_url. Deliberately a thin router, not a page of its
+// own: it reuses the exact client-side session/role check dashboard.html
+// already does (via AuthSession), just with one extra branch for "no
+// session at all" -> public homepage. No new auth logic on the server.
+app.get("/app", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "app.html"));
+});
+
 // ── Dynamic sitemap ──────────────────────────────────────────────────────────
 // Regenerated on every request from the live database, so every apartment
 // listing is automatically included — no manual re-uploading needed.
