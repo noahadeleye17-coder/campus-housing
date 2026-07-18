@@ -9,6 +9,8 @@ const {
   deleteUser,
   getSiteConfig,
   updateSiteConfig,
+  getRoommateProfiles,
+  deleteRoommateProfile,
 } = require("../controllers/adminController");
 
 router.use(protect, isAdmin);
@@ -30,5 +32,11 @@ router.get("/site-config", getSiteConfig);
 
 // @route   PUT /api/admin/site-config
 router.put("/site-config", writeLimiter, updateSiteConfig);
+
+// @route   GET /api/admin/roommate-profiles
+router.get("/roommate-profiles", getRoommateProfiles);
+
+// @route   DELETE /api/admin/roommate-profiles/:id
+router.delete("/roommate-profiles/:id", writeLimiter, deleteRoommateProfile);
 
 module.exports = router;

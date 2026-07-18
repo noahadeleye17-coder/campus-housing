@@ -446,6 +446,7 @@
       <button type="button" class="admin-tab-btn active" data-tab="overview">Overview</button>
       <button type="button" class="admin-tab-btn" data-tab="listings">Listings</button>
       <button type="button" class="admin-tab-btn" data-tab="users">Users</button>
+      <button type="button" class="admin-tab-btn" data-tab="roommates">Roommates</button>
       <button type="button" class="admin-tab-btn" data-tab="content">Content</button>
     </div>
 
@@ -504,6 +505,34 @@
             </thead>
             <tbody id="usersTableBody">
               <tr><td colspan="5">Loading users…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Roommates -->
+    <section class="admin-panel" id="panel-roommates">
+      <div class="panel-card">
+        <h2>All roommate profiles</h2>
+        <p>Every roommate profile on the platform. Delete a profile to remove it (and any pending/matched requests tied to it) without touching the person's account.</p>
+        <div class="toolbar">
+          <input type="search" id="roommateSearchInput" placeholder="Search by name, email, or campus…" />
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Campus</th>
+                <th>Budget</th>
+                <th>Visible</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="roommatesTableBody">
+              <tr><td colspan="6">Loading roommate profiles…</td></tr>
             </tbody>
           </table>
         </div>

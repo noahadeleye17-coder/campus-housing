@@ -266,3 +266,69 @@ exports.updateSiteConfig = async (req, res) => {
     res.status(400).json({ message: error.message || "Could not update site config" });
   }
 };
+
+// @route   GET /api/admin/roommate-profiles
+// @desc    List every roommate profile on the platform (optional ?search=
+//          against the linked user's name/email or the profile's campus)
+// @access  Private (admin only)
+exports.getRoommateProfiles = async (req, res) => {
+  try {
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({ message: "Database is not connected" });
+    }
+
+    const searchTerm = (req.query.search || "").trim().toLowerCase();
+
+    const profiles = await RoommateProfile.find({})
+      .sort({ createdAt: -1 })
+      .populate("user", "name email");
+
+    const filtered = searchTerm
+      ? profiles.filter((p) => {
+          const haystack = `${p.user?.name || ""} ${p.user?.email || ""} ${p.campus || ""}`.toLowerCase();
+          return haystack.includes(searchTerm);
+        })
+      : profiles;
+
+    res.json(filtered);
+  } catch (error) {
+    if (isDatabaseError(error)) {
+      return res.status(503).json({ message: "Database is not connected" });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// @route   DELETE /api/admin/roommate-profiles/:id
+// @desc    Permanently delete a single roommate profile (e.g. test data)
+//          without touching the underlying user account. Also clears any
+//          roommate requests tied to that user so nothing is left orphaned.
+// @access  Private (admin only)
+exports.deleteRoommateProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid roommate profile ID" });
+    }
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({ message: "Database is not connected" });
+    }
+
+    const profile = await RoommateProfile.findById(id);
+    if (!profile) {
+      return res.status(404).json({ message: "Roommate profile not found" });
+    }
+
+    await Promise.all([
+      RoommateRequest.deleteMany({ $or: [{ fromUser: profile.user }, { toUser: profile.user }] }),
+      RoommateProfile.deleteOne({ _id: profile._id }),
+    ]);
+
+    res.json({ message: "Roommate profile deleted" });
+  } catch (error) {
+    if (isDatabaseError(error)) {
+      return res.status(503).json({ message: "Database is not connected" });
+    }
+    res.status(500).json({ message: "Could not delete roommate profile" });
+  }
+};

@@ -87,6 +87,7 @@ const loadTab = (tabName) => {
   if (tabName === "overview") loadStats();
   if (tabName === "listings") loadListings();
   if (tabName === "users") loadUsers();
+  if (tabName === "roommates") loadRoommateProfiles();
   if (tabName === "content") loadSiteConfig();
 };
 
@@ -431,6 +432,94 @@ let userSearchDebounce = null;
 userSearchInput.addEventListener("input", () => {
   clearTimeout(userSearchDebounce);
   userSearchDebounce = setTimeout(() => loadUsers(userSearchInput.value.trim()), 400);
+});
+
+// ── Roommates tab ─────────────────────────────────────────────────────────
+const roommatesTableBody = document.getElementById("roommatesTableBody");
+const roommateSearchInput = document.getElementById("roommateSearchInput");
+
+async function loadRoommateProfiles(searchTerm = "") {
+  roommatesTableBody.innerHTML = `<tr><td colspan="6">Loading roommate profiles…</td></tr>`;
+  try {
+    const query = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : "";
+    const res = await authedFetch(`/admin/roommate-profiles${query}`);
+    const data = await res.json().catch(() => ([]));
+    if (!res.ok) {
+      roommatesTableBody.innerHTML = `<tr><td colspan="6">${escapeHtml(data.message || "Could not load roommate profiles.")}</td></tr>`;
+      return;
+    }
+    renderRoommateProfiles(data);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderRoommateProfiles(profiles) {
+  if (!profiles.length) {
+    roommatesTableBody.innerHTML = `<tr><td colspan="6">No roommate profiles match.</td></tr>`;
+    return;
+  }
+
+  roommatesTableBody.innerHTML = profiles
+    .map((p) => {
+      const name = p.user?.name || "Unknown user";
+      const email = p.user?.email || "";
+      const budget = p.budgetMin || p.budgetMax
+        ? `₦${Number(p.budgetMin || 0).toLocaleString()} – ₦${Number(p.budgetMax || 0).toLocaleString()}`
+        : "—";
+      const created = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—";
+      return `
+        <tr data-id="${p._id}">
+          <td>
+            <div class="user-name-cell">${escapeHtml(name)}</div>
+            <div class="user-email-cell">${escapeHtml(email)}</div>
+          </td>
+          <td>${escapeHtml(p.campus || "—")}</td>
+          <td>${budget}</td>
+          <td><span class="role-badge ${p.visible ? "" : "disabled-badge"}">${p.visible ? "Visible" : "Hidden"}</span></td>
+          <td>${created}</td>
+          <td>
+            <div class="row-actions">
+              <button type="button" class="btn danger delete-roommate-btn" data-id="${p._id}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  roommatesTableBody.querySelectorAll(".delete-roommate-btn").forEach((btn) => {
+    btn.addEventListener("click", () => deleteRoommateProfile(btn.dataset.id));
+  });
+}
+
+async function deleteRoommateProfile(id) {
+  const confirmed = window.showConfirm
+    ? await window.showConfirm(
+        "Delete this roommate profile permanently? Any pending or matched requests tied to it are removed too. The user's account itself is not affected.",
+        { confirmText: "Delete" }
+      )
+    : window.confirm("Delete this roommate profile permanently?");
+  if (!confirmed) return;
+
+  try {
+    const res = await authedFetch(`/admin/roommate-profiles/${encodeURIComponent(id)}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      window.showToast?.(data.message || "Could not delete roommate profile", "error");
+      return;
+    }
+    window.showToast?.("Roommate profile deleted", "success");
+    loadRoommateProfiles(roommateSearchInput.value.trim());
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+let roommateSearchDebounce = null;
+roommateSearchInput.addEventListener("input", () => {
+  clearTimeout(roommateSearchDebounce);
+  roommateSearchDebounce = setTimeout(() => loadRoommateProfiles(roommateSearchInput.value.trim()), 400);
 });
 
 // ── Content tab: announcement banner ─────────────────────────────────────
