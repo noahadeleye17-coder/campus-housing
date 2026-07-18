@@ -300,7 +300,7 @@ async function fetchApartments(page = 1, search = "", type = "") {
   }
 
   try {
-    const params = new URLSearchParams({ page, limit: 9 });
+    const params = new URLSearchParams({ page, limit: 10 });
     if (search) params.set("search", search);
     if (type) params.set("type", type);
 

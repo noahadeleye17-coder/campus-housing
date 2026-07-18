@@ -161,7 +161,7 @@ const getOwnedListingFilter = (req, id) => {
 
 const getApartments = async (req, res) => {
   try {
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 9, 1), 50);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 50);
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const skip = (page - 1) * limit;
     const searchTerm = (req.query.search || "").trim();
