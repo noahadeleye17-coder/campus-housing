@@ -378,12 +378,18 @@ const updateRoommateRequest = async (req, res) => {
 
       // Only the original requester needs telling — the person who just
       // clicked "Accept" already knows.
+      const frontendBase = process.env.FRONTEND_URL || process.env.SITE_URL || "https://offcampushub.ng";
+      const dashboardUrl = `${frontendBase}/studentdashboard.html`;
+
       sendNotificationEmail(request.fromUser, {
         subject: `${request.toUser.name} accepted your roommate request`,
         html: wrapEmail(
           "You've been matched!",
           `<p><strong>${escapeHtml(request.toUser.name)}</strong> accepted your roommate request on Off-Campus Hub.</p>
-           <p>Log in to your dashboard to get their contact details and start planning.</p>`
+           <p>Log in to your dashboard to get their contact details and start planning.</p>
+           <p style="text-align:center;margin:28px 0;">
+             <a href="${dashboardUrl}" style="background:#17327f;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;display:inline-block;">Go to your dashboard</a>
+           </p>`
         ),
       }).catch(() => {});
     }

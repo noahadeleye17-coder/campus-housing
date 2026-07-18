@@ -48,8 +48,18 @@ const sendNotificationEmail = async (user, { subject, html }) => {
   return sendEmail({ to: user.email, subject, html });
 };
 
+// Publicly reachable URL for the logo shown in the email header. Email
+// clients can't load local files, so this has to point at the deployed
+// site (not a relative path). Falls back to the live domain if the env
+// var isn't set.
+const SITE_URL = process.env.SITE_URL || "https://offcampushub.ng";
+const LOGO_URL = `${SITE_URL}/icons/icon-512.png`;
+
 const wrapEmail = (title, bodyHtml) => `
   <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <img src="${LOGO_URL}" alt="Off-Campus Hub" width="56" height="56" style="border-radius:12px;display:inline-block;" />
+    </div>
     <h2 style="color:#17327f;">${title}</h2>
     ${bodyHtml}
     <p style="color:#7a8496;font-size:0.8rem;margin-top:24px;">
