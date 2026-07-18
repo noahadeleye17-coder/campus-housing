@@ -276,18 +276,6 @@ app.get("/api/health", (req, res) => {
     database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
   });
 });
-app.get("/api/debug-cloudinary", async (req, res) => {
-  const { v2: cloudinary } = require("cloudinary");
-  try {
-    const result = await cloudinary.uploader.upload(
-      "https://res.cloudinary.com/demo/image/upload/sample.jpg",
-      { folder: "campus-housing/debug-test" }
-    );
-    res.json({ success: true, url: result.secure_url });
-  } catch (error) {
-    res.json({ success: false, error: error.message });
-  }
-});
 
 // Error middleware (after all routes)
 app.use((err, req, res, next) => {
