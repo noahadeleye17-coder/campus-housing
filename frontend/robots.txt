@@ -8,4 +8,4 @@ Disallow: /forgot-password.html
 Disallow: /reset-password.html
 Disallow: /api/
 
-Sitemap: https://offcampushub.onrender.com/sitemap.xml
+Sitemap: https://offcampushub.ng/sitemap.xml
