@@ -67,7 +67,7 @@ const sendBulkEmails = async (emails) => {
 
   for (let i = 0; i < emails.length; i += BULK_BATCH_SIZE) {
     const chunk = emails.slice(i, i + BULK_BATCH_SIZE).map((email) => ({
-      from: "Off-Campus Hub <onboarding@resend.dev>",
+      from: "Off-Campus Hub <hello@offcampushub.ng>",
       to: email.to,
       subject: email.subject,
       html: email.html,
