@@ -310,17 +310,39 @@ const usersTableBody = document.getElementById("usersTableBody");
 const userSearchInput = document.getElementById("userSearchInput");
 const currentUserId = session.user?.id || session.user?._id || null;
 
+// Welcome-back email campaign controls
+const selectAllCheckbox = document.getElementById("selectAllCheckbox");
+const selectAllStudentsBtn = document.getElementById("selectAllStudentsBtn");
+const clearSelectionBtn = document.getElementById("clearSelectionBtn");
+const sendSelectedWelcomeBtn = document.getElementById("sendSelectedWelcomeBtn");
+const sendAllStudentsWelcomeBtn = document.getElementById("sendAllStudentsWelcomeBtn");
+
+let currentUsers = [];
+const selectedUserIds = new Set();
+
+function updateSelectionUI() {
+  sendSelectedWelcomeBtn.textContent = `Send welcome back (${selectedUserIds.size} selected)`;
+  sendSelectedWelcomeBtn.disabled = selectedUserIds.size === 0;
+  usersTableBody.querySelectorAll(".user-row-checkbox").forEach((cb) => {
+    cb.checked = selectedUserIds.has(cb.dataset.id);
+  });
+  const rowIds = currentUsers.map((u) => u.id);
+  selectAllCheckbox.checked = rowIds.length > 0 && rowIds.every((id) => selectedUserIds.has(id));
+}
+
 async function loadUsers(searchTerm = "") {
-  usersTableBody.innerHTML = `<tr><td colspan="5">Loading users…</td></tr>`;
+  usersTableBody.innerHTML = `<tr><td colspan="6">Loading users…</td></tr>`;
   try {
     const query = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : "";
     const res = await authedFetch(`/admin/users${query}`);
     const data = await res.json().catch(() => ([]));
     if (!res.ok) {
-      usersTableBody.innerHTML = `<tr><td colspan="5">${escapeHtml(data.message || "Could not load users.")}</td></tr>`;
+      usersTableBody.innerHTML = `<tr><td colspan="6">${escapeHtml(data.message || "Could not load users.")}</td></tr>`;
       return;
     }
+    currentUsers = data;
     renderUsers(data);
+    updateSelectionUI();
   } catch (err) {
     console.error(err);
   }
@@ -328,7 +350,7 @@ async function loadUsers(searchTerm = "") {
 
 function renderUsers(users) {
   if (!users.length) {
-    usersTableBody.innerHTML = `<tr><td colspan="5">No users match.</td></tr>`;
+    usersTableBody.innerHTML = `<tr><td colspan="6">No users match.</td></tr>`;
     return;
   }
 
@@ -338,6 +360,7 @@ function renderUsers(users) {
       const joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—";
       return `
         <tr data-id="${u.id}">
+          <td><input type="checkbox" class="user-row-checkbox" data-id="${u.id}" ${selectedUserIds.has(u.id) ? "checked" : ""} /></td>
           <td>
             <div class="user-name-cell">${escapeHtml(u.name || "—")}</div>
             <div class="user-email-cell">${escapeHtml(u.email || "")}</div>
@@ -380,7 +403,91 @@ function renderUsers(users) {
   usersTableBody.querySelectorAll(".delete-user-btn").forEach((btn) => {
     btn.addEventListener("click", () => deleteUser(btn.dataset.id));
   });
+
+  usersTableBody.querySelectorAll(".user-row-checkbox").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      if (cb.checked) {
+        selectedUserIds.add(cb.dataset.id);
+      } else {
+        selectedUserIds.delete(cb.dataset.id);
+      }
+      updateSelectionUI();
+    });
+  });
 }
+
+selectAllCheckbox.addEventListener("change", () => {
+  if (selectAllCheckbox.checked) {
+    currentUsers.forEach((u) => selectedUserIds.add(u.id));
+  } else {
+    currentUsers.forEach((u) => selectedUserIds.delete(u.id));
+  }
+  updateSelectionUI();
+});
+
+selectAllStudentsBtn.addEventListener("click", () => {
+  currentUsers.filter((u) => u.role === "student").forEach((u) => selectedUserIds.add(u.id));
+  updateSelectionUI();
+});
+
+clearSelectionBtn.addEventListener("click", () => {
+  selectedUserIds.clear();
+  updateSelectionUI();
+});
+
+async function sendWelcomeBackEmail(payload, confirmMessage) {
+  const confirmed = window.showConfirm
+    ? await window.showConfirm(confirmMessage, { confirmText: "Send" })
+    : window.confirm(confirmMessage);
+  if (!confirmed) return;
+
+  const btn = payload.target === "all-students" ? sendAllStudentsWelcomeBtn : sendSelectedWelcomeBtn;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+
+  try {
+    const res = await authedFetch("/admin/users/welcome-back-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      window.showToast?.(data.message || "Could not send welcome back emails", "error");
+      return;
+    }
+    window.showToast?.(data.message || "Emails sent", "success");
+    if (payload.target !== "all-students") {
+      selectedUserIds.clear();
+      updateSelectionUI();
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    btn.disabled = payload.target === "all-students" ? false : selectedUserIds.size === 0;
+    if (btn.disabled === false || payload.target !== "all-students") {
+      btn.textContent = payload.target === "all-students" ? originalText : `Send welcome back (${selectedUserIds.size} selected)`;
+    } else {
+      btn.textContent = originalText;
+    }
+  }
+}
+
+sendSelectedWelcomeBtn.addEventListener("click", () => {
+  const userIds = Array.from(selectedUserIds);
+  sendWelcomeBackEmail(
+    { target: "selected", userIds },
+    `Send a welcome-back email to ${userIds.length} selected user(s)?`
+  );
+});
+
+sendAllStudentsWelcomeBtn.addEventListener("click", () => {
+  sendWelcomeBackEmail(
+    { target: "all-students" },
+    "Send a welcome-back email to EVERY student on the platform? This isn't limited to the current search results."
+  );
+});
 
 async function updateUser(id, payload) {
   try {

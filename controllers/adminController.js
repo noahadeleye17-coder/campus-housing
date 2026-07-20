@@ -6,6 +6,7 @@ const RoommateRequest = require("../models/RoommateRequest");
 const SiteConfig = require("../models/SiteConfig");
 const { deleteFromCloudinary } = require("../upload/ResizeImage");
 const { cloudinaryPublicIdFromUrl } = require("./apartmentController");
+const { sendBulkEmails, wrapEmail, escapeHtml } = require("../utils/email");
 
 const isDatabaseError = (error) => {
   return error.name === "MongooseError" || error.name === "MongoServerSelectionError";
@@ -209,6 +210,81 @@ exports.deleteUser = async (req, res) => {
       return res.status(503).json({ message: "Database is not connected" });
     }
     res.status(500).json({ message: "Could not delete user" });
+  }
+};
+
+// @route   POST /api/admin/users/welcome-back-email
+// @desc    Send a "you're welcome back" campaign email either to a specific
+//          list of user IDs, or to every student on the platform.
+//          Body: { target: "selected", userIds: [...] } or { target: "all-students" }
+// @access  Private (admin only)
+exports.sendWelcomeBackEmail = async (req, res) => {
+  try {
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({ message: "Database is not connected" });
+    }
+
+    const { target, userIds } = req.body;
+
+    let filter;
+    if (target === "all-students") {
+      filter = { role: "student", disabled: false };
+    } else {
+      if (!Array.isArray(userIds) || !userIds.length) {
+        return res.status(400).json({ message: "No users selected" });
+      }
+      const hasInvalidId = userIds.some((id) => !isValidObjectId(id));
+      if (hasInvalidId) {
+        return res.status(400).json({ message: "Invalid user ID in selection" });
+      }
+      filter = { _id: { $in: userIds }, disabled: false };
+    }
+
+    const candidates = await User.find(filter).select("name email notificationsEnabled");
+    const recipients = candidates.filter((u) => u.email && u.notificationsEnabled !== false);
+
+    if (!recipients.length) {
+      return res.status(400).json({
+        message: "No eligible recipients — selected users may have notifications off, no email, or be disabled",
+      });
+    }
+
+    const emails = recipients.map((user) => ({
+      to: user.email,
+      subject: "You're always welcome back at Off-Campus Hub",
+      html: wrapEmail(
+        "You're always welcome back 🏠",
+        `
+          <p>Hi ${escapeHtml(user.name || "there")},</p>
+          <p>It's been a while since we've seen you on Off-Campus Hub — and we just wanted to reach out and say you're always welcome back.</p>
+          <p>Whether you're still hunting for a place near campus, looking to connect with a roommate, or just checking what's new, everything's right where you left it.</p>
+          <p>A few things that make it worth another look:</p>
+          <ul>
+            <li>Verified listings from real landlords around FUTA</li>
+            <li>Roommate matching, so you're not searching (or living) alone</li>
+            <li>A faster, cleaner experience than when you last visited</li>
+          </ul>
+          <p><a href="https://offcampushub.ng" style="color:#2357d8;font-weight:700;">Come back to Off-Campus Hub →</a></p>
+          <p>We built this for students like you, and we'd genuinely love to have you back.</p>
+          <p>— The Off-Campus Hub Team</p>
+        `
+      ),
+    }));
+
+    const { sent, failed } = await sendBulkEmails(emails);
+    const skipped = candidates.length - recipients.length;
+
+    res.json({
+      message: `Sent to ${sent} of ${recipients.length} recipient(s)${failed ? `, ${failed} failed` : ""}${skipped ? `, ${skipped} skipped (notifications off)` : ""}`,
+      sent,
+      failed,
+      skipped,
+    });
+  } catch (error) {
+    if (isDatabaseError(error)) {
+      return res.status(503).json({ message: "Database is not connected" });
+    }
+    res.status(500).json({ message: error.message || "Could not send welcome back emails" });
   }
 };
 

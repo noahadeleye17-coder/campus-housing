@@ -48,18 +48,54 @@ const sendNotificationEmail = async (user, { subject, html }) => {
   return sendEmail({ to: user.email, subject, html });
 };
 
-// Publicly reachable URL for the logo shown in the email header. Email
-// clients can't load local files, so this has to point at the deployed
-// site (not a relative path). Falls back to the live domain if the env
-// var isn't set.
-const SITE_URL = process.env.SITE_URL || "https://offcampushub.ng";
-const LOGO_URL = `${SITE_URL}/icons/icon-512.png`;
+// Bulk-sends independent emails (different recipient/body per entry) via
+// Resend's batch endpoint, which caps each call at 100 emails. Chunks larger
+// lists and pauses briefly between chunks to stay under Resend's rate limit.
+// Used by the admin "send welcome back email" feature — never throws, so one
+// bad batch doesn't take down the whole campaign; failures are just counted.
+const BULK_BATCH_SIZE = 100;
+const BULK_BATCH_DELAY_MS = 600;
+
+const sendBulkEmails = async (emails) => {
+  if (!resend) {
+    console.warn(`Bulk email not sent (RESEND_API_KEY not configured): ${emails.length} recipient(s)`);
+    return { sent: 0, failed: emails.length };
+  }
+
+  let sent = 0;
+  let failed = 0;
+
+  for (let i = 0; i < emails.length; i += BULK_BATCH_SIZE) {
+    const chunk = emails.slice(i, i + BULK_BATCH_SIZE).map((email) => ({
+      from: "Off-Campus Hub <onboarding@resend.dev>",
+      to: email.to,
+      subject: email.subject,
+      html: email.html,
+    }));
+
+    try {
+      const { error } = await resend.batch.send(chunk);
+      if (error) {
+        console.error("Bulk email batch failed:", error);
+        failed += chunk.length;
+      } else {
+        sent += chunk.length;
+      }
+    } catch (err) {
+      console.error("Bulk email batch failed:", err.message);
+      failed += chunk.length;
+    }
+
+    if (i + BULK_BATCH_SIZE < emails.length) {
+      await new Promise((resolve) => setTimeout(resolve, BULK_BATCH_DELAY_MS));
+    }
+  }
+
+  return { sent, failed };
+};
 
 const wrapEmail = (title, bodyHtml) => `
   <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-    <div style="text-align:center;margin-bottom:20px;">
-      <img src="${LOGO_URL}" alt="Off-Campus Hub" width="56" height="56" style="border-radius:12px;display:inline-block;" />
-    </div>
     <h2 style="color:#17327f;">${title}</h2>
     ${bodyHtml}
     <p style="color:#7a8496;font-size:0.8rem;margin-top:24px;">
@@ -69,4 +105,4 @@ const wrapEmail = (title, bodyHtml) => `
   </div>
 `;
 
-module.exports = { sendEmail, sendNotificationEmail, wrapEmail, escapeHtml };
+module.exports = { sendEmail, sendNotificationEmail, sendBulkEmails, wrapEmail, escapeHtml };

@@ -7,6 +7,7 @@ const {
   getAllUsers,
   updateUser,
   deleteUser,
+  sendWelcomeBackEmail,
   getSiteConfig,
   updateSiteConfig,
   getRoommateProfiles,
@@ -26,6 +27,9 @@ router.patch("/users/:id", writeLimiter, updateUser);
 
 // @route   DELETE /api/admin/users/:id
 router.delete("/users/:id", writeLimiter, deleteUser);
+
+// @route   POST /api/admin/users/welcome-back-email
+router.post("/users/welcome-back-email", writeLimiter, sendWelcomeBackEmail);
 
 // @route   GET /api/admin/site-config
 router.get("/site-config", getSiteConfig);

@@ -492,10 +492,17 @@
         <div class="toolbar">
           <input type="search" id="userSearchInput" placeholder="Search by name or email…" />
         </div>
+        <div class="toolbar">
+          <button type="button" class="btn outline" id="selectAllStudentsBtn">Select all students (this list)</button>
+          <button type="button" class="btn outline" id="clearSelectionBtn">Clear selection</button>
+          <button type="button" class="btn" id="sendSelectedWelcomeBtn" disabled>Send welcome back (0 selected)</button>
+          <button type="button" class="btn" id="sendAllStudentsWelcomeBtn">Send welcome back to ALL students</button>
+        </div>
         <div class="data-table-wrap">
           <table class="data-table">
             <thead>
               <tr>
+                <th><input type="checkbox" id="selectAllCheckbox" title="Select all in this list" /></th>
                 <th>Name</th>
                 <th>Role</th>
                 <th>Status</th>
@@ -504,7 +511,7 @@
               </tr>
             </thead>
             <tbody id="usersTableBody">
-              <tr><td colspan="5">Loading users…</td></tr>
+              <tr><td colspan="6">Loading users…</td></tr>
             </tbody>
           </table>
         </div>
