@@ -228,7 +228,7 @@ exports.sendWelcomeBackEmail = async (req, res) => {
 
     let filter;
     if (target === "all-students") {
-      filter = { role: "student", disabled: false };
+      filter = { role: "student", disabled: { $ne: true } };
     } else {
       if (!Array.isArray(userIds) || !userIds.length) {
         return res.status(400).json({ message: "No users selected" });
@@ -237,7 +237,7 @@ exports.sendWelcomeBackEmail = async (req, res) => {
       if (hasInvalidId) {
         return res.status(400).json({ message: "Invalid user ID in selection" });
       }
-      filter = { _id: { $in: userIds }, disabled: false };
+      filter = { _id: { $in: userIds }, disabled: { $ne: true } };
     }
 
     // Deliberately NOT filtered by notificationsEnabled — that toggle covers
