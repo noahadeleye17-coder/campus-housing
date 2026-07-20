@@ -240,12 +240,15 @@ exports.sendWelcomeBackEmail = async (req, res) => {
       filter = { _id: { $in: userIds }, disabled: false };
     }
 
-    const candidates = await User.find(filter).select("name email notificationsEnabled");
-    const recipients = candidates.filter((u) => u.email && u.notificationsEnabled !== false);
+    // Deliberately NOT filtered by notificationsEnabled — that toggle covers
+    // feature notifications (roommate requests, etc.), and this is a
+    // separate re-engagement campaign, not a notification.
+    const candidates = await User.find(filter).select("name email");
+    const recipients = candidates.filter((u) => u.email);
 
     if (!recipients.length) {
       return res.status(400).json({
-        message: "No eligible recipients — selected users may have notifications off, no email, or be disabled",
+        message: "No eligible recipients — selected users have no email on file or are disabled",
       });
     }
 
@@ -275,7 +278,7 @@ exports.sendWelcomeBackEmail = async (req, res) => {
     const skipped = candidates.length - recipients.length;
 
     res.json({
-      message: `Sent to ${sent} of ${recipients.length} recipient(s)${failed ? `, ${failed} failed` : ""}${skipped ? `, ${skipped} skipped (notifications off)` : ""}`,
+      message: `Sent to ${sent} of ${recipients.length} recipient(s)${failed ? `, ${failed} failed` : ""}${skipped ? `, ${skipped} skipped (no email on file)` : ""}`,
       sent,
       failed,
       skipped,
