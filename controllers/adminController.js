@@ -6,7 +6,7 @@ const RoommateRequest = require("../models/RoommateRequest");
 const SiteConfig = require("../models/SiteConfig");
 const { deleteFromCloudinary } = require("../upload/ResizeImage");
 const { cloudinaryPublicIdFromUrl } = require("./apartmentController");
-const { sendBulkEmails, wrapEmail, escapeHtml } = require("../utils/email");
+const { sendBulkEmails, escapeHtml } = require("../utils/email");
 
 const isDatabaseError = (error) => {
   return error.name === "MongooseError" || error.name === "MongoServerSelectionError";
@@ -255,23 +255,17 @@ exports.sendWelcomeBackEmail = async (req, res) => {
     const emails = recipients.map((user) => ({
       to: user.email,
       subject: "You're always welcome back at Off-Campus Hub",
-      html: wrapEmail(
-        "You're always welcome back 🏠",
-        `
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; color: #2d2d2d; line-height: 1.6;">
+          <p style="color:#2357d8; font-weight:700; font-size: 1.1rem; margin-bottom: 20px;">Off-Campus Hub</p>
           <p>Hi ${escapeHtml(user.name || "there")},</p>
-          <p>It's been a while since we've seen you on Off-Campus Hub — and we just wanted to reach out and say you're always welcome back.</p>
-          <p>Whether you're still hunting for a place near campus, looking to connect with a roommate, or just checking what's new, everything's right where you left it.</p>
-          <p>A few things that make it worth another look:</p>
-          <ul>
-            <li>Verified listings from real landlords around FUTA</li>
-            <li>Roommate matching, so you're not searching (or living) alone</li>
-            <li>A faster, cleaner experience than when you last visited</li>
-          </ul>
-          <p><a href="https://offcampushub.ng" style="color:#2357d8;font-weight:700;">Come back to Off-Campus Hub →</a></p>
+          <p>It's been a while since we've seen you on Off-Campus Hub, and we just wanted to reach out and say you're always welcome back.</p>
+          <p>Whether you're still hunting for a place near campus, looking to connect with a roommate, or just checking what's new, everything's right where you left it — verified listings, roommate matching, and a faster experience than when you last visited.</p>
+          <p>You can pick up right here: <a href="https://offcampushub.ng" style="color:#2357d8;">offcampushub.ng</a></p>
           <p>We built this for students like you, and we'd genuinely love to have you back.</p>
           <p>— The Off-Campus Hub Team</p>
-        `
-      ),
+        </div>
+      `,
     }));
 
     const { sent, failed } = await sendBulkEmails(emails);
