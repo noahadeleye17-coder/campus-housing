@@ -1,6 +1,6 @@
 # Off-Campus Hub
 
-A student housing and roommate-matching platform built for FUTA (Federal University of Technology, Akure) students — a listings directory connecting students with verified off-campus apartments and each other, with no payment processing involved. It's a discovery and connection tool: find a place, find a roommate, and take it from there.
+A student housing and roommate-matching platform built for FUTA (Federal University of Technology, Akure) students.A listings directory connecting students with verified off-campus apartments and each other, with no payment processing involved. It's a discovery and connection tool: find a place, find a roommate, and take it from there.
 
 **Live site:** [offcampushub.ng](https://offcampushub.ng)
 
@@ -30,7 +30,7 @@ A student housing and roommate-matching platform built for FUTA (Federal Univers
 **Under the hood**
 - Server-side rendering for apartment detail pages with injected meta tags and JSON-LD structured data, so shared links unfurl properly and pages are indexable
 - Dynamically generated `sitemap.xml` built from live listings
-- Progressive Web App (PWA) — installable to the home screen; logged-in users land straight on their dashboard, logged-out users land on the homepage
+- Progressive Web App (PWA),installable to the home screen; logged-in users land straight on their dashboard, logged-out users land on the homepage
 - Rate limiting across auth, password reset, uploads, and general writes
 
 ## Tech stack
