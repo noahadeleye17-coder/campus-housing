@@ -53,6 +53,7 @@ const authActions = document.getElementById("authActions");
 const searchForm = document.getElementById("apartmentSearchForm");
 const searchInput = document.getElementById("apartmentSearchInput");
 const typeSelect = document.getElementById("apartmentTypeSelect");
+const zoneChips = document.getElementById("zoneChips");
 const savedCountEl = document.getElementById("savedCount");
 const savedFilterBtn = document.getElementById("savedFilterBtn");
 
@@ -246,6 +247,7 @@ let totalListings = 0;
 let isFetchingMore = false;
 let activeSearch = ""; // tracks what term is currently loaded from the server
 let activeType = ""; // tracks the currently loaded property-type filter
+let activeZone = ""; // tracks the currently loaded gate-zone filter
 
 function updatePaginationUi() {
   if (!paginationBar) return;
@@ -283,7 +285,7 @@ function updatePaginationUi() {
 // ============================
 // FETCH APARTMENTS
 // ============================
-async function fetchApartments(page = 1, search = "", type = "") {
+async function fetchApartments(page = 1, search = "", type = "", zone = "") {
   if (!apartmentContainer) return;
 
   const isFirstPage = page === 1;
@@ -303,6 +305,7 @@ async function fetchApartments(page = 1, search = "", type = "") {
     const params = new URLSearchParams({ page, limit: 10 });
     if (search) params.set("search", search);
     if (type) params.set("type", type);
+    if (zone) params.set("zone", zone);
 
     const res = await fetch(`${API_BASE}/apartments?${params}`);
     if (!res.ok) throw new Error("Fetch failed");
@@ -315,6 +318,7 @@ async function fetchApartments(page = 1, search = "", type = "") {
     totalListings = data.total || incoming.length;
     activeSearch = search;
     activeType = type;
+    activeZone = zone;
 
     allApartments = isFirstPage ? incoming : [...allApartments, ...incoming];
 
@@ -331,6 +335,7 @@ async function fetchApartments(page = 1, search = "", type = "") {
       totalListings = 0;
       activeSearch = "";
       activeType = "";
+      activeZone = "";
       renderApartments(allApartments);
       updateSavedUi();
     }
@@ -509,7 +514,15 @@ function searchApartments() {
 function resetFilters() {
   if (searchInput) searchInput.value = "";
   if (typeSelect) typeSelect.value = "";
-  fetchApartments(1, "", "");
+  setActiveZoneChip("");
+  fetchApartments(1, "", "", "");
+}
+
+function setActiveZoneChip(zone) {
+  if (!zoneChips) return;
+  zoneChips.querySelectorAll(".zone-chip").forEach((chip) => {
+    chip.classList.toggle("active", chip.dataset.zone === zone);
+  });
 }
 
 if (searchForm && searchInput) {
@@ -519,7 +532,7 @@ if (searchForm && searchInput) {
   const doSearch = () => {
     const term = searchInput.value.trim();
     const type = typeSelect ? typeSelect.value : "";
-    fetchApartments(1, term, type);
+    fetchApartments(1, term, type, activeZone);
   };
 
   searchForm.addEventListener("submit", (e) => {
@@ -553,6 +566,23 @@ if (searchForm && searchInput) {
       searchInput.focus();
     });
   }
+}
+
+if (zoneChips) {
+  zoneChips.addEventListener("click", (event) => {
+    const chip = event.target.closest(".zone-chip");
+    if (!chip) return;
+
+    const zone = chip.dataset.zone || "";
+    const isAlreadyActive = chip.classList.contains("active");
+    const nextZone = isAlreadyActive ? "" : zone;
+
+    setActiveZoneChip(nextZone);
+
+    const term = searchInput ? searchInput.value.trim() : "";
+    const type = typeSelect ? typeSelect.value : "";
+    fetchApartments(1, term, type, nextZone);
+  });
 }
 
 if (apartmentContainer) {
@@ -616,7 +646,7 @@ if (mobileSavedBtn) {
 if (loadMoreBtn) {
   loadMoreBtn.addEventListener("click", () => {
     if (!isFetchingMore && currentPage < totalPages) {
-      fetchApartments(currentPage + 1, activeSearch, activeType);
+      fetchApartments(currentPage + 1, activeSearch, activeType, activeZone);
     }
   });
 }

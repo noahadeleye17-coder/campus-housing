@@ -582,6 +582,40 @@ img {
   box-shadow: 0 28px 70px rgba(16, 24, 40, 0.26);
 }
 
+.zone-chips {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: min(760px, calc(100% - 24px));
+  margin: 14px auto 0;
+}
+
+.zone-chip {
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.85rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.zone-chip:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.zone-chip.active {
+  background: var(--sun);
+  border-color: var(--sun);
+  color: #33260b;
+}
+
 .trust-strip,
 .card-trust,
 .detail-trust {

@@ -31,6 +31,39 @@ const isDatabaseConnected = () => mongoose.connection.readyState === 1;
 
 const isValidApartmentId = (id) => mongoose.Types.ObjectId.isValid(id);
 
+// Zone filter — keyword-matches the free-text `location` field against
+// FUTA gate names. "Others" is anything that doesn't mention a gate.
+const ZONE_KEYWORDS = {
+  "North Gate": "north",
+  "West Gate": "west",
+  "South Gate": "south",
+};
+
+const matchesZone = (locationText, zone) => {
+  const text = (locationText || "").toLowerCase();
+  if (zone === "Others") {
+    return !Object.values(ZONE_KEYWORDS).some((keyword) => text.includes(keyword));
+  }
+  const keyword = ZONE_KEYWORDS[zone];
+  return keyword ? text.includes(keyword) : true;
+};
+
+// Builds a Mongo filter fragment for a zone. For "Others", excludes any
+// location that mentions a known gate keyword.
+const buildZoneFilter = (zone) => {
+  if (!zone) return null;
+  if (zone === "Others") {
+    return {
+      location: {
+        $not: { $regex: Object.values(ZONE_KEYWORDS).join("|"), $options: "i" },
+      },
+    };
+  }
+  const keyword = ZONE_KEYWORDS[zone];
+  if (!keyword) return null;
+  return { location: { $regex: keyword, $options: "i" } };
+};
+
 const parseAmenities = (amenities) => {
   if (Array.isArray(amenities)) {
     return amenities.map((item) => String(item).trim()).filter(Boolean);
@@ -166,6 +199,7 @@ const getApartments = async (req, res) => {
     const skip = (page - 1) * limit;
     const searchTerm = (req.query.search || "").trim();
     const propertyType = (req.query.type || "").trim();
+    const zone = (req.query.zone || "").trim();
 
     if (!isDatabaseConnected()) {
       // Filter demo apartments by search term and/or property type if provided
@@ -174,7 +208,8 @@ const getApartments = async (req, res) => {
           a.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           a.location?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesType = !propertyType || a.propertyType === propertyType;
-        return matchesSearch && matchesType;
+        const matchesZoneFilter = !zone || matchesZone(a.location, zone);
+        return matchesSearch && matchesType && matchesZoneFilter;
       });
       const slice = filtered.slice(skip, skip + limit);
       return res.json({
@@ -187,7 +222,8 @@ const getApartments = async (req, res) => {
 
     // Build filter — when searching, match title or location (case-insensitive).
     // When a property type is selected, narrow further to that exact type.
-    // When neither is set, return all listings.
+    // When a zone is selected, narrow further by keyword-matching location.
+    // When none are set, return all listings.
     const filter = searchTerm
       ? {
           $or: [
@@ -197,22 +233,24 @@ const getApartments = async (req, res) => {
         }
       : {};
     if (propertyType) filter.propertyType = propertyType;
+    const zoneFilter = buildZoneFilter(zone);
+    if (zoneFilter) Object.assign(filter, zoneFilter);
 
     const [realApartments, totalReal] = await Promise.all([
       Apartment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("landlord", "name email"),
       Apartment.countDocuments(filter),
     ]);
 
-    // Only pad with demo listings on page 1 when there is no active search
-    // or type filter, and real listings are still few. When filtering, we
-    // only show real results that actually match.
+    // Only pad with demo listings on page 1 when there is no active search,
+    // type, or zone filter, and real listings are still few. When filtering,
+    // we only show real results that actually match.
     let apartments = realApartments;
-    if (!searchTerm && !propertyType && page === 1 && realApartments.length < limit) {
+    if (!searchTerm && !propertyType && !zone && page === 1 && realApartments.length < limit) {
       const slotsLeft = limit - realApartments.length;
       apartments = [...realApartments, ...demoApartments.slice(0, slotsLeft)];
     }
 
-    const total = (searchTerm || propertyType) ? totalReal : Math.max(totalReal, demoApartments.length);
+    const total = (searchTerm || propertyType || zone) ? totalReal : Math.max(totalReal, demoApartments.length);
     const pages = Math.ceil(total / limit) || 1;
 
     res.json({ apartments, total, page, pages });
