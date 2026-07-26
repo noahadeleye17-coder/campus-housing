@@ -16,6 +16,19 @@
 </head>
 <body>
 
+  <!-- AD POPUP -->
+  <div id="adPopupOverlay" class="ad-popup-overlay" aria-hidden="true">
+    <div class="ad-popup-box" role="dialog" aria-modal="true" aria-label="Advertisement">
+      <button id="adPopupClose" class="ad-popup-close" aria-label="Close advertisement">&times;</button>
+      <img
+        src="https://res.cloudinary.com/gmjt7j8d/image/upload/1000843306_cwjekt.png"
+        alt="Off-Campus Hub x Emperor — The Mandate Keeps Us Going"
+        class="ad-popup-image"
+      />
+      <button id="adPopupCta" class="ad-popup-cta">Continue to Off-Campus Hub</button>
+    </div>
+  </div>
+
   <!-- OVERLAY -->
   <div id="menuOverlay" class="menu-overlay"></div>
 
@@ -229,5 +242,40 @@
 <script src="app.js"></script>
   <script src="pwa-register.js" defer></script>
   <script src="install-prompt.js" defer></script>
+
+  <!-- AD POPUP LOGIC -->
+  <script>
+    (function () {
+      var STORAGE_KEY = "ochAdPopupShown";
+
+      document.addEventListener("DOMContentLoaded", function () {
+        var overlay = document.getElementById("adPopupOverlay");
+        if (!overlay) return;
+
+        var alreadyShown = sessionStorage.getItem(STORAGE_KEY);
+        if (!alreadyShown) {
+          overlay.classList.add("active");
+          document.body.classList.add("ad-popup-open");
+          sessionStorage.setItem(STORAGE_KEY, "true");
+        }
+
+        function closePopup() {
+          overlay.classList.remove("active");
+          document.body.classList.remove("ad-popup-open");
+        }
+
+        document.getElementById("adPopupClose").addEventListener("click", closePopup);
+        document.getElementById("adPopupCta").addEventListener("click", closePopup);
+
+        overlay.addEventListener("click", function (e) {
+          if (e.target === overlay) closePopup();
+        });
+
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") closePopup();
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
