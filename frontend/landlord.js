@@ -15,7 +15,36 @@ const fields = {
   amenities: document.getElementById("amenities"),
   images: document.getElementById("images"),
   video: document.getElementById("video"),
+  landlordId: document.getElementById("landlordId"),
 };
+
+const landlordPickerField = document.getElementById("landlordPickerField");
+const isAdmin = session.user?.role === "admin";
+
+// ── Admin-only: pick which real landlord a listing gets posted under ────────
+if (isAdmin && landlordPickerField && fields.landlordId) {
+  landlordPickerField.style.display = "";
+
+  fetch(`${API_BASE}/admin/users`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then((res) => (res.ok ? res.json() : []))
+    .then((users) => {
+      const landlords = (Array.isArray(users) ? users : []).filter(
+        (u) => u.role === "landlord" && !u.disabled
+      );
+
+      fields.landlordId.innerHTML = landlords.length
+        ? `<option value="">Select a landlord…</option>` +
+          landlords
+            .map((l) => `<option value="${l.id}">${escapeHtml(l.name)} (${escapeHtml(l.email)})</option>`)
+            .join("")
+        : `<option value="">No landlord accounts found</option>`;
+    })
+    .catch(() => {
+      fields.landlordId.innerHTML = `<option value="">Couldn't load landlords</option>`;
+    });
+}
 
 const submitBtn = document.getElementById("submitBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
@@ -322,6 +351,13 @@ const setFormMode = (id = null, apartment = null) => {
       ? apartment.amenities.join(", ")
       : apartment.amenities || "";
     fields.landlordWhatsapp.value = apartment.landlordWhatsapp || "";
+    if (isAdmin && fields.landlordId) {
+      // apartment.landlord is populated with { _id, name, email }; the picker
+      // is filled asynchronously, so this may run before options exist —
+      // setting .value on a <select> with no matching <option> yet is a
+      // harmless no-op, and it'll just show as unselected until re-picked.
+      fields.landlordId.value = apartment.landlord?._id || apartment.landlord?.id || "";
+    }
     fields.images.value = "";
     fields.video.value = "";
     selectedImageFiles = [];
@@ -365,6 +401,10 @@ form.addEventListener("submit", async (e) => {
   formData.append("propertyType", fields.propertyType.value);
   formData.append("landlordWhatsapp", fields.landlordWhatsapp.value);
   formData.append("amenities", fields.amenities.value);
+
+  if (isAdmin && fields.landlordId.value) {
+    formData.append("landlordId", fields.landlordId.value);
+  }
 
   // Multiple images — note the field name "images" (plural) matches the
   // backend's upload.fields([{ name: "images" }, { name: "video" }])

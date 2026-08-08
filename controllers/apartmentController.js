@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Apartment = require("../models/Apartment");
+const User = require("../models/user");
 const demoApartments = require("../data/demoApartments");
 const { cleanupProcessedMedia, deleteFromCloudinary } = require("../upload/ResizeImage");
 const { geocodeAddress, distanceFromFuta } = require("../utils/geocode");
@@ -30,6 +31,37 @@ const isDatabaseError = (error) => {
 const isDatabaseConnected = () => mongoose.connection.readyState === 1;
 
 const isValidApartmentId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+/**
+ * Resolve which user a listing should be attributed to as `landlord`.
+ *
+ * Regular landlords always get their own account — `landlordId` in the
+ * request body is ignored for them, so one landlord can never attribute a
+ * listing to another account. Admins may post a listing on behalf of a real
+ * landlord by passing `landlordId`; that ID is validated against a real,
+ * non-disabled user with the "landlord" role before it's trusted, so a typo
+ * or stale ID can't silently attach a listing to the wrong (or a
+ * nonexistent) account. If an admin omits `landlordId`, the listing falls
+ * back to their own account, same as before this feature existed.
+ */
+const resolveLandlordId = async (req) => {
+  const { landlordId } = req.body;
+
+  if (req.user.role !== "admin" || !landlordId) {
+    return req.user.id;
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(landlordId)) {
+    throw new Error("Invalid landlord selected");
+  }
+
+  const landlord = await User.findById(landlordId).select("role disabled");
+  if (!landlord || landlord.role !== "landlord" || landlord.disabled) {
+    throw new Error("Selected landlord account not found or is not an active landlord");
+  }
+
+  return landlordId;
+};
 
 // Zone filter — keyword-matches the free-text `location` field against
 // FUTA gate names. "Others" is anything that doesn't mention a gate.
@@ -89,6 +121,7 @@ const buildApartmentData = async (req, existingApartment = null) => {
     propertyType,
     existingImages,
     removeVideo,
+    landlordId,
   } = req.body;
   const data = {};
   const hasExplicitCoordinates =
@@ -100,6 +133,14 @@ const buildApartmentData = async (req, existingApartment = null) => {
   if (amenities !== undefined) data.amenities = parseAmenities(amenities);
   if (landlordWhatsapp !== undefined) data.landlordWhatsapp = landlordWhatsapp;
   if (propertyType !== undefined) data.propertyType = propertyType;
+
+  // Editing an existing listing: only an admin may reassign which landlord
+  // it's attributed to, and only when they explicitly picked one — an admin
+  // editing a listing without touching the landlord field should never
+  // silently reassign it to themselves.
+  if (existingApartment && landlordId && req.user.role === "admin") {
+    data.landlord = await resolveLandlordId(req);
+  }
 
   const newImages = req.processedImages || [];
 
@@ -306,7 +347,7 @@ const createApartment = async (req, res) => {
 
     const apartment = await Apartment.create({
       ...(await buildApartmentData(req)),
-      landlord: req.user.id,
+      landlord: await resolveLandlordId(req),
     });
 
     res.status(201).json(apartment);
