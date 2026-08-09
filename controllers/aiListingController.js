@@ -5,9 +5,12 @@ const { normalizePhone } = require("../utils/phone");
 
 const isDatabaseConnected = () => mongoose.connection.readyState === 1;
 
-// Free-tier model — no billing required. See:
-// https://ai.google.dev/gemini-api/docs/pricing
-const AI_MODEL = "gemini-2.5-flash";
+// "gemini-flash-latest" is an alias Google keeps pointed at its current
+// recommended free-tier Flash model — it gets hot-swapped automatically as
+// Google retires/replaces specific versions (which is what just happened:
+// the pinned "gemini-2.5-flash" got closed to new API keys). Using the
+// alias avoids this same error recurring every time Google rotates models.
+const AI_MODEL = "gemini-flash-latest";
 
 /**
  * Send the landlord's raw WhatsApp text to Gemini and get back structured
