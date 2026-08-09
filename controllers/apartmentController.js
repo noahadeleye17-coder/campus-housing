@@ -360,8 +360,13 @@ const createApartment = async (req, res) => {
     if (apartment.landlordWhatsapp) {
       const normalized = normalizePhone(apartment.landlordWhatsapp);
       if (normalized) {
+        // Matches accounts with no phone on file at all — not just an
+        // explicit empty string. Landlord accounts created before this
+        // field existed on the schema have no `phone` key in the database
+        // whatsoever, so `{ phone: "" }` alone silently matches zero of
+        // them and the backfill never runs.
         User.updateOne(
-          { _id: apartment.landlord, phone: "" },
+          { _id: apartment.landlord, $or: [{ phone: "" }, { phone: { $exists: false } }] },
           { phone: normalized }
         ).catch((err) => console.warn("Could not backfill landlord phone:", err.message));
       }
