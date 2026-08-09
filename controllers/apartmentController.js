@@ -123,7 +123,6 @@ const buildApartmentData = async (req, existingApartment = null) => {
     existingImages,
     removeVideo,
     landlordId,
-    status,
   } = req.body;
   const data = {};
   const hasExplicitCoordinates =
@@ -135,13 +134,6 @@ const buildApartmentData = async (req, existingApartment = null) => {
   if (amenities !== undefined) data.amenities = parseAmenities(amenities);
   if (landlordWhatsapp !== undefined) data.landlordWhatsapp = landlordWhatsapp;
   if (propertyType !== undefined) data.propertyType = propertyType;
-
-  // Publishing/unpublishing is an admin-only action — a landlord sending
-  // this field (accidentally or otherwise) is silently ignored rather than
-  // erroring, same treatment as landlordId below.
-  if (status !== undefined && req.user.role === "admin" && ["draft", "published"].includes(status)) {
-    data.status = status;
-  }
 
   // Editing an existing listing: only an admin may reassign which landlord
   // it's attributed to, and only when they explicitly picked one — an admin
@@ -285,10 +277,6 @@ const getApartments = async (req, res) => {
     if (propertyType) filter.propertyType = propertyType;
     const zoneFilter = buildZoneFilter(zone);
     if (zoneFilter) Object.assign(filter, zoneFilter);
-    // Drafts (created via the AI Inbox, pending admin review) never appear
-    // in public search results. Missing `status` on older documents is
-    // treated as published, not excluded.
-    filter.status = { $ne: "draft" };
 
     const [realApartments, totalReal] = await Promise.all([
       Apartment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("landlord", "name email"),
@@ -338,7 +326,7 @@ const getApartmentById = async (req, res) => {
     }
 
     const apartment = await Apartment.findById(req.params.id).populate("landlord", "name email");
-    if (!apartment || apartment.status === "draft") {
+    if (!apartment) {
       return res.status(404).json({ message: "Apartment not found" });
     }
     res.json(apartment);
@@ -395,7 +383,7 @@ const getMyApartments = async (req, res) => {
       return res.status(503).json({ message: "Database is not connected. Demo apartments are read-only." });
     }
 
-    const filter = req.user.role === "admin" ? {} : { landlord: req.user.id, status: { $ne: "draft" } };
+    const filter = req.user.role === "admin" ? {} : { landlord: req.user.id };
     const apartments = await Apartment.find(filter).sort({ createdAt: -1 }).populate("landlord", "name email");
     res.json(apartments);
   } catch (error) {

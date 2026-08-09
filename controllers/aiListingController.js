@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
 const Apartment = require("../models/Apartment");
 const User = require("../models/user");
-const { buildApartmentData } = require("./apartmentController");
-const { cleanupProcessedMedia } = require("../upload/ResizeImage");
 const { normalizePhone } = require("../utils/phone");
 
 const isDatabaseConnected = () => mongoose.connection.readyState === 1;
@@ -92,15 +90,17 @@ Rules:
   };
 };
 
-// @route   POST /api/admin/listings/ai-draft
+// @route   POST /api/admin/listings/ai-parse
 // @desc    Admin pastes a landlord's raw WhatsApp message (plus optional
-//          phone override, images, video). AI extracts the listing fields,
-//          the phone is matched against a landlord account if possible, and
-//          a DRAFT listing is created — nothing is public until an admin
-//          reviews and publishes it (see the `status` handling in
-//          apartmentController.buildApartmentData).
+//          phone override). AI extracts the listing fields and the phone is
+//          matched against a landlord account if possible — nothing is
+//          created or saved here. The admin's create-listing form
+//          (landlord.html) uses this to pre-fill itself so the admin
+//          reviews/edits every field, attaches photos, and picks the
+//          landlord in the one place that already does all of that, before
+//          ever submitting.
 // @access  Private (admin only)
-exports.createAiDraft = async (req, res) => {
+exports.parseListingText = async (req, res) => {
   try {
     if (!isDatabaseConnected()) {
       return res.status(503).json({ message: "Database is not connected" });
@@ -116,9 +116,9 @@ exports.createAiDraft = async (req, res) => {
       Apartment.schema.path("propertyType").enumValues.filter(Boolean)
     );
 
-    // A phone number typed directly into the Inbox form wins over whatever
-    // the AI thinks it saw in the message text — the admin knows which
-    // number this actually came in on.
+    // A phone number typed directly into the form wins over whatever the AI
+    // thinks it saw in the message text — the admin knows which number this
+    // actually came in on.
     const rawPhone = (req.body.phone || extracted.landlordWhatsapp || "").trim();
     const normalizedPhone = normalizePhone(rawPhone);
 
@@ -131,30 +131,14 @@ exports.createAiDraft = async (req, res) => {
       }).select("_id name email");
     }
 
-    // Reuses the exact same field-building logic as the manual create form
-    // — including the images/video pipeline via req.processedImages/Video
-    // — by populating req.body with the AI's output before calling it.
-    req.body.title = extracted.title;
-    req.body.price = extracted.price;
-    req.body.location = extracted.location;
-    req.body.propertyType = extracted.propertyType;
-    req.body.amenities = extracted.amenities;
-    req.body.landlordWhatsapp = normalizedPhone || rawPhone;
-
-    const data = await buildApartmentData(req);
-    data.status = "draft";
-    data.landlord = matchedLandlord ? matchedLandlord._id : null;
-
-    const apartment = await Apartment.create(data);
-
-    res.status(201).json({
-      apartment,
+    res.json({
+      ...extracted,
+      landlordWhatsapp: normalizedPhone || rawPhone,
       matchedLandlord: matchedLandlord
         ? { id: matchedLandlord._id, name: matchedLandlord.name, email: matchedLandlord.email }
         : null,
     });
   } catch (error) {
-    cleanupProcessedMedia(req);
-    res.status(400).json({ message: error.message || "Could not create AI draft" });
+    res.status(400).json({ message: error.message || "Could not parse the message" });
   }
 };

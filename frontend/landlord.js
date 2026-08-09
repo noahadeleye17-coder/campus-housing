@@ -164,6 +164,81 @@ if (logoutBtn) {
   });
 }
 
+// ── Admin-only: AI-assist — parse a pasted WhatsApp message straight into
+// the form fields above, so it's reviewed/edited/landlord-picked in the
+// exact same place as every other listing, before anything is submitted.
+const aiAssistBox = document.getElementById("aiAssistBox");
+const aiRawText = document.getElementById("aiRawText");
+const aiFillBtn = document.getElementById("aiFillBtn");
+const aiAssistStatus = document.getElementById("aiAssistStatus");
+
+if (isAdmin && aiAssistBox) {
+  aiAssistBox.style.display = "";
+}
+
+if (aiFillBtn) {
+  aiFillBtn.addEventListener("click", async () => {
+    const rawText = aiRawText.value.trim();
+    if (!rawText) {
+      aiAssistStatus.textContent = "Paste the message first.";
+      return;
+    }
+
+    aiFillBtn.disabled = true;
+    aiFillBtn.textContent = "Filling…";
+    aiAssistStatus.textContent = "";
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/listings/ai-parse`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ rawText, phone: fields.landlordWhatsapp.value }),
+      });
+
+      if (res.status === 401) {
+        handleExpiredSession();
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        aiAssistStatus.textContent = data.message || "Could not parse that message.";
+        return;
+      }
+
+      if (data.title) fields.title.value = data.title;
+      if (data.price) fields.price.value = data.price;
+      if (data.location) fields.location.value = data.location;
+      if (data.propertyType) fields.propertyType.value = data.propertyType;
+      if (data.landlordWhatsapp) fields.landlordWhatsapp.value = data.landlordWhatsapp;
+      if (Array.isArray(data.amenities) && data.amenities.length) {
+        fields.amenities.value = data.amenities.join(", ");
+      }
+
+      if (isAdmin && fields.landlordId) {
+        if (data.matchedLandlord) {
+          fields.landlordId.value = data.matchedLandlord.id;
+          aiAssistStatus.textContent = `Filled in. Matched landlord: ${data.matchedLandlord.name} — review everything below, attach photos, then submit.`;
+        } else {
+          aiAssistStatus.textContent = "Filled in — no landlord matched this number, pick one below. Review everything, attach photos, then submit.";
+        }
+      } else {
+        aiAssistStatus.textContent = "Filled in — review everything below, attach photos, then submit.";
+      }
+    } catch (err) {
+      console.error(err);
+      aiAssistStatus.textContent = "Network error. Make sure the server is running.";
+    } finally {
+      aiFillBtn.disabled = false;
+      aiFillBtn.textContent = "Fill form with AI";
+    }
+  });
+}
+
 // ── Photo / video previews before upload ─────────────────────────────────────
 const imagePreviewsEl = document.getElementById("imagePreviews");
 const imageCountWarningEl = document.getElementById("imageCountWarning");

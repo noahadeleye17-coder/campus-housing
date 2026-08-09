@@ -707,6 +707,15 @@
               <p>Enter the apartment details below. Everything shown here is what students will see on the listing.</p>
             </div>
 
+            <div class="form-field form-field-wide ai-assist-box" id="aiAssistBox" style="display:none;">
+              <span>Paste landlord's WhatsApp message (optional — AI fills the fields below for you to review)</span>
+              <textarea id="aiRawText" rows="4" placeholder="e.g. 2 bedroom self contain behind west gate, 250k per year, has water and prepaid meter, call 0801 234 5678"></textarea>
+              <div class="ai-assist-actions">
+                <button type="button" class="btn outline" id="aiFillBtn">Fill form with AI</button>
+                <span id="aiAssistStatus" class="ai-assist-status"></span>
+              </div>
+            </div>
+
             <label class="form-field" id="landlordPickerField" style="display:none;">
               <span>Post as landlord</span>
               <select id="landlordId" name="landlordId">

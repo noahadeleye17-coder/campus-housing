@@ -1258,6 +1258,35 @@ img {
   min-width: 0;
 }
 
+.ai-assist-box {
+  border: 1px dashed rgba(15, 159, 143, 0.35);
+  border-radius: var(--radius-sm);
+  background: var(--surface-tint);
+  padding: 14px;
+}
+
+.ai-assist-box textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.88rem;
+  font-family: inherit;
+}
+
+.ai-assist-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.ai-assist-status {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .form-field input,
 .form-field select,
 .form-field textarea {

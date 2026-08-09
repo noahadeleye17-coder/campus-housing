@@ -346,31 +346,18 @@
     }
 
     .quick-edit-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
-    .quick-edit-form input, .quick-edit-form select, .quick-edit-form textarea {
+    .quick-edit-form input, .quick-edit-form select {
       padding: 8px 10px;
       border-radius: 8px;
       border: 1px solid var(--border);
       font-size: 0.88rem;
       font-family: inherit;
     }
-    .quick-edit-form textarea { resize: vertical; }
     .quick-edit-form .quick-edit-actions {
       grid-column: 1 / -1;
       display: flex;
       gap: 10px;
       justify-content: flex-end;
-    }
-    .badge-draft {
-      display: inline-block;
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: #fff3cd;
-      color: #8a6100;
-      vertical-align: middle;
     }
 
     /* Content tab: announcement banner editor */
@@ -487,29 +474,6 @@
 
     <!-- Listings -->
     <section class="admin-panel" id="panel-listings">
-      <div class="panel-card">
-        <h2>AI Inbox</h2>
-        <p>Paste a landlord's raw WhatsApp message. AI fills in the listing details, matches the phone number to a landlord account if it recognizes one, and saves it as a draft — nothing goes public until you hit Publish below.</p>
-        <form id="aiInboxForm" class="quick-edit-form">
-          <label style="grid-column: 1 / -1;">Landlord's WhatsApp message
-            <textarea id="aiRawText" name="rawText" rows="5" placeholder="Paste the message here… e.g. 2 bedroom self contain behind west gate, 250k per year, has water and prepaid meter, call 0801 234 5678" required></textarea>
-          </label>
-          <label>Landlord's number (optional if it's in the message)
-            <input type="tel" id="aiPhone" name="phone" placeholder="0801 234 5678" />
-          </label>
-          <label>Photos (optional)
-            <input type="file" id="aiImages" name="images" accept="image/*" multiple />
-          </label>
-          <label>Video (optional)
-            <input type="file" id="aiVideo" name="video" accept="video/*" />
-          </label>
-          <div class="quick-edit-actions">
-            <button type="submit" class="btn" id="aiGenerateBtn">Generate draft</button>
-          </div>
-        </form>
-        <div id="aiInboxResult"></div>
-      </div>
-
       <div class="panel-card">
         <h2>All listings</h2>
         <p>Every apartment on the platform, from every landlord. Edit the key details or remove a listing outright.</p>

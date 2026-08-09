@@ -66,17 +66,6 @@ const apartmentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
-
-  // "draft" listings were created via the AI Inbox and are not shown
-  // anywhere public (search, single-listing view, or a non-admin
-  // landlord's own dashboard) until an admin reviews and publishes them.
-  // Missing on older documents — treated the same as "published" wherever
-  // this is checked (see apartmentController), so no migration is needed.
-  status: {
-    type: String,
-    enum: ["draft", "published"],
-    default: "published",
-  },
 }, { timestamps: true });
 
 // Speeds up the "All Types" + price range filters on the search bar
