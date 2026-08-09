@@ -37,13 +37,28 @@ if (isAdmin && landlordPickerField && fields.landlordId) {
       fields.landlordId.innerHTML = landlords.length
         ? `<option value="">Select a landlord…</option>` +
           landlords
-            .map((l) => `<option value="${l.id}">${escapeHtml(l.name)} (${escapeHtml(l.email)})</option>`)
+            .map(
+              (l) =>
+                `<option value="${l.id}" data-phone="${escapeHtml(l.phone || "")}">${escapeHtml(l.name)} (${escapeHtml(l.email)})</option>`
+            )
             .join("")
         : `<option value="">No landlord accounts found</option>`;
     })
     .catch(() => {
       fields.landlordId.innerHTML = `<option value="">Couldn't load landlords</option>`;
     });
+
+  // Auto-fill the WhatsApp field from whichever landlord gets picked — it
+  // was saved on their account the first time one of their own listings
+  // carried a number (see the phone backfill in apartmentController). Only
+  // fires on an actual selection, so it never overwrites an existing
+  // listing's saved number when pre-filling the edit form programmatically.
+  fields.landlordId.addEventListener("change", () => {
+    const phone = fields.landlordId.selectedOptions[0]?.dataset.phone;
+    if (phone) {
+      fields.landlordWhatsapp.value = phone;
+    }
+  });
 }
 
 const submitBtn = document.getElementById("submitBtn");

@@ -24,6 +24,7 @@ const publicUser = (user) => ({
   disabled: !!user.disabled,
   authProvider: user.authProvider || "local",
   createdAt: user.createdAt,
+  phone: user.phone || "",
 });
 
 // @route   GET /api/admin/stats
