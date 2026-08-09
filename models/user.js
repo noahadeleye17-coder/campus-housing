@@ -25,6 +25,19 @@ const userSchema = new mongoose.Schema(
       default: "student",
     },
 
+    // Normalized to "+234XXXXXXXXXX" (see utils/phone.js) so a landlord's
+    // WhatsApp number always matches the same account regardless of how it
+    // was typed. Populated automatically the first time a listing is
+    // created/updated with their WhatsApp number attached — not collected
+    // at signup. Used by the AI Inbox to auto-select the right landlord
+    // from an incoming WhatsApp message.
+    phone: {
+      type: String,
+      trim: true,
+      default: "",
+      index: true,
+    },
+
     // Set by an admin to suspend an account without deleting it. Blocked at
     // both login (authController) and on every subsequent request that
     // carries an existing token (authmiddleware.protect), so a disabled

@@ -188,7 +188,7 @@ function renderListings(listings) {
 
       return `
         <article class="apartment-card">
-          <h3>${escapeHtml(a.title || "Untitled listing")}</h3>
+          <h3>${escapeHtml(a.title || "Untitled listing")}${a.status === "draft" ? ` <span class="badge-draft">Draft</span>` : ""}</h3>
           <p class="landlord-tag">Landlord: <strong>${escapeHtml(landlordName)}</strong>${landlordEmail ? ` · ${escapeHtml(landlordEmail)}` : ""}</p>
           <div class="apartment-meta">
             <span>${escapeHtml(a.location || "No location")}</span>
@@ -197,7 +197,8 @@ function renderListings(listings) {
           <p class="apartment-price">₦${Number(a.price || 0).toLocaleString()}/year</p>
           ${quickEdit}
           <div class="listing-actions">
-            <a class="btn outline listing-btn" href="apartment.html?id=${a._id}" target="_blank" rel="noopener">View live</a>
+            ${a.status === "draft" ? "" : `<a class="btn outline listing-btn" href="apartment.html?id=${a._id}" target="_blank" rel="noopener">View live</a>`}
+            ${a.status === "draft" ? `<button type="button" class="btn listing-btn publish-listing-btn" data-id="${a._id}">Publish</button>` : ""}
             <button type="button" class="btn outline listing-btn edit-listing-btn" data-id="${a._id}">${isEditing ? "Close editor" : "Edit"}</button>
             <button type="button" class="btn danger listing-btn delete-listing-btn" data-id="${a._id}">Delete</button>
           </div>
@@ -205,6 +206,10 @@ function renderListings(listings) {
       `;
     })
     .join("");
+
+  adminApartmentsEl.querySelectorAll(".publish-listing-btn").forEach((btn) => {
+    btn.addEventListener("click", () => publishListing(btn.dataset.id));
+  });
 
   adminApartmentsEl.querySelectorAll(".edit-listing-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -248,6 +253,65 @@ listingSearchInput.addEventListener("input", () => {
   listingSearchDebounce = setTimeout(() => renderListings(currentFilteredListings()), 300);
 });
 
+// ── AI Inbox ──────────────────────────────────────────────────────────────
+const aiInboxForm = document.getElementById("aiInboxForm");
+const aiInboxResult = document.getElementById("aiInboxResult");
+const aiGenerateBtn = document.getElementById("aiGenerateBtn");
+
+if (aiInboxForm) {
+  aiInboxForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (aiGenerateBtn.disabled) return;
+
+    const formData = new FormData();
+    formData.append("rawText", document.getElementById("aiRawText").value);
+    formData.append("phone", document.getElementById("aiPhone").value);
+    Array.from(document.getElementById("aiImages").files).forEach((file) => {
+      formData.append("images", file);
+    });
+    const videoFile = document.getElementById("aiVideo").files[0];
+    if (videoFile) formData.append("video", videoFile);
+
+    aiGenerateBtn.disabled = true;
+    aiGenerateBtn.textContent = "Generating…";
+    aiInboxResult.innerHTML = "";
+
+    try {
+      const res = await authedFetch("/admin/listings/ai-draft", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        aiInboxResult.innerHTML = `<div class="empty-state">${escapeHtml(data.message || "Could not generate draft.")}</div>`;
+        return;
+      }
+
+      const landlordLine = data.matchedLandlord
+        ? `Matched to landlord <strong>${escapeHtml(data.matchedLandlord.name)}</strong> (${escapeHtml(data.matchedLandlord.email)}).`
+        : `No landlord matched this number — open the draft below via "Post listing" → edit it to assign one manually.`;
+
+      aiInboxResult.innerHTML = `
+        <div class="empty-state">
+          Draft created: <strong>${escapeHtml(data.apartment?.title || "Untitled")}</strong>. ${landlordLine}
+        </div>
+      `;
+
+      aiInboxForm.reset();
+      window.showToast?.("Draft created — review it in the list below before publishing", "success");
+      loadedTabs.delete("listings");
+      loadListings();
+    } catch (err) {
+      console.error(err);
+      aiInboxResult.innerHTML = `<div class="empty-state">Network error. Make sure the server is running.</div>`;
+    } finally {
+      aiGenerateBtn.disabled = false;
+      aiGenerateBtn.textContent = "Generate draft";
+    }
+  });
+}
+
 async function saveListingEdit(form) {
   const id = form.dataset.id;
   const payload = {
@@ -277,6 +341,26 @@ async function saveListingEdit(form) {
     }
     window.showToast?.("Listing updated", "success");
     editingListingId = null;
+    loadedTabs.delete("listings");
+    loadListings();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function publishListing(id) {
+  try {
+    const res = await authedFetch(`/apartments/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "published" }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      window.showToast?.(data.message || "Failed to publish listing", "error");
+      return;
+    }
+    window.showToast?.("Listing published — it's now live on the site", "success");
     loadedTabs.delete("listings");
     loadListings();
   } catch (err) {

@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const { protect, isAdmin } = require("../middleware/authmiddleware");
-const { writeLimiter } = require("../middleware/rateLimit");
+const { writeLimiter, uploadLimiter, aiLimiter } = require("../middleware/rateLimit");
+const upload = require("../upload/upload");
+const resizeImage = require("../upload/ResizeImage");
 const {
   getStats,
   getAllUsers,
@@ -13,6 +15,12 @@ const {
   getRoommateProfiles,
   deleteRoommateProfile,
 } = require("../controllers/adminController");
+const { createAiDraft } = require("../controllers/aiListingController");
+
+const mediaFields = upload.fields([
+  { name: "images", maxCount: 6 },
+  { name: "video", maxCount: 1 },
+]);
 
 router.use(protect, isAdmin);
 
@@ -42,5 +50,10 @@ router.get("/roommate-profiles", getRoommateProfiles);
 
 // @route   DELETE /api/admin/roommate-profiles/:id
 router.delete("/roommate-profiles/:id", writeLimiter, deleteRoommateProfile);
+
+// @route   POST /api/admin/listings/ai-draft
+// @desc    Parse a raw WhatsApp message (+ optional phone/images/video) into
+//          a draft listing via AI. See controllers/aiListingController.js.
+router.post("/listings/ai-draft", writeLimiter, uploadLimiter, aiLimiter, mediaFields, resizeImage, createAiDraft);
 
 module.exports = router;

@@ -81,6 +81,14 @@ const uploadLimiter = createRateLimiter({
   message: "Too many upload attempts. Please try again later.",
 });
 
+// Separate, tighter limit for the AI Inbox — each call is a paid external
+// API request, so this caps accidental cost as much as it caps abuse.
+const aiLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: parsePositiveInt(process.env.AI_RATE_LIMIT_MAX, 30),
+  message: "Too many AI parsing requests this hour. Please try again later.",
+});
+
 module.exports = {
   createRateLimiter,
   apiLimiter,
@@ -88,4 +96,5 @@ module.exports = {
   passwordResetLimiter,
   writeLimiter,
   uploadLimiter,
+  aiLimiter,
 };
