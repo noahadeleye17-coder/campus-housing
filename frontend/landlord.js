@@ -213,22 +213,29 @@ if (aiFillBtn) {
       if (data.title) fields.title.value = data.title;
       if (data.price) fields.price.value = data.price;
       if (data.location) fields.location.value = data.location;
-      if (data.propertyType) fields.propertyType.value = data.propertyType;
       if (data.landlordWhatsapp) fields.landlordWhatsapp.value = data.landlordWhatsapp;
       if (Array.isArray(data.amenities) && data.amenities.length) {
         fields.amenities.value = data.amenities.join(", ");
       }
 
+      // Dropdowns (property type, landlord) are deliberately left for you to
+      // pick yourself — a wrong auto-selected option is easy to miss at a
+      // glance, unlike a wrong word sitting in a text field you can actually
+      // read. The AI's best guess is surfaced as a hint instead of being
+      // applied on your behalf.
+      const hints = [];
+      if (data.propertyType) hints.push(`property type looks like "${data.propertyType}"`);
       if (isAdmin && fields.landlordId) {
-        if (data.matchedLandlord) {
-          fields.landlordId.value = data.matchedLandlord.id;
-          aiAssistStatus.textContent = `Filled in. Matched landlord: ${data.matchedLandlord.name} — review everything below, attach photos, then submit.`;
-        } else {
-          aiAssistStatus.textContent = "Filled in — no landlord matched this number, pick one below. Review everything, attach photos, then submit.";
-        }
-      } else {
-        aiAssistStatus.textContent = "Filled in — review everything below, attach photos, then submit.";
+        hints.push(
+          data.matchedLandlord
+            ? `landlord match: ${data.matchedLandlord.name}`
+            : "no landlord matched this number"
+        );
       }
+
+      aiAssistStatus.textContent = hints.length
+        ? `Filled in — ${hints.join("; ")}. Pick the dropdowns yourself, review everything, attach photos, then submit.`
+        : "Filled in — review everything below, attach photos, then submit.";
     } catch (err) {
       console.error(err);
       aiAssistStatus.textContent = "Network error. Make sure the server is running.";

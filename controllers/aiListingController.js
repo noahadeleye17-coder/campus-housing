@@ -38,11 +38,16 @@ Rules:
       title: { type: "STRING" },
       price: { type: "NUMBER" },
       location: { type: "STRING" },
-      propertyType: { type: "STRING", enum: [...propertyTypes, ""] },
+      propertyType: { type: "STRING", enum: propertyTypes },
       amenities: { type: "ARRAY", items: { type: "STRING" } },
       landlordWhatsapp: { type: "STRING" },
     },
-    required: ["title", "price", "location", "propertyType", "amenities", "landlordWhatsapp"],
+    // propertyType is intentionally left out of `required` — Gemini's schema
+    // validator rejects an empty string as an enum member, so there's no
+    // valid way to force "I couldn't tell" through the enum itself. Leaving
+    // it optional lets Gemini omit the field when unsure; the code below
+    // already defaults a missing/invalid value to "".
+    required: ["title", "price", "location", "amenities", "landlordWhatsapp"],
   };
 
   const response = await fetch(
