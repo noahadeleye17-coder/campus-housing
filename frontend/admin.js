@@ -5,7 +5,7 @@ const API_BASE = window.API_BASE || "/api";
 const PROPERTY_TYPES = [
   "Self Contain",
   "Single Room",
-  "1 Bedroom",
+  "Room and Parlour",
   "2 Bedroom",
   "3 Bedroom",
   "Shared Apartment",

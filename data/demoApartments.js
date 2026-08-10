@@ -62,7 +62,7 @@ const demoApartments = [
   {
     _id: "demo-4",
     title: "Quiet Mini Flat With Study Space",
-    propertyType: "1 Bedroom",
+    propertyType: "Room and Parlour",
     price: 520000,
     location: "North Gate Area",
     distanceFromCampus: 3.1,
@@ -104,7 +104,7 @@ const demoApartments = [
   {
     _id: "demo-6",
     title: "Premium 1-Bed Apartment",
-    propertyType: "1 Bedroom",
+    propertyType: "Room and Parlour",
     price: 750000,
     location: "West Gate Area",
     distanceFromCampus: 0.6,

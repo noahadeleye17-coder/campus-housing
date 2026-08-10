@@ -16,16 +16,17 @@ const apartmentSchema = new mongoose.Schema({
   distanceFromCampus: Number,
   amenities: [String],
 
-  // Property type / category (e.g. "Self Contain", "1 Bedroom") used to
-  // power the "All Types" filter on the search bar. Left as a plain string
-  // enum (rather than a ref) since these are a small fixed set of options.
+  // Property type / category (e.g. "Self Contain", "Room and Parlour") used
+  // to power the "All Types" filter on the search bar. Left as a plain
+  // string enum (rather than a ref) since these are a small fixed set of
+  // options.
   propertyType: {
     type: String,
     enum: [
       "",
       "Self Contain",
       "Single Room",
-      "1 Bedroom",
+      "Room and Parlour",
       "2 Bedroom",
       "3 Bedroom",
       "Shared Apartment",
