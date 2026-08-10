@@ -1,0 +1,160 @@
+From e91c5d5fc925635a56719e707fd87e7c0eff95b9 Mon Sep 17 00:00:00 2001
+From: Noah <noah@offcampushub.ng>
+Date: Mon, 10 Aug 2026 18:21:28 +0000
+Subject: [PATCH] Rename propertyType '1 Bedroom' to 'Room and Parlour'
+
+- Update the Apartment model enum
+- Update filter/form dropdown options in index.html, landlord.html, admin.js
+- Update demo/fallback listings dataset
+- Add scripts/migrateRoomAndParlour.js to move existing '1 Bedroom'
+  listings in MongoDB over to the new value
+---
+ data/demoApartments.js           |  4 +--
+ frontend/admin.js                |  2 +-
+ frontend/index.html              |  2 +-
+ frontend/landlord.html           |  2 +-
+ models/Apartment.js              |  9 ++++---
+ scripts/migrateRoomAndParlour.js | 44 ++++++++++++++++++++++++++++++++
+ 6 files changed, 54 insertions(+), 9 deletions(-)
+ create mode 100644 scripts/migrateRoomAndParlour.js
+
+diff --git a/data/demoApartments.js b/data/demoApartments.js
+index d69f0b9..c433cab 100644
+--- a/data/demoApartments.js
++++ b/data/demoApartments.js
+@@ -62,7 +62,7 @@ const demoApartments = [
+   {
+     _id: "demo-4",
+     title: "Quiet Mini Flat With Study Space",
+-    propertyType: "1 Bedroom",
++    propertyType: "Room and Parlour",
+     price: 520000,
+     location: "North Gate Area",
+     distanceFromCampus: 3.1,
+@@ -104,7 +104,7 @@ const demoApartments = [
+   {
+     _id: "demo-6",
+     title: "Premium 1-Bed Apartment",
+-    propertyType: "1 Bedroom",
++    propertyType: "Room and Parlour",
+     price: 750000,
+     location: "West Gate Area",
+     distanceFromCampus: 0.6,
+diff --git a/frontend/admin.js b/frontend/admin.js
+index 8c851f4..c398dd7 100644
+--- a/frontend/admin.js
++++ b/frontend/admin.js
+@@ -5,7 +5,7 @@ const API_BASE = window.API_BASE || "/api";
+ const PROPERTY_TYPES = [
+   "Self Contain",
+   "Single Room",
+-  "1 Bedroom",
++  "Room and Parlour",
+   "2 Bedroom",
+   "3 Bedroom",
+   "Shared Apartment",
+diff --git a/frontend/index.html b/frontend/index.html
+index 23c90d2..c2900eb 100644
+--- a/frontend/index.html
++++ b/frontend/index.html
+@@ -133,7 +133,7 @@
+         <option value="">All Types</option>
+         <option value="Self Contain">Self Contain</option>
+         <option value="Single Room">Single Room</option>
+-        <option value="1 Bedroom">1 Bedroom</option>
++        <option value="Room and Parlour">Room and Parlour</option>
+         <option value="2 Bedroom">2 Bedroom</option>
+         <option value="3 Bedroom">3 Bedroom</option>
+         <option value="Shared Apartment">Shared Apartment</option>
+diff --git a/frontend/landlord.html b/frontend/landlord.html
+index e9d46d0..1d73b75 100644
+--- a/frontend/landlord.html
++++ b/frontend/landlord.html
+@@ -745,7 +745,7 @@
+                 <option value="" disabled selected>Select a type</option>
+                 <option value="Self Contain">Self Contain</option>
+                 <option value="Single Room">Single Room</option>
+-                <option value="1 Bedroom">1 Bedroom</option>
++                <option value="Room and Parlour">Room and Parlour</option>
+                 <option value="2 Bedroom">2 Bedroom</option>
+                 <option value="3 Bedroom">3 Bedroom</option>
+                 <option value="Shared Apartment">Shared Apartment</option>
+diff --git a/models/Apartment.js b/models/Apartment.js
+index 6b43e72..1c35611 100644
+--- a/models/Apartment.js
++++ b/models/Apartment.js
+@@ -16,16 +16,17 @@ const apartmentSchema = new mongoose.Schema({
+   distanceFromCampus: Number,
+   amenities: [String],
+ 
+-  // Property type / category (e.g. "Self Contain", "1 Bedroom") used to
+-  // power the "All Types" filter on the search bar. Left as a plain string
+-  // enum (rather than a ref) since these are a small fixed set of options.
++  // Property type / category (e.g. "Self Contain", "Room and Parlour") used
++  // to power the "All Types" filter on the search bar. Left as a plain
++  // string enum (rather than a ref) since these are a small fixed set of
++  // options.
+   propertyType: {
+     type: String,
+     enum: [
+       "",
+       "Self Contain",
+       "Single Room",
+-      "1 Bedroom",
++      "Room and Parlour",
+       "2 Bedroom",
+       "3 Bedroom",
+       "Shared Apartment",
+diff --git a/scripts/migrateRoomAndParlour.js b/scripts/migrateRoomAndParlour.js
+new file mode 100644
+index 0000000..8938baa
+--- /dev/null
++++ b/scripts/migrateRoomAndParlour.js
+@@ -0,0 +1,44 @@
++// scripts/migrateRoomAndParlour.js
++//
++// One-off script: renames the "1 Bedroom" propertyType value to
++// "Room and Parlour" on all existing listings, so they keep showing up
++// under the "All Types" filter after the enum value was renamed in
++// models/Apartment.js.
++//
++// Safe to run more than once (matches only propertyType: "1 Bedroom").
++//
++// Usage:
++//   node scripts/migrateRoomAndParlour.js
++//
++// Requires MONGO_URI to be set (loaded from config.env, same as server.js).
++
++require("dotenv").config({ path: "config.env" });
++const mongoose = require("mongoose");
++const Apartment = require("../models/Apartment");
++
++const run = async () => {
++  if (!process.env.MONGO_URI) {
++    console.error("MONGO_URI is not set. Add it to config.env before running this script.");
++    process.exit(1);
++  }
++
++  await mongoose.connect(process.env.MONGO_URI);
++  console.log("Connected to MongoDB");
++
++  const result = await Apartment.updateMany(
++    { propertyType: "1 Bedroom" },
++    { $set: { propertyType: "Room and Parlour" } }
++  );
++
++  console.log(
++    `Done. Matched ${result.matchedCount ?? result.n}, updated ${result.modifiedCount ?? result.nModified} listing(s).`
++  );
++
++  await mongoose.disconnect();
++  process.exit(0);
++};
++
++run().catch((err) => {
++  console.error("Migration failed:", err);
++  process.exit(1);
++});
+-- 
+2.43.0
+
