@@ -67,6 +67,21 @@ const apartmentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
+
+  // "Mark as taken" — lets a landlord hide a listing from students without
+  // deleting it. Taken listings are excluded from public browse/search
+  // results but remain fully intact (and reversible) in the landlord's own
+  // dashboard. The direct listing page still resolves for old/shared links,
+  // just with a "Taken" badge instead of a 404.
+  status: {
+    type: String,
+    enum: ["available", "taken"],
+    default: "available",
+  },
+  takenAt: {
+    type: Date,
+    default: null,
+  },
 }, { timestamps: true });
 
 // Speeds up the "All Types" + price range filters on the search bar

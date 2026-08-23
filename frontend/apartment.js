@@ -410,6 +410,7 @@ const renderApartment = (apartment) => {
 
   const imageMarkup = buildCarousel(media, apartment.title);
   const travelTime = formatTravelTime(apartment.distanceFromCampus);
+  const isTaken = apartment.status === "taken";
 
   container.innerHTML = `
     <div class="detail-hero-image">
@@ -427,7 +428,7 @@ const renderApartment = (apartment) => {
             <span>Landlord confirmed</span>
           </div>
         </div>
-        <span class="detail-status">Available</span>
+        <span class="detail-status${isTaken ? " taken" : ""}">${isTaken ? "Taken" : "Available"}</span>
       </div>
 
       <div class="detail-grid">
@@ -445,7 +446,7 @@ const renderApartment = (apartment) => {
         </div>
         <div>
           <span>Status</span>
-          <strong>Available</strong>
+          <strong>${isTaken ? "Taken" : "Available"}</strong>
         </div>
       </div>
 

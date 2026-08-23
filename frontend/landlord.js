@@ -626,12 +626,16 @@ async function loadApartments() {
 
       const travelTime = formatTravelTime(a.distanceFromCampus || a.distance);
       const price = Number(a.price);
+      const isTaken = a.status === "taken";
 
       return `
         <article class="apartment-card">
           ${mediaMarkup}
           <div>
-            <h3>${escapeHtml(a.title)}</h3>
+            <h3>
+              ${escapeHtml(a.title)}
+              ${isTaken ? `<span class="listing-status-badge taken">Taken</span>` : ""}
+            </h3>
             <div class="apartment-meta">
               <span>${escapeHtml(a.location)}</span>
               ${a.propertyType ? `<span>${escapeHtml(a.propertyType)}</span>` : ""}
@@ -643,6 +647,7 @@ async function loadApartments() {
           <p class="apartment-price">₦${Number.isNaN(price) ? "N/A" : price.toLocaleString()}</p>
           <div class="listing-actions">
             <button class="btn outline listing-btn edit-listing" type="button" data-id="${escapeHtml(a._id)}">Edit</button>
+            <button class="btn outline listing-btn toggle-status" type="button" data-id="${escapeHtml(a._id)}" data-next-status="${isTaken ? "available" : "taken"}">${isTaken ? "Mark as Available" : "Mark as Taken"}</button>
             <button class="btn outline danger listing-btn delete-listing" type="button" data-id="${escapeHtml(a._id)}">Delete</button>
           </div>
         </article>
@@ -692,6 +697,40 @@ container.addEventListener("click", async (event) => {
       loadApartments();
     } catch (err) {
       showToast("Network error. Could not delete the listing.", "error");
+      console.error(err);
+    }
+    return;
+  }
+
+  if (button.classList.contains("toggle-status")) {
+    const nextStatus = button.dataset.nextStatus;
+
+    try {
+      const res = await fetch(`${API_BASE}/apartments/${encodeURIComponent(apartmentId)}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+
+      if (res.status === 401) {
+        handleExpiredSession();
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        showToast(data.message || "Failed to update listing status", "error");
+        return;
+      }
+
+      showToast(nextStatus === "taken" ? "Listing marked as taken." : "Listing marked as available.", "success");
+      loadApartments();
+    } catch (err) {
+      showToast("Network error. Could not update the listing.", "error");
       console.error(err);
     }
     return;

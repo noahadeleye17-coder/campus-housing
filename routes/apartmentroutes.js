@@ -12,6 +12,7 @@ const {
   createApartment,
   getMyApartments,
   updateApartment,
+  updateApartmentStatus,
   deleteApartment,
 } = require("../controllers/apartmentController");
 
@@ -44,6 +45,11 @@ router.post("/", protect, isLandlord, writeLimiter, uploadLimiter, mediaFields, 
 // @desc    Update an apartment listing
 // @access  Private (landlord only)
 router.patch("/:id", protect, isLandlord, writeLimiter, uploadLimiter, mediaFields, apartmentUpdateRules, validate, resizeImage, updateApartment);
+
+// @route   PATCH /api/apartments/:id/status
+// @desc    Mark a listing as taken/available without editing/deleting it
+// @access  Private (landlord only, own listings; admin any)
+router.patch("/:id/status", protect, isLandlord, writeLimiter, updateApartmentStatus);
 
 // @route   DELETE /api/apartments/:id
 // @desc    Delete an apartment listing

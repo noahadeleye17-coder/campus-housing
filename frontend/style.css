@@ -2079,6 +2079,31 @@ img {
   font-weight: 850;
 }
 
+.detail-status.taken {
+  background: rgba(217, 119, 6, 0.14);
+  color: #b45309;
+}
+
+/* Landlord dashboard "Taken" badge — sits next to the listing title on
+   the apartment card once a landlord marks it taken via the one-click
+   toggle. The listing itself is never removed, just flagged. */
+.listing-status-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
+.listing-status-badge.taken {
+  background: rgba(217, 119, 6, 0.14);
+  color: #b45309;
+}
+
 .detail-trust {
   margin-top: 12px;
 }

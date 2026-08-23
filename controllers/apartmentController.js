@@ -278,6 +278,10 @@ const getApartments = async (req, res) => {
     const zoneFilter = buildZoneFilter(zone);
     if (zoneFilter) Object.assign(filter, zoneFilter);
 
+    // Public browse/search never surfaces listings a landlord has marked
+    // taken — they still exist untouched in the database, just hidden here.
+    filter.status = "available";
+
     const [realApartments, totalReal] = await Promise.all([
       Apartment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("landlord", "name email"),
       Apartment.countDocuments(filter),
@@ -462,6 +466,47 @@ const updateApartment = async (req, res) => {
   }
 };
 
+// Lightweight "mark as taken / available" toggle — deliberately separate
+// from updateApartment so a landlord can flip availability in one click
+// from the dashboard card without going through the full edit form (and
+// without touching photos, price, etc). Never deletes anything; the
+// listing simply stops matching the public `status: "available"` filter
+// in getApartments while staying fully visible (and reversible) via
+// getMyApartments.
+const updateApartmentStatus = async (req, res) => {
+  try {
+    if (!isValidApartmentId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid apartment ID" });
+    }
+
+    const { status } = req.body;
+    if (status !== "available" && status !== "taken") {
+      return res.status(400).json({ message: "Status must be 'available' or 'taken'" });
+    }
+
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({ message: "Database is not connected. Demo apartments are read-only." });
+    }
+
+    const apartment = await Apartment.findOneAndUpdate(
+      getOwnedListingFilter(req, req.params.id),
+      { status, takenAt: status === "taken" ? new Date() : null },
+      { new: true, runValidators: true }
+    ).populate("landlord", "name email");
+
+    if (!apartment) {
+      return res.status(404).json({ message: "Apartment not found" });
+    }
+
+    res.json(apartment);
+  } catch (error) {
+    if (isDatabaseError(error)) {
+      return res.status(503).json({ message: "Database is not connected" });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 const deleteApartment = async (req, res) => {
   try {
     if (!isValidApartmentId(req.params.id)) {
@@ -508,6 +553,7 @@ module.exports = {
   createApartment,
   getMyApartments,
   updateApartment,
+  updateApartmentStatus,
   deleteApartment,
   buildApartmentData,
   cloudinaryPublicIdFromUrl,
