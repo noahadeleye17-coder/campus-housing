@@ -280,7 +280,7 @@ const getApartments = async (req, res) => {
 
     // Public browse/search never surfaces listings a landlord has marked
     // taken — they still exist untouched in the database, just hidden here.
-    filter.status = "available";
+    filter.status = { $ne: "taken" }
 
     const [realApartments, totalReal] = await Promise.all([
       Apartment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("landlord", "name email"),
