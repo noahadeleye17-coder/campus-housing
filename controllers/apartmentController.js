@@ -266,11 +266,12 @@ const getApartments = async (req, res) => {
     // When a property type is selected, narrow further to that exact type.
     // When a zone is selected, narrow further by keyword-matching location.
     // When none are set, return all listings.
+    const safeTerm = searchTerm.slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const filter = searchTerm
       ? {
           $or: [
-            { title: { $regex: searchTerm, $options: "i" } },
-            { location: { $regex: searchTerm, $options: "i" } },
+            { title: { $regex: safeTerm, $options: "i" } },
+            { location: { $regex: safeTerm, $options: "i" } },
           ],
         }
       : {};
@@ -283,7 +284,9 @@ const getApartments = async (req, res) => {
     filter.status = { $ne: "taken" }
 
     const [realApartments, totalReal] = await Promise.all([
-      Apartment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("landlord", "name email"),
+      Apartment.find(filter)
+        .select("title price location distanceFromCampus image video propertyType createdAt")
+        .sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       Apartment.countDocuments(filter),
     ]);
 
@@ -299,6 +302,9 @@ const getApartments = async (req, res) => {
     const total = (searchTerm || propertyType || zone) ? totalReal : Math.max(totalReal, demoApartments.length);
     const pages = Math.ceil(total / limit) || 1;
 
+    if (!searchTerm && !propertyType && !zone) {
+      res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=300");
+    }
     res.json({ apartments, total, page, pages });
   } catch (error) {
     if (isDatabaseError(error)) {

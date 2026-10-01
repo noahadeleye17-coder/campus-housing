@@ -1,23 +1,33 @@
-// Off-Campus Hub — minimal service worker
-//
-// Purpose: satisfy PWA installability requirements only.
-// Deliberately does NOT cache anything and does NOT serve offline content.
-// Every request just passes straight through to the network.
+// Off-Campus Hub service worker: caches the app shell + public listings so
+// repeat visits are fast and usable on weak networks. Never caches auth/user APIs.
+const V = "och-v2";
+const SHELL = ["/", "/style.css", "/app.js", "/auth-session.js", "/ui-feedback.js"];
 
-self.addEventListener('install', (event) => {
-  // Activate this SW as soon as it's installed, without waiting
-  // for old tabs to close.
-  self.skipWaiting();
-});
+const swr = async (req) => {
+  const c = await caches.open(V);
+  const hit = await c.match(req);
+  const net = fetch(req)
+    .then((r) => { if (r.ok) c.put(req, r.clone()); return r; })
+    .catch(() => hit);
+  return hit || net;
+};
 
-self.addEventListener('activate', (event) => {
-  // Take control of any open pages immediately.
-  event.waitUntil(self.clients.claim());
-});
-
-// A fetch handler is required by some browsers' install criteria,
-// but this one does nothing except pass the request straight to
-// the network — no cache, no offline fallback.
-self.addEventListener('fetch', (event) => {
-  event.respondWith(fetch(event.request));
+self.addEventListener("install", (e) =>
+  e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()))
+);
+self.addEventListener("activate", (e) =>
+  e.waitUntil(
+    caches.keys()
+      .then((ks) => Promise.all(ks.filter((k) => k !== V).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  )
+);
+self.addEventListener("fetch", (e) => {
+  const r = e.request, u = new URL(r.url);
+  if (r.method !== "GET" || u.origin !== location.origin) return;
+  if (u.pathname === "/sw.js") return;
+  const isApi = u.pathname.startsWith("/api/");
+  if (isApi && u.pathname !== "/api/apartments") return; // auth/user data: network only
+  if (u.pathname === "/apartment.html") return;          // server-rendered per listing
+  e.respondWith(swr(r));
 });

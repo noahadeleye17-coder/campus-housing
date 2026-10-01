@@ -1,4 +1,8 @@
 const API_BASE = window.API_BASE || "/api";
+const cld = (url, w) =>
+  url && url.includes("res.cloudinary.com") && url.includes("/upload/")
+    ? url.replace("/upload/", `/upload/f_auto,q_auto,w_${w},c_limit/`)
+    : url;
 const container = document.getElementById("apartmentDetails");
 const mapEl = document.getElementById("map");
 const params = new URLSearchParams(window.location.search);
@@ -181,13 +185,13 @@ const buildCarousel = (media, title) => {
     if (item.type === "video") {
       return `<video src="${escapeHtml(item.src)}" controls playsinline style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;"></video>`;
     }
-    return `<img src="${escapeHtml(item.src)}" alt="${escapeHtml(title)}" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;">`;
+    return `<img src="${escapeHtml(cld(item.src, 900))}" decoding="async" fetchpriority="high" alt="${escapeHtml(title)}" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;">`;
   }
 
   const slides = media.map((item, i) => {
     const inner = item.type === "video"
       ? `<video src="${escapeHtml(item.src)}" controls playsinline></video>`
-      : `<img src="${escapeHtml(item.src)}" alt="${escapeHtml(title)} — photo ${i + 1}" loading="${i === 0 ? 'eager' : 'lazy'}">`;
+      : `<img src="${escapeHtml(cld(item.src, 900))}" decoding="async" alt="${escapeHtml(title)} — photo ${i + 1}" loading="${i === 0 ? 'eager' : 'lazy'}">`;
     return `<div class="carousel-slide">${inner}</div>`;
   }).join("");
 

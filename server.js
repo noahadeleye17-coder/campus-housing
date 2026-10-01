@@ -6,6 +6,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
+const compression = require("compression");
 
 const authRoutes = require("./routes/authRoutes");
 const apartmentRoutes = require("./routes/apartmentroutes");
@@ -57,6 +58,7 @@ app.use(cors({
   },
   credentials: true,
 }));
+app.use(compression());
 app.use("/api", apiLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -170,9 +172,21 @@ app.get("/apartment.html", async (req, res, next) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, "frontend")));
+const staticOpts = {
+  etag: true,
+  setHeaders: (res, p) => {
+    if (/\.(png|jpe?g|svg|ico|webp|woff2?)$/i.test(p)) {
+      res.setHeader("Cache-Control", "public, max-age=2592000");
+    } else if (p.endsWith("sw.js")) {
+      res.setHeader("Cache-Control", "no-cache");
+    } else {
+      res.setHeader("Cache-Control", "no-cache"); // revalidate html/js/css via ETag
+    }
+  },
+};
+app.use(express.static(path.join(__dirname, "frontend"), staticOpts));
 // Serve the same frontend folder under /frontend so URLs like /frontend/landlord.html work
-app.use("/frontend", express.static(path.join(__dirname, "frontend")));
+app.use("/frontend", express.static(path.join(__dirname, "frontend"), staticOpts));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/apartments", apartmentRoutes);

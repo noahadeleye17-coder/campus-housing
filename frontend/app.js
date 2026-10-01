@@ -23,6 +23,17 @@ const cloudinaryVideoThumbnail = (videoUrl) => {
   return videoUrl.replace(/\.[^/.]+$/, ".jpg");
 };
 
+// Cloudinary on-the-fly resize + modern format (no-op for other hosts).
+const cld = (url, w) =>
+  url && url.includes("res.cloudinary.com") && url.includes("/upload/")
+    ? url.replace("/upload/", `/upload/f_auto,q_auto,w_${w},c_limit/`)
+    : url;
+const cardImg = (src, alt, i) => {
+  const e = escapeHtml;
+  const attrs = i < 2 ? 'fetchpriority="' + (i === 0 ? "high" : "auto") + '"' : 'loading="lazy"';
+  return `<img src="${e(cld(src, 480))}" srcset="${e(cld(src, 320))} 320w, ${e(cld(src, 480))} 480w, ${e(cld(src, 720))} 720w" sizes="(max-width:600px) 100vw, 360px" width="480" height="360" decoding="async" ${attrs} alt="${e(alt)}" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'card-placeholder', innerHTML: '<span class=&quot;card-placeholder-label&quot;>Photos coming soon</span>' }));">`;
+};
+
 function showSkeletons(container, count = 6) {
   container.innerHTML = "";
 
@@ -285,8 +296,12 @@ function updatePaginationUi() {
 // ============================
 // FETCH APARTMENTS
 // ============================
+let listAbort = null;
 async function fetchApartments(page = 1, search = "", type = "", zone = "") {
   if (!apartmentContainer) return;
+  if (listAbort) listAbort.abort();
+  listAbort = new AbortController();
+  const signal = listAbort.signal;
 
   const isFirstPage = page === 1;
 
@@ -307,7 +322,7 @@ async function fetchApartments(page = 1, search = "", type = "", zone = "") {
     if (type) params.set("type", type);
     if (zone) params.set("zone", zone);
 
-    const res = await fetch(`${API_BASE}/apartments?${params}`);
+    const res = await fetch(`${API_BASE}/apartments?${params}`, { signal });
     if (!res.ok) throw new Error("Fetch failed");
 
     const data = await res.json();
@@ -327,6 +342,7 @@ async function fetchApartments(page = 1, search = "", type = "", zone = "") {
     updatePaginationUi();
 
   } catch (err) {
+    if (err.name === "AbortError") return;
     console.error(err);
     if (isFirstPage) {
       allApartments = demoApartments;
@@ -434,7 +450,7 @@ function renderApartments(apartments) {
     return;
   }
 
-  apartments.forEach(apartment => {
+  apartments.forEach((apartment, idx) => {
     const isSaved = getSavedIds().has(String(apartment._id));
     const div = document.createElement("div");
     div.className = "apartment";
@@ -447,12 +463,12 @@ function renderApartments(apartments) {
     let imageMarkup;
 
     if (apartment.image) {
-      imageMarkup = `<img src="${escapeHtml(apartment.image)}" alt="${escapeHtml(apartment.title)}" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'card-placeholder', innerHTML: '<span class=&quot;card-placeholder-label&quot;>Photos coming soon</span>' }));">`;
+      imageMarkup = cardImg(apartment.image, apartment.title, idx);
     } else if (videoThumb) {
       // No photos uploaded, but there's a video — show its first frame as
       // the card image, with a small badge so it's clear it's a video.
       imageMarkup = `
-        <img src="${escapeHtml(videoThumb)}" alt="${escapeHtml(apartment.title)}" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'card-placeholder', innerHTML: '<span class=&quot;card-placeholder-label&quot;>Photos coming soon</span>' }));">
+        ${cardImg(videoThumb, apartment.title, idx)}
         <span class="video-badge" aria-label="Video available" title="Video available">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
         </span>

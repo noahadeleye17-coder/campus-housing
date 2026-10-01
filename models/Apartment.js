@@ -87,6 +87,8 @@ const apartmentSchema = new mongoose.Schema({
 // Speeds up the "All Types" + price range filters on the search bar
 // (avoids a full collection scan on every homepage search/filter).
 apartmentSchema.index({ propertyType: 1, price: 1 });
+// Default public browse: not-taken, newest first.
+apartmentSchema.index({ status: 1, createdAt: -1 });
 
 // Text index for the search box (apartment title / location). Lets queries
 // use $text: { $search: "..." } instead of a $regex scan — faster and
