@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const { OAuth2Client } = require("google-auth-library");
 const { Resend } = require("resend");
 const User = require("../models/user");
+const { FROM_ADDRESS } = require("../utils/email");
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClient = googleClientId ? new OAuth2Client(googleClientId) : null;
@@ -38,8 +39,8 @@ const sendResetEmail = async (toEmail, resetUrl) => {
     throw new Error("Email service is not configured");
   }
 
-  await resend.emails.send({
-    from: "Off-Campus Hub <offcampushub.ng>",
+  const { error } = await resend.emails.send({
+    from: FROM_ADDRESS,
     to: toEmail,
     subject: "Reset your Off-Campus Hub password",
     html: `
@@ -56,6 +57,13 @@ const sendResetEmail = async (toEmail, resetUrl) => {
       </div>
     `,
   });
+
+  // The Resend SDK returns API rejections in `error` rather than throwing.
+  // Throwing here lets forgotPassword's catch clear the token and tell the
+  // user the email couldn't be sent, instead of a false "link sent" message.
+  if (error) {
+    throw new Error(error.message || "Resend rejected the reset email");
+  }
 };
 
 exports.register = async (req, res) => {

@@ -2,6 +2,12 @@ const { Resend } = require("resend");
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
+// Single sender used by every email the app sends. It must be a full
+// address on a domain verified in Resend (offcampushub.ng). The old
+// "onboarding@resend.dev" sandbox sender only delivers to the Resend
+// account owner's own inbox, so it can't be used for real users.
+const FROM_ADDRESS = "Off-Campus Hub <hello@offcampushub.ng>";
+
 // Same escaping used for user-generated text elsewhere in the app (see
 // server.js) — names/messages get interpolated into email HTML below, so
 // they need the same treatment to avoid a malicious name/message breaking
@@ -25,12 +31,19 @@ const sendEmail = async ({ to, subject, html }) => {
     return false;
   }
   try {
-    await resend.emails.send({
-      from: "Off-Campus Hub <onboarding@resend.dev>",
+    // The Resend SDK reports API rejections (bad sender, unverified domain,
+    // invalid recipient...) in an `error` field instead of throwing, so it
+    // has to be checked explicitly or failures look like successes.
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
       to,
       subject,
       html,
     });
+    if (error) {
+      console.error("Failed to send email:", error.message || error);
+      return false;
+    }
     return true;
   } catch (error) {
     console.error("Failed to send email:", error.message);
@@ -67,7 +80,7 @@ const sendBulkEmails = async (emails) => {
 
   for (let i = 0; i < emails.length; i += BULK_BATCH_SIZE) {
     const chunk = emails.slice(i, i + BULK_BATCH_SIZE).map((email) => ({
-      from: "Off-Campus Hub <hello@offcampushub.ng>",
+      from: FROM_ADDRESS,
       to: email.to,
       subject: email.subject,
       html: email.html,
@@ -106,4 +119,4 @@ const wrapEmail = (title, bodyHtml) => `
   </div>
 `;
 
-module.exports = { sendEmail, sendNotificationEmail, sendBulkEmails, wrapEmail, escapeHtml };
+module.exports = { FROM_ADDRESS, sendEmail, sendNotificationEmail, sendBulkEmails, wrapEmail, escapeHtml };
