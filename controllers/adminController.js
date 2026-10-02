@@ -7,6 +7,11 @@ const SiteConfig = require("../models/SiteConfig");
 const { deleteFromCloudinary } = require("../upload/ResizeImage");
 const { cloudinaryPublicIdFromUrl } = require("./apartmentController");
 const { sendBulkEmails, escapeHtml } = require("../utils/email");
+const {
+  buildBroadcastEmail,
+  buildUnsubscribeUrl,
+  isHttpUrl,
+} = require("../utils/emailTemplates");
 
 const isDatabaseError = (error) => {
   return error.name === "MongooseError" || error.name === "MongoServerSelectionError";
@@ -283,6 +288,143 @@ exports.sendWelcomeBackEmail = async (req, res) => {
       return res.status(503).json({ message: "Database is not connected" });
     }
     res.status(500).json({ message: error.message || "Could not send welcome back emails" });
+  }
+};
+
+// Audiences for the broadcast email. Admins are never included in a mass send
+// (use "test" mode to see it yourself). Disabled accounts and anyone who has
+// turned emails off (or unsubscribed via the email footer link) are skipped.
+const BROADCAST_AUDIENCES = {
+  all: { role: { $in: ["student", "landlord"] } },
+  students: { role: "student" },
+  landlords: { role: "landlord" },
+};
+
+const broadcastRecipientFilter = (audience) => ({
+  ...BROADCAST_AUDIENCES[audience],
+  disabled: { $ne: true },
+  notificationsEnabled: { $ne: false },
+});
+
+// @route   POST /api/admin/users/broadcast-email
+// @desc    Branded letterhead email to an audience.
+//          mode "preview" -> returns rendered HTML + recipient count (sends nothing)
+//          mode "test"    -> sends only to the logged-in admin
+//          mode "send"    -> sends to the whole audience
+// @access  Private (admin only)
+exports.sendBroadcastEmail = async (req, res) => {
+  try {
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({ message: "Database is not connected" });
+    }
+
+    const {
+      mode = "send",
+      audience = "all",
+      subject = "",
+      message = "",
+      ctaText = "",
+      ctaUrl = "",
+    } = req.body || {};
+
+    if (!["preview", "test", "send"].includes(mode)) {
+      return res.status(400).json({ message: "Invalid mode" });
+    }
+    if (!BROADCAST_AUDIENCES[audience]) {
+      return res.status(400).json({ message: "Invalid audience" });
+    }
+
+    const cleanSubject = String(subject).trim();
+    const cleanMessage = String(message).trim();
+    const cleanCtaText = String(ctaText).trim();
+    const cleanCtaUrl = String(ctaUrl).trim();
+
+    if (!cleanSubject || cleanSubject.length > 150) {
+      return res.status(400).json({ message: "Subject is required (150 characters max)" });
+    }
+    if (!cleanMessage || cleanMessage.length > 5000) {
+      return res.status(400).json({ message: "Message is required (5000 characters max)" });
+    }
+    if ((cleanCtaText || cleanCtaUrl) && (!cleanCtaText || !isHttpUrl(cleanCtaUrl))) {
+      return res.status(400).json({
+        message: "A button needs both a label and a full link starting with http:// or https://",
+      });
+    }
+    if (cleanCtaText.length > 40) {
+      return res.status(400).json({ message: "Button label is too long (40 characters max)" });
+    }
+
+    const render = (user, unsubscribeUrl) =>
+      buildBroadcastEmail({
+        message: cleanMessage,
+        userName: user.name,
+        unsubscribeUrl,
+        ctaText: cleanCtaText,
+        ctaUrl: cleanCtaUrl,
+        preheader: cleanMessage.replace(/\s+/g, " ").slice(0, 110),
+      });
+
+    const filter = broadcastRecipientFilter(audience);
+
+    if (mode === "preview") {
+      const recipientCount = await User.countDocuments({ ...filter, email: { $exists: true, $ne: "" } });
+      return res.json({
+        html: render({ name: req.user.name || "Alex" }, ""),
+        recipientCount,
+      });
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      return res.status(503).json({ message: "Email service is not configured (RESEND_API_KEY missing)" });
+    }
+    if (!process.env.JWT_SECRET) {
+      return res.status(503).json({ message: "JWT_SECRET is not set, so unsubscribe links can't be generated" });
+    }
+
+    const toEmail = (user, subjectLine) => {
+      const unsubscribeUrl = buildUnsubscribeUrl(user._id);
+      return {
+        to: user.email,
+        subject: subjectLine,
+        html: render(user, unsubscribeUrl),
+        headers: {
+          "List-Unsubscribe": `<${unsubscribeUrl}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
+      };
+    };
+
+    if (mode === "test") {
+      if (!req.user.email) {
+        return res.status(400).json({ message: "Your admin account has no email on file" });
+      }
+      const { sent } = await sendBulkEmails([toEmail(req.user, `[TEST] ${cleanSubject}`)]);
+      if (!sent) {
+        return res.status(502).json({ message: "Test email failed to send. Check the server logs." });
+      }
+      return res.json({ message: `Test email sent to ${req.user.email}`, sent, failed: 0 });
+    }
+
+    // mode === "send"
+    const candidates = await User.find(filter).select("name email");
+    const recipients = candidates.filter((u) => u.email);
+
+    if (!recipients.length) {
+      return res.status(400).json({ message: "No eligible recipients for this audience" });
+    }
+
+    const { sent, failed } = await sendBulkEmails(recipients.map((u) => toEmail(u, cleanSubject)));
+
+    res.json({
+      message: `Sent to ${sent} of ${recipients.length} recipient(s)${failed ? `, ${failed} failed` : ""}`,
+      sent,
+      failed,
+    });
+  } catch (error) {
+    if (isDatabaseError(error)) {
+      return res.status(503).json({ message: "Database is not connected" });
+    }
+    res.status(500).json({ message: error.message || "Could not send broadcast email" });
   }
 };
 

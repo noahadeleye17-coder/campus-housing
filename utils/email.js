@@ -71,6 +71,7 @@ const sendBulkEmails = async (emails) => {
       to: email.to,
       subject: email.subject,
       html: email.html,
+      ...(email.headers ? { headers: email.headers } : {}),
     }));
 
     try {

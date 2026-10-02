@@ -1,0 +1,743 @@
+diff --git a/controllers/adminController.js b/controllers/adminController.js
+index 1479486..2744ed2 100644
+--- a/controllers/adminController.js
++++ b/controllers/adminController.js
+@@ -7,6 +7,11 @@ const SiteConfig = require("../models/SiteConfig");
+ const { deleteFromCloudinary } = require("../upload/ResizeImage");
+ const { cloudinaryPublicIdFromUrl } = require("./apartmentController");
+ const { sendBulkEmails, escapeHtml } = require("../utils/email");
++const {
++  buildBroadcastEmail,
++  buildUnsubscribeUrl,
++  isHttpUrl,
++} = require("../utils/emailTemplates");
+ 
+ const isDatabaseError = (error) => {
+   return error.name === "MongooseError" || error.name === "MongoServerSelectionError";
+@@ -286,6 +291,143 @@ exports.sendWelcomeBackEmail = async (req, res) => {
+   }
+ };
+ 
++// Audiences for the broadcast email. Admins are never included in a mass send
++// (use "test" mode to see it yourself). Disabled accounts and anyone who has
++// turned emails off (or unsubscribed via the email footer link) are skipped.
++const BROADCAST_AUDIENCES = {
++  all: { role: { $in: ["student", "landlord"] } },
++  students: { role: "student" },
++  landlords: { role: "landlord" },
++};
++
++const broadcastRecipientFilter = (audience) => ({
++  ...BROADCAST_AUDIENCES[audience],
++  disabled: { $ne: true },
++  notificationsEnabled: { $ne: false },
++});
++
++// @route   POST /api/admin/users/broadcast-email
++// @desc    Branded letterhead email to an audience.
++//          mode "preview" -> returns rendered HTML + recipient count (sends nothing)
++//          mode "test"    -> sends only to the logged-in admin
++//          mode "send"    -> sends to the whole audience
++// @access  Private (admin only)
++exports.sendBroadcastEmail = async (req, res) => {
++  try {
++    if (!isDatabaseConnected()) {
++      return res.status(503).json({ message: "Database is not connected" });
++    }
++
++    const {
++      mode = "send",
++      audience = "all",
++      subject = "",
++      message = "",
++      ctaText = "",
++      ctaUrl = "",
++    } = req.body || {};
++
++    if (!["preview", "test", "send"].includes(mode)) {
++      return res.status(400).json({ message: "Invalid mode" });
++    }
++    if (!BROADCAST_AUDIENCES[audience]) {
++      return res.status(400).json({ message: "Invalid audience" });
++    }
++
++    const cleanSubject = String(subject).trim();
++    const cleanMessage = String(message).trim();
++    const cleanCtaText = String(ctaText).trim();
++    const cleanCtaUrl = String(ctaUrl).trim();
++
++    if (!cleanSubject || cleanSubject.length > 150) {
++      return res.status(400).json({ message: "Subject is required (150 characters max)" });
++    }
++    if (!cleanMessage || cleanMessage.length > 5000) {
++      return res.status(400).json({ message: "Message is required (5000 characters max)" });
++    }
++    if ((cleanCtaText || cleanCtaUrl) && (!cleanCtaText || !isHttpUrl(cleanCtaUrl))) {
++      return res.status(400).json({
++        message: "A button needs both a label and a full link starting with http:// or https://",
++      });
++    }
++    if (cleanCtaText.length > 40) {
++      return res.status(400).json({ message: "Button label is too long (40 characters max)" });
++    }
++
++    const render = (user, unsubscribeUrl) =>
++      buildBroadcastEmail({
++        message: cleanMessage,
++        userName: user.name,
++        unsubscribeUrl,
++        ctaText: cleanCtaText,
++        ctaUrl: cleanCtaUrl,
++        preheader: cleanMessage.replace(/\s+/g, " ").slice(0, 110),
++      });
++
++    const filter = broadcastRecipientFilter(audience);
++
++    if (mode === "preview") {
++      const recipientCount = await User.countDocuments({ ...filter, email: { $exists: true, $ne: "" } });
++      return res.json({
++        html: render({ name: req.user.name || "Alex" }, ""),
++        recipientCount,
++      });
++    }
++
++    if (!process.env.RESEND_API_KEY) {
++      return res.status(503).json({ message: "Email service is not configured (RESEND_API_KEY missing)" });
++    }
++    if (!process.env.JWT_SECRET) {
++      return res.status(503).json({ message: "JWT_SECRET is not set, so unsubscribe links can't be generated" });
++    }
++
++    const toEmail = (user, subjectLine) => {
++      const unsubscribeUrl = buildUnsubscribeUrl(user._id);
++      return {
++        to: user.email,
++        subject: subjectLine,
++        html: render(user, unsubscribeUrl),
++        headers: {
++          "List-Unsubscribe": `<${unsubscribeUrl}>`,
++          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
++        },
++      };
++    };
++
++    if (mode === "test") {
++      if (!req.user.email) {
++        return res.status(400).json({ message: "Your admin account has no email on file" });
++      }
++      const { sent } = await sendBulkEmails([toEmail(req.user, `[TEST] ${cleanSubject}`)]);
++      if (!sent) {
++        return res.status(502).json({ message: "Test email failed to send. Check the server logs." });
++      }
++      return res.json({ message: `Test email sent to ${req.user.email}`, sent, failed: 0 });
++    }
++
++    // mode === "send"
++    const candidates = await User.find(filter).select("name email");
++    const recipients = candidates.filter((u) => u.email);
++
++    if (!recipients.length) {
++      return res.status(400).json({ message: "No eligible recipients for this audience" });
++    }
++
++    const { sent, failed } = await sendBulkEmails(recipients.map((u) => toEmail(u, cleanSubject)));
++
++    res.json({
++      message: `Sent to ${sent} of ${recipients.length} recipient(s)${failed ? `, ${failed} failed` : ""}`,
++      sent,
++      failed,
++    });
++  } catch (error) {
++    if (isDatabaseError(error)) {
++      return res.status(503).json({ message: "Database is not connected" });
++    }
++    res.status(500).json({ message: error.message || "Could not send broadcast email" });
++  }
++};
++
+ // @route   GET /api/admin/site-config
+ // @desc    Read the current announcement banner (admin view — same data as
+ //          the public endpoint, kept separate so the admin UI never has to
+diff --git a/controllers/unsubscribeController.js b/controllers/unsubscribeController.js
+new file mode 100644
+index 0000000..e50db4f
+--- /dev/null
++++ b/controllers/unsubscribeController.js
+@@ -0,0 +1,89 @@
++const mongoose = require("mongoose");
++const User = require("../models/user");
++const { escapeHtml } = require("../utils/email");
++const { isValidUnsubscribeToken, getSiteUrl } = require("../utils/emailTemplates");
++
++const isDatabaseConnected = () => mongoose.connection.readyState === 1;
++
++const page = (title, bodyHtml) => `<!DOCTYPE html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <meta name="robots" content="noindex">
++  <title>${escapeHtml(title)} · Off-Campus Hub</title>
++</head>
++<body style="margin:0;background:#f4f0e8;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#16213e;">
++  <div style="max-width:460px;margin:12vh auto 0;padding:0 16px;">
++    <div style="background:#fff;border-radius:16px;padding:32px 28px;box-shadow:0 12px 28px rgba(16,24,40,0.08);text-align:center;">
++      <img src="/icons/icon-192.png" width="56" height="56" alt="Off-Campus Hub" style="display:block;margin:0 auto 12px;">
++      <h1 style="margin:0 0 10px;font-size:1.3rem;color:#17327f;">${escapeHtml(title)}</h1>
++      ${bodyHtml}
++    </div>
++  </div>
++</body>
++</html>`;
++
++const buttonStyle =
++  "display:inline-block;margin-top:18px;padding:12px 24px;border:0;border-radius:10px;background:#2357d8;color:#fff;font-size:1rem;font-weight:700;cursor:pointer;text-decoration:none;";
++
++const invalidLink = (res) =>
++  res
++    .status(400)
++    .type("html")
++    .send(
++      page(
++        "Link not valid",
++        `<p style="color:#596274;line-height:1.6;">This unsubscribe link isn't valid or has expired. You can also turn emails off any time from your dashboard settings.</p>
++         <a href="${getSiteUrl()}" style="${buttonStyle}">Go to Off-Campus Hub</a>`
++      )
++    );
++
++// @route   GET /api/auth/unsubscribe?uid=...&token=...
++// @desc    Confirmation page. Deliberately does NOT unsubscribe on GET — mail
++//          scanners and link previewers fetch URLs automatically and would
++//          silently opt people out. The button below POSTs instead.
++exports.showUnsubscribe = (req, res) => {
++  const { uid, token } = req.query;
++  if (!mongoose.Types.ObjectId.isValid(uid) || !isValidUnsubscribeToken(uid, token)) {
++    return invalidLink(res);
++  }
++
++  res.type("html").send(
++    page(
++      "Unsubscribe from emails?",
++      `<p style="color:#596274;line-height:1.6;">You'll stop receiving announcements and notification emails from Off-Campus Hub.</p>
++       <form method="POST" action="/api/auth/unsubscribe?uid=${encodeURIComponent(uid)}&token=${encodeURIComponent(token)}">
++         <button type="submit" style="${buttonStyle}">Yes, unsubscribe me</button>
++       </form>`
++    )
++  );
++};
++
++// @route   POST /api/auth/unsubscribe?uid=...&token=...
++// @desc    Performs the unsubscribe. Also serves as the RFC 8058 one-click
++//          endpoint (List-Unsubscribe-Post), which mail apps call directly.
++exports.confirmUnsubscribe = async (req, res) => {
++  const { uid, token } = req.query;
++  if (!mongoose.Types.ObjectId.isValid(uid) || !isValidUnsubscribeToken(uid, token)) {
++    return invalidLink(res);
++  }
++
++  try {
++    if (!isDatabaseConnected()) {
++      return res.status(503).type("html").send(page("Try again shortly", `<p style="color:#596274;">We couldn't reach the server. Please try again in a moment.</p>`));
++    }
++
++    await User.updateOne({ _id: uid }, { notificationsEnabled: false });
++
++    res.type("html").send(
++      page(
++        "You're unsubscribed",
++        `<p style="color:#596274;line-height:1.6;">You won't get any more emails from us. Changed your mind? Turn them back on any time in your dashboard settings.</p>
++         <a href="${getSiteUrl()}" style="${buttonStyle}">Back to Off-Campus Hub</a>`
++      )
++    );
++  } catch (error) {
++    res.status(500).type("html").send(page("Something went wrong", `<p style="color:#596274;">Please try again later.</p>`));
++  }
++};
+diff --git a/frontend/admin.html b/frontend/admin.html
+index 545e44f..c4c2e4a 100644
+--- a/frontend/admin.html
++++ b/frontend/admin.html
+@@ -381,7 +381,40 @@
+     }
+     .char-count { font-size: 0.78rem; color: var(--muted); text-align: right; }
+ 
++    /* Broadcast tab: letterhead email composer */
++    .broadcast-form { display: grid; gap: 16px; max-width: 640px; }
++    .broadcast-form label {
++      display: grid;
++      gap: 6px;
++      font-weight: 700;
++      font-size: 0.88rem;
++      color: var(--ink);
++    }
++    .broadcast-form input,
++    .broadcast-form select,
++    .broadcast-form textarea {
++      padding: 12px 14px;
++      border-radius: var(--radius-sm);
++      border: 1px solid var(--border);
++      font-family: inherit;
++      font-size: 0.92rem;
++      font-weight: 400;
++      background: #fff;
++    }
++    .broadcast-form textarea { resize: vertical; min-height: 220px; line-height: 1.6; }
++    .broadcast-cta-row { display: grid; grid-template-columns: 1fr 1.6fr; gap: 12px; }
++    .broadcast-hint { margin: 0; font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
++    .broadcast-note { margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--primary-dark); min-height: 1.2em; }
++    .broadcast-preview-frame {
++      width: 100%;
++      height: 680px;
++      border: 1px solid var(--border);
++      border-radius: var(--radius-md);
++      background: #f4f0e8;
++    }
++
+     @media (max-width: 640px) {
++      .broadcast-cta-row { grid-template-columns: 1fr; }
+       .page-shell { margin: 20px auto 60px; }
+       .page-header, .panel-card { padding: 20px; }
+     }
+@@ -448,6 +481,7 @@
+       <button type="button" class="admin-tab-btn" data-tab="users">Users</button>
+       <button type="button" class="admin-tab-btn" data-tab="roommates">Roommates</button>
+       <button type="button" class="admin-tab-btn" data-tab="content">Content</button>
++      <button type="button" class="admin-tab-btn" data-tab="broadcast">Broadcast</button>
+     </div>
+ 
+     <!-- Overview -->
+@@ -567,6 +601,56 @@
+         </form>
+       </div>
+     </section>
++
++    <!-- Broadcast -->
++    <section class="admin-panel" id="panel-broadcast">
++      <div class="panel-card">
++        <h2>Broadcast email</h2>
++        <p>Send a message to your users on the Off-Campus Hub letterhead (logo, brand colours, footer and unsubscribe link are added automatically). Anyone who is disabled or has turned emails off is skipped.</p>
++        <form id="broadcastForm" class="broadcast-form" novalidate>
++          <label>
++            Audience
++            <select id="broadcastAudience">
++              <option value="all">All students and landlords</option>
++              <option value="students">Students only</option>
++              <option value="landlords">Landlords only</option>
++            </select>
++          </label>
++          <label>
++            Subject
++            <input type="text" id="broadcastSubject" maxlength="150" placeholder="e.g. Happy New Month from Off-Campus Hub" />
++          </label>
++          <label>
++            Message
++            <textarea id="broadcastMessage" maxlength="5000" placeholder="Hello {{name}},&#10;&#10;Happy New Month! ...&#10;&#10;— The Off-Campus Hub Team"></textarea>
++            <span class="char-count"><span id="broadcastCharCount">0</span>/5000</span>
++          </label>
++          <div class="broadcast-cta-row">
++            <label>
++              Button label (optional)
++              <input type="text" id="broadcastCtaText" maxlength="40" placeholder="Browse listings" />
++            </label>
++            <label>
++              Button link (optional)
++              <input type="url" id="broadcastCtaUrl" placeholder="https://offcampushub.ng" />
++            </label>
++          </div>
++          <p class="broadcast-hint">Use <code>{{name}}</code> to insert each person's first name, <code>**bold**</code> for bold text, and a blank line to start a new paragraph. Links you paste become clickable.</p>
++          <div class="form-actions">
++            <button type="button" class="btn outline" id="broadcastPreviewBtn">Preview</button>
++            <button type="button" class="btn outline" id="broadcastTestBtn">Send test to me</button>
++            <button type="button" class="btn" id="broadcastSendBtn">Send to audience</button>
++          </div>
++          <p class="broadcast-note" id="broadcastRecipientNote" aria-live="polite"></p>
++        </form>
++      </div>
++
++      <div class="panel-card" id="broadcastPreviewCard" hidden>
++        <h2>Preview</h2>
++        <p>This is how the email will look. The first name shown is yours; each recipient sees their own.</p>
++        <iframe id="broadcastPreviewFrame" class="broadcast-preview-frame" sandbox="" title="Broadcast email preview"></iframe>
++      </div>
++    </section>
+   </div>
+ 
+   <script src="auth-session.js"></script>
+diff --git a/frontend/admin.js b/frontend/admin.js
+index c398dd7..eae51e2 100644
+--- a/frontend/admin.js
++++ b/frontend/admin.js
+@@ -679,4 +679,121 @@ announcementForm.addEventListener("submit", async (e) => {
+     saveBtn.disabled = false;
+     saveBtn.textContent = "Save";
+   }
+-});
+\ No newline at end of file
++});
++
++// ── Broadcast tab ─────────────────────────────────────────────────────────
++const broadcastAudience = document.getElementById("broadcastAudience");
++const broadcastSubject = document.getElementById("broadcastSubject");
++const broadcastMessage = document.getElementById("broadcastMessage");
++const broadcastCharCount = document.getElementById("broadcastCharCount");
++const broadcastCtaText = document.getElementById("broadcastCtaText");
++const broadcastCtaUrl = document.getElementById("broadcastCtaUrl");
++const broadcastPreviewBtn = document.getElementById("broadcastPreviewBtn");
++const broadcastTestBtn = document.getElementById("broadcastTestBtn");
++const broadcastSendBtn = document.getElementById("broadcastSendBtn");
++const broadcastRecipientNote = document.getElementById("broadcastRecipientNote");
++const broadcastPreviewCard = document.getElementById("broadcastPreviewCard");
++const broadcastPreviewFrame = document.getElementById("broadcastPreviewFrame");
++const broadcastForm = document.getElementById("broadcastForm");
++
++const BROADCAST_AUDIENCE_LABELS = {
++  all: "students and landlords",
++  students: "students",
++  landlords: "landlords",
++};
++
++broadcastForm.addEventListener("submit", (e) => e.preventDefault());
++
++broadcastMessage.addEventListener("input", () => {
++  broadcastCharCount.textContent = broadcastMessage.value.length;
++});
++
++async function postBroadcast(mode) {
++  const res = await authedFetch("/admin/users/broadcast-email", {
++    method: "POST",
++    headers: { "Content-Type": "application/json" },
++    body: JSON.stringify({
++      mode,
++      audience: broadcastAudience.value,
++      subject: broadcastSubject.value,
++      message: broadcastMessage.value,
++      ctaText: broadcastCtaText.value,
++      ctaUrl: broadcastCtaUrl.value,
++    }),
++  });
++  const data = await res.json().catch(() => ({}));
++  return { ok: res.ok, data };
++}
++
++function showBroadcastPreview(data) {
++  broadcastPreviewFrame.srcdoc = data.html;
++  broadcastPreviewCard.hidden = false;
++  const label = BROADCAST_AUDIENCE_LABELS[broadcastAudience.value];
++  broadcastRecipientNote.textContent = `${data.recipientCount} eligible ${label} will receive this.`;
++}
++
++// Runs one broadcast action with all three buttons locked, so a double click
++// can't fire a second send.
++async function withBroadcastBusy(activeBtn, busyText, action) {
++  const buttons = [broadcastPreviewBtn, broadcastTestBtn, broadcastSendBtn];
++  const originalText = activeBtn.textContent;
++  buttons.forEach((b) => (b.disabled = true));
++  activeBtn.textContent = busyText;
++  try {
++    await action();
++  } catch (err) {
++    console.error(err);
++    if (err.message !== "Session expired") {
++      window.showToast?.("Something went wrong. Please try again.", "error");
++    }
++  } finally {
++    buttons.forEach((b) => (b.disabled = false));
++    activeBtn.textContent = originalText;
++  }
++}
++
++broadcastPreviewBtn.addEventListener("click", () => {
++  withBroadcastBusy(broadcastPreviewBtn, "Loading…", async () => {
++    const { ok, data } = await postBroadcast("preview");
++    if (!ok) {
++      window.showToast?.(data.message || "Could not build preview", "error");
++      return;
++    }
++    showBroadcastPreview(data);
++  });
++});
++
++broadcastTestBtn.addEventListener("click", () => {
++  withBroadcastBusy(broadcastTestBtn, "Sending…", async () => {
++    const { ok, data } = await postBroadcast("test");
++    window.showToast?.(data.message || (ok ? "Test email sent" : "Could not send test email"), ok ? "success" : "error");
++  });
++});
++
++broadcastSendBtn.addEventListener("click", () => {
++  withBroadcastBusy(broadcastSendBtn, "Sending…", async () => {
++    // Preview first: validates the form and gives the real recipient count
++    // for the confirmation prompt before anything is sent.
++    const preview = await postBroadcast("preview");
++    if (!preview.ok) {
++      window.showToast?.(preview.data.message || "Could not send", "error");
++      return;
++    }
++    showBroadcastPreview(preview.data);
++
++    const count = preview.data.recipientCount;
++    if (!count) {
++      window.showToast?.("No eligible recipients for this audience", "error");
++      return;
++    }
++
++    const confirmMessage = `Send this email to ${count} ${BROADCAST_AUDIENCE_LABELS[broadcastAudience.value]}? This can't be undone.`;
++    const confirmed = window.showConfirm
++      ? await window.showConfirm(confirmMessage, { confirmText: "Send" })
++      : window.confirm(confirmMessage);
++    if (!confirmed) return;
++
++    const { ok, data } = await postBroadcast("send");
++    window.showToast?.(data.message || (ok ? "Emails sent" : "Could not send emails"), ok ? "success" : "error");
++  });
++});
+diff --git a/routes/adminRoutes.js b/routes/adminRoutes.js
+index beb10ef..275ffb6 100644
+--- a/routes/adminRoutes.js
++++ b/routes/adminRoutes.js
+@@ -8,6 +8,7 @@ const {
+   updateUser,
+   deleteUser,
+   sendWelcomeBackEmail,
++  sendBroadcastEmail,
+   getSiteConfig,
+   updateSiteConfig,
+   getRoommateProfiles,
+@@ -32,6 +33,11 @@ router.delete("/users/:id", writeLimiter, deleteUser);
+ // @route   POST /api/admin/users/welcome-back-email
+ router.post("/users/welcome-back-email", writeLimiter, sendWelcomeBackEmail);
+ 
++// @route   POST /api/admin/users/broadcast-email
++// @desc    Preview / test-send / send a branded letterhead email to a user
++//          audience. Body: { mode: "preview"|"test"|"send", audience, subject, message, ctaText?, ctaUrl? }
++router.post("/users/broadcast-email", writeLimiter, sendBroadcastEmail);
++
+ // @route   GET /api/admin/site-config
+ router.get("/site-config", getSiteConfig);
+ 
+diff --git a/routes/authRoutes.js b/routes/authRoutes.js
+index 720f810..a5fb35d 100644
+--- a/routes/authRoutes.js
++++ b/routes/authRoutes.js
+@@ -9,7 +9,8 @@ const {
+   resetPassword,
+ } = require("../controllers/authController");
+ const { registerRules, loginRules, googleAuthRules, validate } = require("../middleware/validateAuth");
+-const { authLimiter, passwordResetLimiter } = require("../middleware/rateLimit");
++const { authLimiter, passwordResetLimiter, writeLimiter } = require("../middleware/rateLimit");
++const { showUnsubscribe, confirmUnsubscribe } = require("../controllers/unsubscribeController");
+ const { forgotPasswordRules, resetPasswordRules } = require("../middleware/validateInput");
+ 
+ router.post("/register", authLimiter, registerRules, validate, register);
+@@ -18,4 +19,9 @@ router.post("/google", authLimiter, googleAuthRules, validate, googleLogin);
+ router.post("/forgot-password", passwordResetLimiter, forgotPasswordRules, validate, forgotPassword);
+ router.post("/reset-password", passwordResetLimiter, resetPasswordRules, validate, resetPassword);
+ 
++// Email unsubscribe (linked from broadcast emails). GET shows a confirm page,
++// POST performs it — also used by mail apps' one-click unsubscribe.
++router.get("/unsubscribe", showUnsubscribe);
++router.post("/unsubscribe", writeLimiter, confirmUnsubscribe);
++
+ module.exports = router;
+\ No newline at end of file
+diff --git a/utils/email.js b/utils/email.js
+index 5e62a46..6abe1e2 100644
+--- a/utils/email.js
++++ b/utils/email.js
+@@ -71,6 +71,7 @@ const sendBulkEmails = async (emails) => {
+       to: email.to,
+       subject: email.subject,
+       html: email.html,
++      ...(email.headers ? { headers: email.headers } : {}),
+     }));
+ 
+     try {
+diff --git a/utils/emailTemplates.js b/utils/emailTemplates.js
+new file mode 100644
+index 0000000..ac87952
+--- /dev/null
++++ b/utils/emailTemplates.js
+@@ -0,0 +1,183 @@
++const crypto = require("crypto");
++const { escapeHtml } = require("./email");
++
++// Brand tokens — mirrored from frontend/style.css (:root) so emails match the site.
++const BRAND = {
++  name: "Off-Campus Hub",
++  primary: "#2357d8",
++  primaryDark: "#17327f",
++  accent: "#0f9f8f",
++  text: "#16213e",
++  muted: "#596274",
++  subtle: "#7a8496",
++  pageBg: "#f4f0e8",
++  border: "#e8e4da",
++  font: "'Segoe UI', Helvetica, Arial, sans-serif",
++};
++
++const getSiteUrl = () =>
++  (process.env.FRONTEND_URL || process.env.SITE_URL || "https://offcampushub.ng").replace(/\/+$/, "");
++
++// Email clients block SVG, so the logo must be a PNG served from a public URL.
++// icon-192.png already ships in frontend/icons and is served by express.static.
++const getLogoUrl = () => process.env.EMAIL_LOGO_URL || `${getSiteUrl()}/icons/icon-192.png`;
++
++// ── Unsubscribe links ───────────────────────────────────────────────────────
++// Stateless: the token is an HMAC of the user id, so nothing extra is stored
++// and a link can't be forged for another account without JWT_SECRET.
++const unsubscribeToken = (userId) =>
++  crypto
++    .createHmac("sha256", process.env.JWT_SECRET || "")
++    .update(`unsubscribe:${String(userId)}`)
++    .digest("hex");
++
++const isValidUnsubscribeToken = (userId, token) => {
++  if (!process.env.JWT_SECRET || typeof token !== "string") return false;
++  const expected = Buffer.from(unsubscribeToken(userId), "hex");
++  let provided;
++  try {
++    provided = Buffer.from(token, "hex");
++  } catch {
++    return false;
++  }
++  return provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
++};
++
++const buildUnsubscribeUrl = (userId) =>
++  `${getSiteUrl()}/api/auth/unsubscribe?uid=${encodeURIComponent(String(userId))}&token=${unsubscribeToken(userId)}`;
++
++// ── Message text → email-safe HTML ──────────────────────────────────────────
++// Admin types plain text. We escape everything first, then add the few
++// conveniences back: {{name}}, **bold**, links, paragraphs and line breaks.
++const linkStyle = `color:${BRAND.primary};text-decoration:underline;`;
++
++const linkify = (escapedText) =>
++  escapedText.replace(/(https?:\/\/[^\s<]+)/g, (match) => {
++    const trailing = (match.match(/[.,!?;:)]+$/) || [""])[0];
++    const url = trailing ? match.slice(0, -trailing.length) : match;
++    return `<a href="${url}" style="${linkStyle}">${url}</a>${trailing}`;
++  });
++
++const messageToHtml = (message, userName = "") => {
++  const firstName = String(userName || "").trim().split(/\s+/)[0] || "there";
++  const escaped = escapeHtml(String(message || "").replace(/\r\n/g, "\n").trim())
++    .replace(/\{\{\s*name\s*\}\}/gi, escapeHtml(firstName))
++    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
++
++  return linkify(escaped)
++    .split(/\n{2,}/)
++    .map(
++      (para) =>
++        `<p style="margin:0 0 16px;font-size:16px;line-height:1.65;color:${BRAND.text};">${para.replace(/\n/g, "<br>")}</p>`
++    )
++    .join("");
++};
++
++const isHttpUrl = (value) => /^https?:\/\/[^\s"'<>]+$/i.test(String(value || "").trim());
++
++// ── The letterhead ──────────────────────────────────────────────────────────
++// Table-based layout with inline styles — the only thing that renders
++// consistently across Gmail, Outlook and mobile mail apps.
++const buildBroadcastEmail = ({
++  message,
++  userName = "",
++  unsubscribeUrl = "",
++  ctaText = "",
++  ctaUrl = "",
++  preheader = "",
++}) => {
++  const siteUrl = getSiteUrl();
++  const year = new Date().getFullYear();
++
++  const cta =
++    ctaText && isHttpUrl(ctaUrl)
++      ? `
++        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 8px;">
++          <tr>
++            <td bgcolor="${BRAND.primary}" style="border-radius:10px;">
++              <a href="${escapeHtml(ctaUrl.trim())}" style="display:inline-block;padding:13px 26px;font-family:${BRAND.font};font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">${escapeHtml(ctaText.trim())}</a>
++            </td>
++          </tr>
++        </table>`
++      : "";
++
++  const unsubscribeLine = unsubscribeUrl
++    ? `<br><a href="${escapeHtml(unsubscribeUrl)}" style="color:${BRAND.subtle};text-decoration:underline;">Unsubscribe from these emails</a>`
++    : "";
++
++  return `<!DOCTYPE html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>${escapeHtml(BRAND.name)}</title>
++</head>
++<body style="margin:0;padding:0;background:${BRAND.pageBg};">
++  <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all;">${escapeHtml(preheader)}</span>
++  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${BRAND.pageBg}" style="background:${BRAND.pageBg};">
++    <tr>
++      <td align="center" style="padding:28px 12px;">
++        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;font-family:${BRAND.font};">
++
++          <!-- Brand accent bar -->
++          <tr>
++            <td height="5" bgcolor="${BRAND.primary}" style="height:5px;line-height:5px;font-size:0;background:${BRAND.primary};background-image:linear-gradient(90deg,${BRAND.primary},${BRAND.accent});">&nbsp;</td>
++          </tr>
++
++          <!-- Letterhead -->
++          <tr>
++            <td style="padding:24px 32px 18px;border-bottom:1px solid ${BRAND.border};">
++              <a href="${siteUrl}" style="text-decoration:none;">
++                <table role="presentation" cellpadding="0" cellspacing="0">
++                  <tr>
++                    <td style="padding-right:12px;vertical-align:middle;">
++                      <img src="${escapeHtml(getLogoUrl())}" width="44" height="44" alt="${escapeHtml(BRAND.name)}" style="display:block;border:0;outline:none;width:44px;height:44px;">
++                    </td>
++                    <td style="vertical-align:middle;font-family:${BRAND.font};font-size:21px;font-weight:700;color:${BRAND.primaryDark};letter-spacing:-0.2px;">${escapeHtml(BRAND.name)}</td>
++                  </tr>
++                </table>
++              </a>
++            </td>
++          </tr>
++
++          <!-- Message -->
++          <tr>
++            <td style="padding:30px 32px 18px;font-family:${BRAND.font};">
++              ${messageToHtml(message, userName)}
++              ${cta}
++            </td>
++          </tr>
++
++          <!-- Footer -->
++          <tr>
++            <td style="padding:0 32px 28px;">
++              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f3f6fd" style="background:#f3f6fd;border-radius:12px;">
++                <tr>
++                  <td align="center" style="padding:18px 20px;font-family:${BRAND.font};font-size:13px;line-height:1.7;color:${BRAND.muted};">
++                    <strong style="color:${BRAND.primary};">${escapeHtml(BRAND.name)}</strong> &mdash; verified student housing &amp; roommate matching.<br>
++                    <a href="${siteUrl}" style="color:${BRAND.primary};text-decoration:none;font-weight:600;">${escapeHtml(siteUrl.replace(/^https?:\/\//, ""))}</a>
++                    &nbsp;&middot;&nbsp;
++                    <a href="${siteUrl}/terms.html" style="color:${BRAND.subtle};text-decoration:underline;">Terms &amp; Privacy</a>
++                    <br><span style="color:${BRAND.subtle};font-size:12px;">&copy; ${year} ${escapeHtml(BRAND.name)}</span>${unsubscribeLine}
++                  </td>
++                </tr>
++              </table>
++            </td>
++          </tr>
++
++        </table>
++      </td>
++    </tr>
++  </table>
++</body>
++</html>`;
++};
++
++module.exports = {
++  buildBroadcastEmail,
++  messageToHtml,
++  isHttpUrl,
++  buildUnsubscribeUrl,
++  isValidUnsubscribeToken,
++  getSiteUrl,
++};

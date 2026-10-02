@@ -8,6 +8,7 @@ const {
   updateUser,
   deleteUser,
   sendWelcomeBackEmail,
+  sendBroadcastEmail,
   getSiteConfig,
   updateSiteConfig,
   getRoommateProfiles,
@@ -31,6 +32,11 @@ router.delete("/users/:id", writeLimiter, deleteUser);
 
 // @route   POST /api/admin/users/welcome-back-email
 router.post("/users/welcome-back-email", writeLimiter, sendWelcomeBackEmail);
+
+// @route   POST /api/admin/users/broadcast-email
+// @desc    Preview / test-send / send a branded letterhead email to a user
+//          audience. Body: { mode: "preview"|"test"|"send", audience, subject, message, ctaText?, ctaUrl? }
+router.post("/users/broadcast-email", writeLimiter, sendBroadcastEmail);
 
 // @route   GET /api/admin/site-config
 router.get("/site-config", getSiteConfig);

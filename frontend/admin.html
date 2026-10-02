@@ -384,7 +384,40 @@
     }
     .char-count { font-size: 0.78rem; color: var(--muted); text-align: right; }
 
+    /* Broadcast tab: letterhead email composer */
+    .broadcast-form { display: grid; gap: 16px; max-width: 640px; }
+    .broadcast-form label {
+      display: grid;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--ink);
+    }
+    .broadcast-form input,
+    .broadcast-form select,
+    .broadcast-form textarea {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 400;
+      background: #fff;
+    }
+    .broadcast-form textarea { resize: vertical; min-height: 220px; line-height: 1.6; }
+    .broadcast-cta-row { display: grid; grid-template-columns: 1fr 1.6fr; gap: 12px; }
+    .broadcast-hint { margin: 0; font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+    .broadcast-note { margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--primary-dark); min-height: 1.2em; }
+    .broadcast-preview-frame {
+      width: 100%;
+      height: 680px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #f4f0e8;
+    }
+
     @media (max-width: 640px) {
+      .broadcast-cta-row { grid-template-columns: 1fr; }
       .page-shell { margin: 20px auto 60px; }
       .page-header, .panel-card { padding: 20px; }
     }
@@ -451,6 +484,7 @@
       <button type="button" class="admin-tab-btn" data-tab="users">Users</button>
       <button type="button" class="admin-tab-btn" data-tab="roommates">Roommates</button>
       <button type="button" class="admin-tab-btn" data-tab="content">Content</button>
+      <button type="button" class="admin-tab-btn" data-tab="broadcast">Broadcast</button>
     </div>
 
     <!-- Overview -->
@@ -568,6 +602,56 @@
             <button type="submit" class="btn" id="saveAnnouncementBtn">Save</button>
           </div>
         </form>
+      </div>
+    </section>
+
+    <!-- Broadcast -->
+    <section class="admin-panel" id="panel-broadcast">
+      <div class="panel-card">
+        <h2>Broadcast email</h2>
+        <p>Send a message to your users on the Off-Campus Hub letterhead (logo, brand colours, footer and unsubscribe link are added automatically). Anyone who is disabled or has turned emails off is skipped.</p>
+        <form id="broadcastForm" class="broadcast-form" novalidate>
+          <label>
+            Audience
+            <select id="broadcastAudience">
+              <option value="all">All students and landlords</option>
+              <option value="students">Students only</option>
+              <option value="landlords">Landlords only</option>
+            </select>
+          </label>
+          <label>
+            Subject
+            <input type="text" id="broadcastSubject" maxlength="150" placeholder="e.g. Happy New Month from Off-Campus Hub" />
+          </label>
+          <label>
+            Message
+            <textarea id="broadcastMessage" maxlength="5000" placeholder="Hello {{name}},&#10;&#10;Happy New Month! ...&#10;&#10;— The Off-Campus Hub Team"></textarea>
+            <span class="char-count"><span id="broadcastCharCount">0</span>/5000</span>
+          </label>
+          <div class="broadcast-cta-row">
+            <label>
+              Button label (optional)
+              <input type="text" id="broadcastCtaText" maxlength="40" placeholder="Browse listings" />
+            </label>
+            <label>
+              Button link (optional)
+              <input type="url" id="broadcastCtaUrl" placeholder="https://offcampushub.ng" />
+            </label>
+          </div>
+          <p class="broadcast-hint">Use <code>{{name}}</code> to insert each person's first name, <code>**bold**</code> for bold text, and a blank line to start a new paragraph. Links you paste become clickable.</p>
+          <div class="form-actions">
+            <button type="button" class="btn outline" id="broadcastPreviewBtn">Preview</button>
+            <button type="button" class="btn outline" id="broadcastTestBtn">Send test to me</button>
+            <button type="button" class="btn" id="broadcastSendBtn">Send to audience</button>
+          </div>
+          <p class="broadcast-note" id="broadcastRecipientNote" aria-live="polite"></p>
+        </form>
+      </div>
+
+      <div class="panel-card" id="broadcastPreviewCard" hidden>
+        <h2>Preview</h2>
+        <p>This is how the email will look. The first name shown is yours; each recipient sees their own.</p>
+        <iframe id="broadcastPreviewFrame" class="broadcast-preview-frame" sandbox="" title="Broadcast email preview"></iframe>
       </div>
     </section>
   </div>

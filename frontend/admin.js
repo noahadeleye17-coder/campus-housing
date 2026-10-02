@@ -680,3 +680,120 @@ announcementForm.addEventListener("submit", async (e) => {
     saveBtn.textContent = "Save";
   }
 });
+
+// ── Broadcast tab ─────────────────────────────────────────────────────────
+const broadcastAudience = document.getElementById("broadcastAudience");
+const broadcastSubject = document.getElementById("broadcastSubject");
+const broadcastMessage = document.getElementById("broadcastMessage");
+const broadcastCharCount = document.getElementById("broadcastCharCount");
+const broadcastCtaText = document.getElementById("broadcastCtaText");
+const broadcastCtaUrl = document.getElementById("broadcastCtaUrl");
+const broadcastPreviewBtn = document.getElementById("broadcastPreviewBtn");
+const broadcastTestBtn = document.getElementById("broadcastTestBtn");
+const broadcastSendBtn = document.getElementById("broadcastSendBtn");
+const broadcastRecipientNote = document.getElementById("broadcastRecipientNote");
+const broadcastPreviewCard = document.getElementById("broadcastPreviewCard");
+const broadcastPreviewFrame = document.getElementById("broadcastPreviewFrame");
+const broadcastForm = document.getElementById("broadcastForm");
+
+const BROADCAST_AUDIENCE_LABELS = {
+  all: "students and landlords",
+  students: "students",
+  landlords: "landlords",
+};
+
+broadcastForm.addEventListener("submit", (e) => e.preventDefault());
+
+broadcastMessage.addEventListener("input", () => {
+  broadcastCharCount.textContent = broadcastMessage.value.length;
+});
+
+async function postBroadcast(mode) {
+  const res = await authedFetch("/admin/users/broadcast-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      mode,
+      audience: broadcastAudience.value,
+      subject: broadcastSubject.value,
+      message: broadcastMessage.value,
+      ctaText: broadcastCtaText.value,
+      ctaUrl: broadcastCtaUrl.value,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+function showBroadcastPreview(data) {
+  broadcastPreviewFrame.srcdoc = data.html;
+  broadcastPreviewCard.hidden = false;
+  const label = BROADCAST_AUDIENCE_LABELS[broadcastAudience.value];
+  broadcastRecipientNote.textContent = `${data.recipientCount} eligible ${label} will receive this.`;
+}
+
+// Runs one broadcast action with all three buttons locked, so a double click
+// can't fire a second send.
+async function withBroadcastBusy(activeBtn, busyText, action) {
+  const buttons = [broadcastPreviewBtn, broadcastTestBtn, broadcastSendBtn];
+  const originalText = activeBtn.textContent;
+  buttons.forEach((b) => (b.disabled = true));
+  activeBtn.textContent = busyText;
+  try {
+    await action();
+  } catch (err) {
+    console.error(err);
+    if (err.message !== "Session expired") {
+      window.showToast?.("Something went wrong. Please try again.", "error");
+    }
+  } finally {
+    buttons.forEach((b) => (b.disabled = false));
+    activeBtn.textContent = originalText;
+  }
+}
+
+broadcastPreviewBtn.addEventListener("click", () => {
+  withBroadcastBusy(broadcastPreviewBtn, "Loading…", async () => {
+    const { ok, data } = await postBroadcast("preview");
+    if (!ok) {
+      window.showToast?.(data.message || "Could not build preview", "error");
+      return;
+    }
+    showBroadcastPreview(data);
+  });
+});
+
+broadcastTestBtn.addEventListener("click", () => {
+  withBroadcastBusy(broadcastTestBtn, "Sending…", async () => {
+    const { ok, data } = await postBroadcast("test");
+    window.showToast?.(data.message || (ok ? "Test email sent" : "Could not send test email"), ok ? "success" : "error");
+  });
+});
+
+broadcastSendBtn.addEventListener("click", () => {
+  withBroadcastBusy(broadcastSendBtn, "Sending…", async () => {
+    // Preview first: validates the form and gives the real recipient count
+    // for the confirmation prompt before anything is sent.
+    const preview = await postBroadcast("preview");
+    if (!preview.ok) {
+      window.showToast?.(preview.data.message || "Could not send", "error");
+      return;
+    }
+    showBroadcastPreview(preview.data);
+
+    const count = preview.data.recipientCount;
+    if (!count) {
+      window.showToast?.("No eligible recipients for this audience", "error");
+      return;
+    }
+
+    const confirmMessage = `Send this email to ${count} ${BROADCAST_AUDIENCE_LABELS[broadcastAudience.value]}? This can't be undone.`;
+    const confirmed = window.showConfirm
+      ? await window.showConfirm(confirmMessage, { confirmText: "Send" })
+      : window.confirm(confirmMessage);
+    if (!confirmed) return;
+
+    const { ok, data } = await postBroadcast("send");
+    window.showToast?.(data.message || (ok ? "Emails sent" : "Could not send emails"), ok ? "success" : "error");
+  });
+});
