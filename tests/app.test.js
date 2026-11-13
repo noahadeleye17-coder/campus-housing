@@ -190,7 +190,7 @@ describe("Server", () => {
     expect(res.body.errors.map((error) => error.msg)).toEqual(
       expect.arrayContaining([
         "Title is required",
-        "Price must be a positive number",
+        "Price must be a positive number up to ₦20,000,000",
         "Location is required",
       ])
     );

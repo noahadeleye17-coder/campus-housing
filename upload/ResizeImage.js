@@ -146,11 +146,18 @@ const resizeImage = async (req, res, next) => {
     const imageFiles = req.files?.images || [];
     const videoFiles = req.files?.video || [];
 
-    for (const imageFile of imageFiles) {
-      const { url, publicId } = await processImage(imageFile);
-      req.processedImages.push(url);
-      req.processedImageIds.push(publicId);
-    }
+    // Images are independent, so resize + upload them in parallel (max 6
+    // per listing). Doing them one by one made a 6-photo listing take ~6x
+    // as long to save. Results keep the original upload order.
+    const settled = await Promise.allSettled(imageFiles.map((file) => processImage(file)));
+    settled.forEach((result) => {
+      if (result.status === "fulfilled") {
+        req.processedImages.push(result.value.url);
+        req.processedImageIds.push(result.value.publicId);
+      }
+    });
+    const failed = settled.find((result) => result.status === "rejected");
+    if (failed) throw failed.reason; // the catch below cleans up the ones that did upload
 
     if (videoFiles.length) {
       const { url, publicId } = await processVideo(videoFiles[0]);

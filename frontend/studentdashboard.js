@@ -363,7 +363,15 @@ if (changePasswordBtn) {
       if (currentPasswordInput) currentPasswordInput.value = "";
       if (newPasswordInput) newPasswordInput.value = "";
       if (confirmPasswordInput) confirmPasswordInput.value = "";
-      setPasswordStatus("Password updated.", "success");
+      setPasswordStatus("Password updated. Other devices have been signed out.", "success");
+
+      // The server invalidates every token issued before the change, so the
+      // one this page loaded with no longer works. Store the fresh one and
+      // reload so the rest of the dashboard picks it up.
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        setTimeout(() => window.location.reload(), 1200);
+      }
     } catch (err) {
       setPasswordStatus(err.message || "Could not update password.", "error");
     } finally {

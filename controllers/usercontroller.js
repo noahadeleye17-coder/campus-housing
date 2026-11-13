@@ -1,10 +1,12 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const Apartment = require("../models/Apartment");
 const RoommateProfile = require("../models/RoommateProfile");
 const RoommateRequest = require("../models/RoommateRequest");
 const { processProfileImage, deleteFromCloudinary } = require("../upload/ResizeImage");
+const { deleteListingsForLandlord } = require("./apartmentController");
 
 const isDatabaseError = (error) => {
   return error.name === "MongooseError" || error.name === "MongoServerSelectionError";
@@ -175,7 +177,7 @@ exports.migrateSavedApartments = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { $addToSet: { savedApartments: { $each: existingIds } } },
-      { new: true }
+      { returnDocument: "after" }
     ).populate("savedApartments");
 
     res.json(publicProfile(user));
@@ -201,7 +203,7 @@ exports.updateNotifications = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { notificationsEnabled: enabled },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!user) {
@@ -246,9 +248,16 @@ exports.changePassword = async (req, res) => {
     }
 
     user.password = await bcrypt.hash(newPassword, 12);
+    user.passwordChangedAt = new Date(Date.now() - 1000); // signs out other devices
     await user.save();
 
-    res.json({ message: "Password updated." });
+    // Hand back a fresh token so this device stays signed in; every token
+    // issued before the change is now rejected by protect().
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+    });
+
+    res.json({ message: "Password updated. Other devices have been signed out.", token });
   } catch (error) {
     if (isDatabaseError(error)) {
       return res.status(503).json({ message: "Database is not connected" });
@@ -288,7 +297,11 @@ exports.deleteAccount = async (req, res) => {
       await deleteFromCloudinary(user.profileImagePublicId, "image");
     }
 
+    // A landlord deleting their account used to leave every listing live,
+    // pointing at a user that no longer exists (no owner, no way to edit or
+    // take it down, and "landlord: null" for students viewing it).
     await Promise.all([
+      deleteListingsForLandlord(user._id),
       RoommateProfile.deleteOne({ user: user._id }),
       RoommateRequest.deleteMany({ $or: [{ fromUser: user._id }, { toUser: user._id }] }),
     ]);

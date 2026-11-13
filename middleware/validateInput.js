@@ -1,5 +1,9 @@
 const { body, validationResult } = require("express-validator");
 
+// Yearly rent ceiling. Was ₦1,000,000, which already rejects many 2- and
+// 3-bedroom flats around FUTA at current prices.
+const MAX_PRICE = 20000000;
+
 const optionalText = (field, max, label) => {
   return body(field)
     .optional({ values: "falsy" })
@@ -35,7 +39,7 @@ const resetPasswordRules = [
 
 const apartmentOptionalIdentityRules = [
   body("title").optional({ values: "falsy" }).trim().isLength({ max: 120 }).withMessage("Title must be 120 characters or less"),
-  body("price").optional({ values: "falsy" }).isFloat({ min: 0, max: 1000000 }).withMessage("Price must be a positive number"),
+  body("price").optional({ values: "falsy" }).isFloat({ min: 0, max: MAX_PRICE }).withMessage("Price must be a positive number up to ₦20,000,000"),
   body("location").optional({ values: "falsy" }).trim().isLength({ max: 160 }).withMessage("Location must be 160 characters or less"),
 ];
 
@@ -66,7 +70,7 @@ const apartmentOptionalDetailRules = [
 
 const apartmentCreateRules = [
   body("title").trim().notEmpty().withMessage("Title is required").isLength({ max: 120 }).withMessage("Title must be 120 characters or less"),
-  body("price").isFloat({ min: 0, max: 1000000 }).withMessage("Price must be a positive number"),
+  body("price").isFloat({ min: 0, max: MAX_PRICE }).withMessage("Price must be a positive number up to ₦20,000,000"),
   body("location").trim().notEmpty().withMessage("Location is required").isLength({ max: 160 }).withMessage("Location must be 160 characters or less"),
   body("landlordWhatsapp")
     .trim()

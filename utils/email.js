@@ -6,7 +6,7 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 // address on a domain verified in Resend (offcampushub.ng). The old
 // "onboarding@resend.dev" sandbox sender only delivers to the Resend
 // account owner's own inbox, so it can't be used for real users.
-const FROM_ADDRESS = "Off-Campus Hub <hello@offcampushub.ng>";
+const FROM_ADDRESS = process.env.EMAIL_FROM || "Off-Campus Hub <hello@offcampushub.ng>";
 
 // Same escaping used for user-generated text elsewhere in the app (see
 // server.js) — names/messages get interpolated into email HTML below, so

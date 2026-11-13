@@ -11,6 +11,26 @@ const isDatabaseConnected = () => mongoose.connection.readyState === 1;
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
+// Fields of *another* student we're willing to send to the browser. Email
+// is deliberately left out: contact details are only meant to be revealed
+// after a mutual match (WhatsApp, via matchedWhatsapp), but populating
+// "email" here handed every student's address to any logged-in user who
+// opened the browse page or their requests list.
+const PUBLIC_USER_FIELDS = "name role profileImage";
+
+// Request docs are populated with email + notificationsEnabled so the
+// server can send notification emails; strip those before responding.
+const toPublicRequest = (request) => {
+  const obj = request.toObject();
+  for (const side of ["fromUser", "toUser"]) {
+    if (obj[side] && typeof obj[side] === "object") {
+      delete obj[side].email;
+      delete obj[side].notificationsEnabled;
+    }
+  }
+  return obj;
+};
+
 const normalizeStringArray = (value) => {
   if (Array.isArray(value)) {
     return value.map((item) => String(item).trim()).filter(Boolean).slice(0, 20);
@@ -165,7 +185,7 @@ const upsertMyRoommateProfile = async (req, res) => {
     const profile = await RoommateProfile.findOneAndUpdate(
       { user: req.user.id },
       { ...buildProfileData(req.body), user: req.user.id },
-      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+      { returnDocument: "after", upsert: true, runValidators: true, setDefaultsOnInsert: true }
     ).populate("user", "name email role");
     res.json(profile);
   } catch (error) {
@@ -211,7 +231,7 @@ const getRoommateMatches = async (req, res) => {
     const candidates = await RoommateProfile.find(filter)
       .sort({ updatedAt: -1 })
       .limit(50)
-      .populate("user", "name email role");
+      .populate("user", PUBLIC_USER_FIELDS);
 
     const matches = candidates
       .map((profile) => {
@@ -237,7 +257,7 @@ const getRoommateProfileById = async (req, res) => {
     if (!isDatabaseConnected()) {
       return res.status(503).json({ message: "Database is not connected" });
     }
-    const profile = await RoommateProfile.findOne({ _id: req.params.id, visible: true }).populate("user", "name email role");
+    const profile = await RoommateProfile.findOne({ _id: req.params.id, visible: true }).populate("user", PUBLIC_USER_FIELDS);
     if (!profile) {
       return res.status(404).json({ message: "Roommate profile not found" });
     }
@@ -271,6 +291,22 @@ const createRoommateRequest = async (req, res) => {
         message: "You're currently matched. Turn your profile back to visible before sending new requests.",
       });
     }
+    // The upsert below used to overwrite any existing request back to
+    // "pending": a declined student could keep re-sending (and re-emailing)
+    // forever, and an accepted match could be silently reset, hiding the
+    // contact details both people had just unlocked.
+    const existing = await RoommateRequest.findOne({ fromUser: req.user.id, toUser: profile.user }).select("status");
+    if (existing && existing.status !== "pending") {
+      return res.status(409).json({
+        message: existing.status === "accepted"
+          ? "You're already matched with this student."
+          : "This student declined your earlier request.",
+      });
+    }
+    if (existing) {
+      return res.status(409).json({ message: "You've already sent this student a request." });
+    }
+
     const request = await RoommateRequest.findOneAndUpdate(
       { fromUser: req.user.id, toUser: profile.user },
       {
@@ -279,7 +315,7 @@ const createRoommateRequest = async (req, res) => {
         message: req.body.message || "",
         status: "pending",
       },
-      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+      { returnDocument: "after", upsert: true, runValidators: true, setDefaultsOnInsert: true }
     )
       .populate("fromUser", "name email role notificationsEnabled")
       .populate("toUser", "name email role notificationsEnabled");
@@ -294,7 +330,7 @@ const createRoommateRequest = async (req, res) => {
       ),
     }).catch(() => {}); // best-effort — never block the response on email delivery
 
-    res.status(201).json(request);
+    res.status(201).json(toPublicRequest(request));
   } catch (error) {
     if (isDatabaseError(error)) {
       return res.status(503).json({ message: "Database is not connected" });
@@ -312,8 +348,9 @@ const getRoommateRequests = async (req, res) => {
       $or: [{ fromUser: req.user.id }, { toUser: req.user.id }],
     })
       .sort({ updatedAt: -1 })
-      .populate("fromUser", "name email role")
-      .populate("toUser", "name email role");
+      .populate("fromUser", PUBLIC_USER_FIELDS)
+      .populate("toUser", PUBLIC_USER_FIELDS)
+      .then((list) => list.filter((r) => r.fromUser && r.toUser)); // skip requests whose other user was deleted
 
     const acceptedUserIds = requests
       .filter((r) => r.status === "accepted")
@@ -354,7 +391,7 @@ const updateRoommateRequest = async (req, res) => {
     const request = await RoommateRequest.findOneAndUpdate(
       { _id: req.params.requestId, toUser: req.user.id },
       { status },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     )
       .populate("fromUser", "name email role notificationsEnabled")
       .populate("toUser", "name email role notificationsEnabled");
@@ -394,7 +431,7 @@ const updateRoommateRequest = async (req, res) => {
       }).catch(() => {});
     }
 
-    res.json({ ...request.toObject(), matchedWhatsapp });
+    res.json({ ...toPublicRequest(request), matchedWhatsapp });
   } catch (error) {
     if (isDatabaseError(error)) {
       return res.status(503).json({ message: "Database is not connected" });
