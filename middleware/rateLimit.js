@@ -19,6 +19,16 @@ const createRateLimiter = ({
 }) => {
   const hits = new Map();
 
+  // Expired entries used to stay in the Map forever, so memory grew with
+  // every distinct IP (and IP+email pair) that ever hit the server.
+  const sweep = setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of hits) {
+      if (entry.resetAt <= now) hits.delete(key);
+    }
+  }, Math.min(windowMs, 5 * 60 * 1000));
+  sweep.unref();
+
   return (req, res, next) => {
     const now = Date.now();
     const key = keyGenerator(req);

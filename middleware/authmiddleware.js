@@ -35,6 +35,16 @@ exports.protect = async (req, res, next) => {
       });
     }
 
+    // Token was issued before the most recent password change/reset.
+    if (
+      req.user.passwordChangedAt &&
+      decoded.iat * 1000 < req.user.passwordChangedAt.getTime()
+    ) {
+      return res.status(401).json({
+        message: "Not authorized, token expired after a password change",
+      });
+    }
+
     if (req.user.disabled) {
       return res.status(403).json({
         message: "This account has been disabled. Contact support if you believe this is a mistake.",

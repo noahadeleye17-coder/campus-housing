@@ -5,13 +5,14 @@ const RoommateProfile = require("../models/RoommateProfile");
 const RoommateRequest = require("../models/RoommateRequest");
 const SiteConfig = require("../models/SiteConfig");
 const { deleteFromCloudinary } = require("../upload/ResizeImage");
-const { cloudinaryPublicIdFromUrl } = require("./apartmentController");
+const { deleteListingsForLandlord } = require("./apartmentController");
 const { sendBulkEmails, escapeHtml } = require("../utils/email");
 const {
   buildBroadcastEmail,
   buildUnsubscribeUrl,
   isHttpUrl,
 } = require("../utils/emailTemplates");
+const { escapeRegex } = require("../utils/regex");
 
 const isDatabaseError = (error) => {
   return error.name === "MongooseError" || error.name === "MongoServerSelectionError";
@@ -85,11 +86,12 @@ exports.getAllUsers = async (req, res) => {
     }
 
     const searchTerm = (req.query.search || "").trim();
+    const searchPattern = escapeRegex(searchTerm.slice(0, 80));
     const filter = searchTerm
       ? {
           $or: [
-            { name: { $regex: searchTerm, $options: "i" } },
-            { email: { $regex: searchTerm, $options: "i" } },
+            { name: { $regex: searchPattern, $options: "i" } },
+            { email: { $regex: searchPattern, $options: "i" } },
           ],
         }
       : {};
@@ -141,7 +143,7 @@ exports.updateUser = async (req, res) => {
       update.disabled = !!disabled;
     }
 
-    const user = await User.findByIdAndUpdate(id, update, { new: true });
+    const user = await User.findByIdAndUpdate(id, update, { returnDocument: "after" });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -178,28 +180,13 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Clean up every listing this user owns (if they're a landlord), same
-    // Cloudinary cleanup pattern as a landlord deleting their own listing.
-    const apartments = await Apartment.find({ landlord: user._id });
     const mediaCleanupTasks = [];
-    apartments.forEach((apartment) => {
-      const imageUrls = apartment.images || (apartment.image ? [apartment.image] : []);
-      imageUrls.forEach((url) => {
-        const publicId = cloudinaryPublicIdFromUrl(url);
-        if (publicId) mediaCleanupTasks.push(deleteFromCloudinary(publicId, "image"));
-      });
-      if (apartment.video) {
-        const publicId = cloudinaryPublicIdFromUrl(apartment.video);
-        if (publicId) mediaCleanupTasks.push(deleteFromCloudinary(publicId, "video"));
-      }
-    });
-
     if (user.profileImagePublicId) {
       mediaCleanupTasks.push(deleteFromCloudinary(user.profileImagePublicId, "image"));
     }
 
     await Promise.all([
-      Apartment.deleteMany({ landlord: user._id }),
+      deleteListingsForLandlord(user._id),
       RoommateProfile.deleteOne({ user: user._id }),
       RoommateRequest.deleteMany({ $or: [{ fromUser: user._id }, { toUser: user._id }] }),
       User.deleteOne({ _id: user._id }),
@@ -468,7 +455,7 @@ exports.updateSiteConfig = async (req, res) => {
     const config = await SiteConfig.findOneAndUpdate(
       { key: SiteConfig.SINGLETON_KEY },
       update,
-      { new: true, upsert: true }
+      { returnDocument: "after", upsert: true }
     );
 
     res.json({

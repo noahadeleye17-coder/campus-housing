@@ -75,6 +75,14 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
+    // Set whenever the password changes (reset or change). Any JWT issued
+    // before this moment is rejected by authmiddleware.protect, so a
+    // password reset actually logs out whoever had the old session.
+    passwordChangedAt: {
+      type: Date,
+      default: null,
+    },
+
     resetPasswordToken: {
       type: String,
       default: null,

@@ -21,6 +21,15 @@ const SiteConfig = require("./models/SiteConfig");
 const app = express();
 mongoose.set("bufferCommands", false);
 
+// Render (and most PaaS hosts) sit behind a reverse proxy. Without this,
+// req.ip is the proxy's address for every visitor, so all rate limiters
+// put the entire site into one shared bucket and real users get 429s once
+// a few hundred requests have come in from anyone. "1" trusts exactly one
+// hop (the platform's load balancer), so X-Forwarded-For can't be spoofed
+// past it. Override with TRUST_PROXY if the hosting setup changes.
+const trustProxy = process.env.TRUST_PROXY ?? "1";
+app.set("trust proxy", /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy);
+
 // Security headers (clickjacking, MIME-sniffing, etc.)
 // CSP is left off for now since the frontend uses inline <script>/<style>
 // tags (e.g. window.API_BASE, inline navbar styling) that a default CSP
@@ -54,7 +63,9 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    return callback(new Error("Not allowed by CORS"));
+    const err = new Error("Not allowed by CORS");
+    err.status = 403;
+    return callback(err);
   },
   credentials: true,
 }));
@@ -298,6 +309,16 @@ app.use((err, req, res, next) => {
   }
 
   uploadErrorHandler(err, req, res, next);
+});
+
+// Last resort: anything not handled above gets a JSON response instead of
+// Express's default HTML error page (which also leaks stack traces when
+// NODE_ENV isn't "production").
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = err.status && err.status >= 400 && err.status < 600 ? err.status : 500;
+  if (status >= 500) console.error("Unhandled error:", err);
+  res.status(status).json({ message: status >= 500 ? "Server error" : err.message });
 });
 
 // ── MongoDB connection with auto-reconnect ──────────────────────────────────

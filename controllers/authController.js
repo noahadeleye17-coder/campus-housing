@@ -258,6 +258,9 @@ exports.resetPassword = async (req, res) => {
     }
 
     user.password = await bcrypt.hash(password, 12);
+    // Back-dated by a second so the token issued just below (whose iat is
+    // rounded down to the second) still counts as "after" the change.
+    user.passwordChangedAt = new Date(Date.now() - 1000);
     user.resetPasswordToken = null;
     user.resetPasswordExpire = null;
     await user.save();

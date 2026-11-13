@@ -61,6 +61,9 @@ Rules:
         "Content-Type": "application/json",
         "x-goog-api-key": apiKey,
       },
+      // Without a timeout a hung Gemini call held the admin's request open
+      // until the platform killed it.
+      signal: AbortSignal.timeout(25000),
       body: JSON.stringify({
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: [{ role: "user", parts: [{ text: rawText.slice(0, 4000) }] }],

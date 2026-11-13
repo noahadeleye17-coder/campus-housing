@@ -25,6 +25,33 @@ const cloudinaryPublicIdFromUrl = (url) => {
   }
 };
 
+/**
+ * Delete every listing owned by a landlord, then (best-effort, not awaited)
+ * their photos/videos on Cloudinary. Shared by self-service account deletion
+ * and admin user deletion so both clean up the same way.
+ */
+const deleteListingsForLandlord = async (landlordId) => {
+  const apartments = await Apartment.find({ landlord: landlordId }).select("images image video").lean();
+  if (!apartments.length) return 0;
+
+  const tasks = [];
+  apartments.forEach((apartment) => {
+    const imageUrls = apartment.images?.length ? apartment.images : apartment.image ? [apartment.image] : [];
+    imageUrls.forEach((url) => {
+      const publicId = cloudinaryPublicIdFromUrl(url);
+      if (publicId) tasks.push(deleteFromCloudinary(publicId, "image"));
+    });
+    if (apartment.video) {
+      const publicId = cloudinaryPublicIdFromUrl(apartment.video);
+      if (publicId) tasks.push(deleteFromCloudinary(publicId, "video"));
+    }
+  });
+
+  await Apartment.deleteMany({ landlord: landlordId });
+  Promise.all(tasks).catch((err) => console.warn("Cloudinary cleanup for landlord listings failed:", err.message));
+  return apartments.length;
+};
+
 const isDatabaseError = (error) => {
   return error.name === "MongooseError" || error.name === "MongoServerSelectionError";
 };
@@ -208,7 +235,17 @@ const buildApartmentData = async (req, existingApartment = null) => {
   let coordinates = null;
   if (hasExplicitCoordinates) {
     coordinates = { latitude: Number(latitude), longitude: Number(longitude) };
-  } else if (location !== undefined && location !== "") {
+  } else if (
+    location !== undefined &&
+    location !== "" &&
+    // On edit, only re-geocode when the address actually changed (or the
+    // listing never got coordinates). The edit form always sends
+    // `location`, so this used to call Nominatim on every save — slower
+    // saves, and against Nominatim's usage policy for repeat lookups.
+    (!existingApartment ||
+      location.trim() !== (existingApartment.location || "").trim() ||
+      existingApartment.coordinates?.latitude == null)
+  ) {
     coordinates = await geocodeAddress(location); // null if geocoding fails — non-fatal
   }
 
@@ -429,7 +466,7 @@ const updateApartment = async (req, res) => {
     const apartment = await Apartment.findOneAndUpdate(
       { _id: existingApartment._id },
       data,
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     ).populate("landlord", "name email");
 
     // Best-effort: delete from Cloudinary any photos/video that were on the
@@ -497,7 +534,7 @@ const updateApartmentStatus = async (req, res) => {
     const apartment = await Apartment.findOneAndUpdate(
       getOwnedListingFilter(req, req.params.id),
       { status, takenAt: status === "taken" ? new Date() : null },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     ).populate("landlord", "name email");
 
     if (!apartment) {
@@ -563,4 +600,5 @@ module.exports = {
   deleteApartment,
   buildApartmentData,
   cloudinaryPublicIdFromUrl,
+  deleteListingsForLandlord,
 };
